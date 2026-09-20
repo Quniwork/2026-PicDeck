@@ -13,7 +13,7 @@ struct MonthCalendarGridView: View {
 
     var body: some View {
         AnchoredScrollView(anchorID: focusYearID, isReady: !years.isEmpty) {
-            LazyVStack(alignment: .leading, spacing: 20, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(alignment: .leading, spacing: 20) {
                 ForEach(years) { group in
                     Section {
                         LazyVGrid(columns: columns, spacing: 16) {
@@ -35,7 +35,6 @@ struct MonthCalendarGridView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(.bar)
                     }
                     .id(group.id)
                 }
@@ -134,6 +133,7 @@ struct MiniMonthCalendar: View {
 
     private func color(for day: Int) -> Color {
         if isToday(day) { return .red }
-        return hasPhotos(day) ? .primary : .secondary.opacity(0.45)
+        // 沒有照片的日子要淡，但不能淡到看不見，深色模式下尤其容易消失。
+        return hasPhotos(day) ? .primary : .secondary.opacity(0.75)
     }
 }

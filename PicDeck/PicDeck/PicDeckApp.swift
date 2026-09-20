@@ -9,6 +9,7 @@ struct PicDeckApp: App {
     @StateObject private var organized = OrganizedStore()
     @StateObject private var tagStore = TagStore()
     @StateObject private var journalStore = JournalStore()
+    @StateObject private var noteStore = NoteStore()
 
     var body: some Scene {
         WindowGroup {
@@ -18,6 +19,9 @@ struct PicDeckApp: App {
                 .environmentObject(organized)
                 .environmentObject(tagStore)
                 .environmentObject(journalStore)
+                .environmentObject(noteStore)
+                .environment(\.dynamicTypeSize, .small)
+                .onAppear { model.appearance.apply() }
         }
         .onChange(of: scenePhase) { _, phase in
             // 進背景時把保留紀錄立刻寫入磁碟。
@@ -25,6 +29,7 @@ struct PicDeckApp: App {
                 organized.flush()
                 tagStore.flush()
                 journalStore.flush()
+                noteStore.flush()
             }
         }
     }

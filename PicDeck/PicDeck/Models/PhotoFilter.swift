@@ -7,6 +7,10 @@ enum PhotoFilter: String, CaseIterable, Identifiable, Hashable {
     case photos
     case videos
     case screenshots
+    /// 在系統照片裡編輯過（調整、濾鏡、裁切）。
+    case edited
+    /// 沒有放進任何自己建立的相簿。
+    case notInAlbum
 
     var id: String { rawValue }
 
@@ -19,16 +23,20 @@ enum PhotoFilter: String, CaseIterable, Identifiable, Hashable {
         case .photos: return String(localized: "Photos")
         case .videos: return String(localized: "Videos")
         case .screenshots: return String(localized: "Screenshots")
+        case .edited: return String(localized: "Edited")
+        case .notInAlbum: return String(localized: "Not in an album")
         }
     }
 
     var systemImage: String {
         switch self {
-        case .all: return "square.grid.2x2"
+        case .all: return "square.grid.3x3"
         case .favorites: return "heart"
         case .photos: return "photo"
         case .videos: return "video"
-        case .screenshots: return "iphone"
+        case .screenshots: return "camera.viewfinder"
+        case .edited: return "slider.horizontal.3"
+        case .notInAlbum: return "rectangle.on.rectangle.slash"
         }
     }
 }
@@ -55,7 +63,6 @@ enum PhotoScale: String, CaseIterable, Identifiable, Hashable {
     case year
     case month
     case day
-    case journal
     /// 依日期分段、帶標題資訊的瀏覽（參考 App 的「展開」）。
     case timeline
     /// 純格狀、不帶日期資訊的密集瀏覽（參考 App 的「緊湊」）。
@@ -68,19 +75,18 @@ enum PhotoScale: String, CaseIterable, Identifiable, Hashable {
         case .year: return String(localized: "Year")
         case .month: return String(localized: "Month")
         case .day: return String(localized: "Day")
-        case .journal: return String(localized: "Journal")
         case .timeline: return String(localized: "Timeline")
         case .all: return String(localized: "All")
         }
     }
 
-    /// 日記為付費功能。
-    var isFree: Bool { self != .journal }
+    var isFree: Bool { true }
 }
 
 /// 整理分頁的待整理集合。
 enum OrganizeBucket: Hashable, Identifiable {
     case allUnorganized
+    case unorganizedPhotos
     case unorganizedVideos
     case unorganizedScreenshots
     case month(year: Int, month: Int)
@@ -88,6 +94,7 @@ enum OrganizeBucket: Hashable, Identifiable {
     var id: String {
         switch self {
         case .allUnorganized: return "all"
+        case .unorganizedPhotos: return "photos"
         case .unorganizedVideos: return "videos"
         case .unorganizedScreenshots: return "screenshots"
         case .month(let year, let month): return "\(year)-\(month)"
@@ -97,6 +104,7 @@ enum OrganizeBucket: Hashable, Identifiable {
     var title: String {
         switch self {
         case .allUnorganized: return String(localized: "All unorganized")
+        case .unorganizedPhotos: return String(localized: "Unorganized photos")
         case .unorganizedVideos: return String(localized: "Unorganized videos")
         case .unorganizedScreenshots: return String(localized: "Unorganized screenshots")
         case .month(let year, let month):
@@ -165,5 +173,17 @@ enum DateTitle {
         formatter.dateStyle = .long
         formatter.timeStyle = .none
         return formatter.string(from: date)
+    }
+}
+
+enum GridContext: String {
+    case all, timeline, journal
+
+    init?(_ scale: PhotoScale) {
+        switch scale {
+        case .all: self = .all
+        case .timeline: self = .timeline
+        default: return nil
+        }
     }
 }

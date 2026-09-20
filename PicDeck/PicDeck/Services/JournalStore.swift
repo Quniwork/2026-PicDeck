@@ -64,6 +64,12 @@ final class JournalStore: ObservableObject {
 
     var count: Int { entries.count }
 
+    /// 這張照片是否已經被放進任何一篇日記。放進去之後就不再提供「寫日記」。
+    func isInJournal(_ asset: PHAsset) -> Bool {
+        let id = asset.localIdentifier
+        return entries.values.contains { $0.photoIDs.contains(id) }
+    }
+
     // MARK: - 寫入
 
     func save(mood: String, text: String, photoIDs: [String], forKey key: String) {

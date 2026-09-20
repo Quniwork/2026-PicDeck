@@ -6,6 +6,10 @@ struct AssetThumbnail: View {
     let asset: PHAsset
     var size: CGFloat = 120
     var showsDuration: Bool = true
+    /// 依原本比例完整顯示（留邊），而不是裁成正方形填滿。
+    var fitsAspect: Bool = false
+    /// 喜愛的照片右上角顯示愛心。
+    var showsFavorite: Bool = false
 
     @State private var image: UIImage?
 
@@ -14,9 +18,11 @@ struct AssetThumbnail: View {
             .aspectRatio(1, contentMode: .fit)
             .overlay {
                 if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
+                    if fitsAspect {
+                        Image(uiImage: image).resizable().scaledToFit()
+                    } else {
+                        Image(uiImage: image).resizable().scaledToFill()
+                    }
                 } else {
                     Rectangle().fill(Color(.secondarySystemBackground))
                 }
@@ -28,6 +34,16 @@ struct AssetThumbnail: View {
                         .foregroundStyle(.white)
                         .shadow(radius: 2)
                         .padding(4)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if showsFavorite, asset.isFavorite {
+                    Image(systemName: "heart.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.5), radius: 2)
+                        .padding(5)
+                        .accessibilityHidden(true)
                 }
             }
             .clipped()

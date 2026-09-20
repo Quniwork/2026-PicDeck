@@ -23,15 +23,14 @@ struct MoreTabView: View {
                     }
                 }
 
-                Section("Library") {
-                    NavigationLink {
-                        LibraryManagerView(initialTab: .albums)
-                    } label: {
-                        Label("Manage albums and tags", systemImage: "folder.badge.gearshape")
+                Section("Interface") {
+                    Picker("Appearance", selection: $model.appearance) {
+                        ForEach(AppAppearance.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
                     }
-                    .accessibilityIdentifier("more.manage")
-
-                    LabeledContent("Tags", value: "\(tagStore.tags.count)")
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("more.appearance")
                 }
 
                 Section("Journal") {
@@ -68,7 +67,10 @@ struct MoreTabView: View {
                     LabeledContent("Version", value: appVersion)
                 }
             }
+            .contentMargins(.top, 0, for: .scrollContent)
             .navigationTitle("More")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { LeadingTitleToolbar(title: String(localized: "More"), font: .title) }
             .sheet(isPresented: $showPaywall) { PaywallView() }
             .fullScreenCover(isPresented: $showTutorial) {
                 TutorialView { showTutorial = false }

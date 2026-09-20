@@ -10,6 +10,7 @@ struct PhotosTabView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var tagStore: TagStore
     @EnvironmentObject private var journalStore: JournalStore
+    @EnvironmentObject private var noteStore: NoteStore
 
     @State private var selection: PhotoSelection = .filter(.all)
     @State private var taggingAsset: PHAsset?
@@ -17,10 +18,13 @@ struct PhotosTabView: View {
     @State private var isSelecting = false
     @State private var selectedIDs: Set<String> = []
     @State private var showAlbumPicker = false
+    @State private var albumPickerAsset: PHAsset?
+    @State private var noteAsset: PHAsset?
     @State private var showBatchTagPicker = false
-    @State private var showTagFilterSheet = false
     @State private var albums: [AlbumSummary] = []
     @State private var assets: [PHAsset] = []
+    /// 依加入時間排的名次，切到「已加入」排序時才取。
+    @State private var addedRanks: [String: Int] = [:]
     @State private var years: [PhotoGrouping.Bucket] = []
     @State private var monthCalendars: [PhotoGrouping.YearOfMonths] = []
     @State private var dayCalendars: [PhotoGrouping.MonthOfDays] = []
@@ -35,51 +39,112 @@ struct PhotosTabView: View {
 
     private var scale: PhotoScale { model.lastPhotoScale }
 
+    /// 這個畫面會跳出的所有表單。
+    private enum ActiveSheet: Identifiable {
+        case paywall
+        case tags(PHAsset)
+        case journal(JournalDate)
+        case batchTags
+        case batchAlbum
+        case album(PHAsset)
+        case note(PHAsset)
+
+        var id: String {
+            switch self {
+            case .paywall: return "paywall"
+            case .tags(let asset): return "tags-\(asset.localIdentifier)"
+            case .journal(let date): return "journal-\(date.id)"
+            case .batchTags: return "batchTags"
+            case .batchAlbum: return "batchAlbum"
+            case .album(let asset): return "album-\(asset.localIdentifier)"
+            case .note(let asset): return "note-\(asset.localIdentifier)"
+            }
+        }
+    }
+
+    /// 由既有的幾個狀態合成一個綁定，其他程式碼不用改。
+    private var activeSheet: Binding<ActiveSheet?> {
+        Binding(
+            get: {
+                if showPaywall { return .paywall }
+                if let asset = taggingAsset { return .tags(asset) }
+                if let date = journalDate { return .journal(date) }
+                if showBatchTagPicker { return .batchTags }
+                if showAlbumPicker { return .batchAlbum }
+                if let asset = albumPickerAsset { return .album(asset) }
+                if let asset = noteAsset { return .note(asset) }
+                return nil
+            },
+            set: { newValue in
+                guard newValue == nil else { return }
+                showPaywall = false
+                taggingAsset = nil
+                journalDate = nil
+                showBatchTagPicker = false
+                showAlbumPicker = false
+                albumPickerAsset = nil
+                noteAsset = nil
+            }
+        )
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // 依標籤篩選時，上面列出所有標籤方便快速換一個看。
-                if selectedTagID != nil {
-                    TagSwitcherBar(selected: selectedTagID,
-                                   onPick: { choose(.tag($0.id)) },
-                                   onClear: { choose(.filter(.all)) })
+            content
+                // 每個分頁的背景統一用系統的分組灰底（首頁、日記、整理、更多也是）。
+                .background(Color(.systemGroupedBackground))
+            // 子分類與選取列都是浮在內容上面的玻璃膠囊，內容會捲到它們後面，跟頂部一樣看得穿。
+            // 選取中不需要切換年月日，所以換成選取列。
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Group {
+                    if isSelecting {
+                        selectionBar
+                    } else {
+                        scalePicker
+                    }
                 }
-                content
-                scalePicker
+                .transition(.opacity)
             }
-            .navigationTitle(selectionTitle)
+            .animation(.easeInOut(duration: 0.2), value: isSelecting)
+            // 標題就是標籤切換器：靠左的大字標題加小箭頭，點了直接選「所有項目」或某個標籤。
+            // 系統的大標題不能點，所以標題自己畫在工具列左邊，系統標題留空。
+            .navigationTitle(displayTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) { titleView }
-                if supportsSelection {
-                    ToolbarItem(placement: .topBarLeading) { selectButton }
-                }
-                ToolbarItem(placement: .topBarTrailing) { filterMenu }
-            }
-            .safeAreaInset(edge: .bottom) {
-                if isSelecting { selectionBar }
+                ToolbarItem(placement: .principal) { Text("").accessibilityHidden(true) }
+                titleToolbarItem
+                trailingToolbar
             }
             .task(id: selection) { await reload() }
+            // 首頁的標籤卡片點進來時，切到那個標籤。
+            .onAppear(perform: applyRequestedSelection)
+            .onChange(of: model.requestedSelection) { _ in applyRequestedSelection() }
+            // 勾選或取消勾選時輕輕震一下。
+            .sensoryFeedback(.selection, trigger: selectedIDs.count)
+            // 系統相簿有變動（例如在別處改了喜愛）就重取，長按選單才不會拿到舊狀態。
+            .onChange(of: library.libraryChangeCount) { _ in
+                Task { await refreshAssets() }
+            }
             .task(id: scale) { await rebuildCurrentScale() }
-            .sheet(isPresented: $showPaywall) { PaywallView() }
-            .sheet(item: $taggingAsset) { asset in
-                TagPickerView(assets: [asset])
-            }
-            .sheet(item: $journalDate) { date in
-                JournalEditorView(year: date.year, month: date.month, day: date.day,
-                                  preselectedIDs: date.photoIDs)
-            }
-            .sheet(isPresented: $showBatchTagPicker) {
-                TagPickerView(assets: selectedAssets)
-            }
-            .sheet(isPresented: $showTagFilterSheet) {
-                TagFilterSheet(selected: selectedTagID) { tag in
-                    choose(.tag(tag.id))
-                }
-            }
-            .sheet(isPresented: $showAlbumPicker) {
-                AlbumQuickPicker(albums: albums) { album in
-                    addSelectedToAlbum(album)
+            // 七個獨立的 .sheet 掛在同一個畫面上，照片分頁在「首頁之後才第一次建立」時整個掛不上去
+            // （畫面被求值了，.task 與 onAppear 卻都沒有觸發，結果是一片空白）。所以合併成一個。
+            .sheet(item: activeSheet) { sheet in
+                switch sheet {
+                case .paywall:
+                    PaywallView()
+                case .tags(let asset):
+                    TagPickerView(assets: [asset])
+                case .journal(let date):
+                    JournalEditorView(year: date.year, month: date.month, day: date.day,
+                                      preselectedIDs: date.photoIDs)
+                case .batchTags:
+                    TagPickerView(assets: selectedAssets)
+                case .batchAlbum:
+                    AlbumPickerView(assets: selectedAssets)
+                case .album(let asset):
+                    AlbumPickerView(assets: [asset])
+                case .note(let asset):
+                    NoteEditorView(asset: asset)
                 }
             }
         }
@@ -92,55 +157,94 @@ struct PhotosTabView: View {
         scale == .all || scale == .timeline
     }
 
+    /// 右上角跟系統照片一樣：圓形的篩選鈕、文字的「選取」，各自一塊玻璃，中間隔開。
+    @ToolbarContentBuilder
+    private var trailingToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) { filterMenu }
+        if supportsSelection {
+            if isSelecting {
+                // 選取中：篩選旁多一個「…」放全選，最右邊是 X 退出。
+                ToolbarItem(placement: .topBarTrailing) { selectionMoreMenu }
+            }
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            }
+            ToolbarItem(placement: .topBarTrailing) { selectButton }
+        }
+    }
+
+    private var selectionMoreMenu: some View {
+        Menu {
+            Button {
+                selectedIDs = Set(gridAssets.map(\.localIdentifier))
+            } label: {
+                Label(String(localized: "Select All"), systemImage: "checkmark.circle")
+            }
+            Button {
+                selectedIDs.removeAll()
+            } label: {
+                Label(String(localized: "Deselect All"), systemImage: "circle")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+        }
+        .accessibilityLabel(Text("More"))
+        .accessibilityIdentifier("photos.selectionMore")
+    }
+
     private var selectButton: some View {
         Button {
-            withAnimation {
+            withMotion {
                 isSelecting.toggle()
                 if !isSelecting { selectedIDs.removeAll() }
             }
         } label: {
-            Image(systemName: isSelecting ? "checkmark.circle.fill" : "checkmark.circle")
+            if isSelecting {
+                Image(systemName: "xmark")
+            } else {
+                Text("Select")
+            }
         }
+        .accessibilityLabel(Text(isSelecting ? "Done selecting" : "Select"))
         .accessibilityIdentifier("photos.select")
+    }
+
+    /// 「全部」格狀畫面用的順序：依拍攝時間，或依加入時間。其他子分頁固定依拍攝日期分組。
+    private var gridAssets: [PHAsset] {
+        guard model.sortsByAdded, !addedRanks.isEmpty else { return assets }
+        return assets.sorted { (addedRanks[$0.localIdentifier] ?? .max) < (addedRanks[$1.localIdentifier] ?? .max) }
     }
 
     // MARK: - 右側拖拉軸
 
-    /// 全部：每張照片各一個落點。
+    /// 全部：每張照片各一個落點，格子高度一致所以權重都是 1。
     private var allScrub: ScrubIndex {
-        ScrubIndex(anchors: assets.compactMap { asset in
+        ScrubIndex(anchors: gridAssets.compactMap { asset in
             guard let date = asset.creationDate else { return nil }
-            return ScrubAnchor(id: asset.localIdentifier, date: date, count: 1)
-        }, itemsPerScreen: 28)
+            return ScrubAnchor(date: date, weight: 1)
+        })
     }
 
-    /// 時間軸：一天一個落點，帶上當天張數。
+    /// 時間軸：一天一個落點。權重是這一天佔的列數加上標題。
     private var timelineScrub: ScrubIndex {
         ScrubIndex(anchors: sections.map {
-            ScrubAnchor(id: $0.id, date: $0.date, count: $0.count)
-        }, itemsPerScreen: 28)
+            ScrubAnchor(date: $0.date, weight: (Double($0.count) / 4).rounded(.up) + 0.8)
+        })
     }
 
-    /// 日：一個月一個落點。
+    /// 日：一個月一個落點，月曆大多是五到六列。
     private var dayScrub: ScrubIndex {
-        let anchors = dayCalendars.compactMap { month -> ScrubAnchor? in
+        ScrubIndex(anchors: dayCalendars.compactMap { month -> ScrubAnchor? in
             var parts = DateComponents()
             parts.year = month.year
             parts.month = month.month
             parts.day = 1
             guard let date = PhotoGrouping.calendar.date(from: parts) else { return nil }
-            return ScrubAnchor(id: month.id, date: date, count: 1)
-        }
-        return ScrubIndex(anchors: anchors, itemsPerScreen: 2)
+            return ScrubAnchor(date: date, weight: 1)
+        })
     }
 
-    /// 日記要顯示哪些篇。沒篩選就全部顯示，有篩選就只留照片落在篩選結果裡的。
-    private var journalPhotoFilter: Set<String>? {
-        guard !selection.isAll else { return nil }
-        return Set(assets.map(\.localIdentifier))
-    }
-
-    /// 目前篩選到的標籤，而且那個標籤有設起算日。
+    /// 目前篩選到的標籤，而且那個標籤有設日期。
     /// 只有這種情況才在日期旁邊顯示年月日，平常瀏覽維持原本的樣子。
     private var filteredAnniversaryTag: PhotoTag? {
         guard case .tag(let id) = selection,
@@ -153,102 +257,117 @@ struct PhotosTabView: View {
         library.assets(withIDs: Array(selectedIDs))
     }
 
-    /// 選取的照片是否全部同一天，只有同一天才能寫日記。
-    private var singleSelectedDay: (year: Int, month: Int, day: Int)? {
-        let assets = selectedAssets
-        guard !assets.isEmpty else { return nil }
+    /// 選取的照片依拍攝時間由早到晚。
+    private var selectedAssetsByDate: [PHAsset] {
+        selectedAssets.sorted { ($0.creationDate ?? .distantFuture) < ($1.creationDate ?? .distantFuture) }
+    }
 
-        var found: (Int, Int, Int)?
-        for asset in assets {
-            guard let date = asset.creationDate else { return nil }
-            let parts = PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: date)
-            guard let y = parts.year, let m = parts.month, let d = parts.day else { return nil }
-            if let found {
-                if found != (y, m, d) { return nil }
-            } else {
-                found = (y, m, d)
-            }
-        }
-        return found
+    /// 多選寫日記的日期：選取的照片裡最早那張的拍攝日。不限同一天，沒有任何拍攝日期才不能寫。
+    private var earliestSelectedDay: (year: Int, month: Int, day: Int)? {
+        guard let date = selectedAssetsByDate.compactMap(\.creationDate).first else { return nil }
+        let parts = PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: date)
+        guard let y = parts.year, let m = parts.month, let d = parts.day else { return nil }
+        return (y, m, d)
     }
 
     private var selectionBar: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Text("\(selectedIDs.count) selected")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
-            HStack(spacing: 10) {
-                // 只有選同一天的照片才出現寫日記。
-                if let day = singleSelectedDay {
+            // 兩端內縮一樣，按鈕依內容寬度，中間的空隙平均分配。
+            HStack(spacing: 0) {
+                // 日期用最早那張的拍攝日。全部都已經在日記裡的話不顯示。
+                if let day = earliestSelectedDay,
+                   !selectedAssets.allSatisfy(journalStore.isInJournal) {
                     selectionAction("Write journal", icon: "square.and.pencil", id: "batch.journal") {
                         journalDate = JournalDate(year: day.year, month: day.month, day: day.day,
-                                                  photoIDs: Array(selectedIDs))
+                                                  photoIDs: selectedAssetsByDate.map(\.localIdentifier))
                         exitSelection()
                     }
+                    Spacer(minLength: 4)
                 }
 
                 selectionAction("Tags", icon: "tag", id: "batch.tags") {
                     showBatchTagPicker = true
                 }
+                Spacer(minLength: 4)
 
-                selectionAction("Favorite", icon: "heart", id: "batch.favorite") {
+                selectionAction(allSelectedAreFavorites ? "Remove from favorites" : "Favorite",
+                                icon: allSelectedAreFavorites ? "heart.slash" : "heart",
+                                id: "batch.favorite") {
                     favoriteSelected()
                 }
+                Spacer(minLength: 4)
 
                 selectionAction("Add to album", icon: "rectangle.stack.badge.plus", id: "batch.album") {
                     showAlbumPicker = true
                 }
+                Spacer(minLength: 4)
+
+                selectionAction("Delete", icon: "xmark", id: "batch.delete", isDestructive: true) {
+                    deleteSelected()
+                }
             }
             .disabled(selectedIDs.isEmpty)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 20)
         .padding(.vertical, 10)
-        .background(.bar)
+        .floatingGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
     }
 
     private func selectionAction(_ key: LocalizedStringKey,
                                  icon: String,
                                  id: String,
+                                 isDestructive: Bool = false,
                                  action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon).font(.title3)
-                Text(key).font(.caption2)
-            }
-            .frame(maxWidth: .infinity)
+            // 字級與整理頁的底列一樣（caption）。
+            Label(key, systemImage: icon)
+                .font(.caption)
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .fixedSize()
+                .foregroundStyle(isDestructive ? Color.red : Color.primary)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 2)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .accessibilityIdentifier(id)
     }
 
-    /// 加入喜愛：已經是喜愛的照片跳過不處理。
-    private func favoriteSelected() {
-        let targets = selectedAssets.filter { !$0.isFavorite }
-        guard !targets.isEmpty else {
-            exitSelection()
-            return
-        }
-        Task {
-            for asset in targets {
-                try? await library.setFavorite(asset, to: true)
-            }
-            exitSelection()
-        }
+    /// 刪除：跟整理一樣先放進待刪清單，不會直接刪掉，之後可以在待刪清單確認或還原。
+    private func deleteSelected() {
+        for id in selectedIDs { model.markTrashed(id) }
+        exitSelection()
     }
 
-    private func addSelectedToAlbum(_ album: AlbumSummary) {
-        let targets = selectedAssets
+    /// 選取的照片都已經是喜愛，按鈕就變成「移出喜愛」。
+    private var allSelectedAreFavorites: Bool {
+        let picked = selectedAssets
+        return !picked.isEmpty && picked.allSatisfy(\.isFavorite)
+    }
+
+    /// 加入喜愛：已經是喜愛的照片跳過。全部都已經是喜愛時，改成移出喜愛。
+    /// 做完留在選取模式，不跳出去；畫面不重排，照片還在原位。
+    private func favoriteSelected() {
+        let picked = selectedAssets
+        let removing = allSelectedAreFavorites
+        let targets = removing ? picked : picked.filter { !$0.isFavorite }
+        guard !targets.isEmpty else { return }
         Task {
             for asset in targets {
-                try? await library.addAsset(asset, toAlbumWithID: album.id)
+                try? await library.setFavorite(asset, to: !removing)
             }
-            albums = await library.userAlbums()
-            exitSelection()
         }
     }
 
     private func exitSelection() {
-        withAnimation {
+        withMotion {
             isSelecting = false
             selectedIDs.removeAll()
         }
@@ -256,24 +375,34 @@ struct PhotosTabView: View {
 
     /// 長按照片的操作，與整理的審核畫面一致。
     @ViewBuilder
-    private func photoActions(for asset: PHAsset) -> some View {
+    private func photoActions(for staleAsset: PHAsset) -> some View {
+        // 照片是載入時抓的快照。在系統相簿或別處改過喜愛，這裡的 isFavorite 會是舊的，
+        // 所以每次叫出選單都重新取一次，才能正確顯示成「移出喜愛」。
+        let asset = library.asset(withID: staleAsset.localIdentifier) ?? staleAsset
         PhotoActionsMenu(asset: asset,
-                         albums: albums,
+                         editedAt: editedDate(for: asset),
+                         showsJournal: !journalStore.isInJournal(asset),
                          onJournal: { openJournal(for: $0) },
                          onTag: { taggingAsset = $0 },
+                         onNote: { noteAsset = $0 },
                          onFavorite: { toggleFavorite($0) },
-                         onAddToAlbum: { addToAlbum($0, album: $1) })
+                         onAddToAlbum: { albumPickerAsset = $0 },
+                         onDelete: { model.markTrashed($0.localIdentifier) })
+    }
+
+    /// 這張照片最近一次被改的時間：備註、標籤，或系統照片的修改時間（比拍攝時間晚一分鐘以上才算）。
+    private func editedDate(for asset: PHAsset) -> Date? {
+        var dates: [Date] = []
+        if let note = noteStore.note(for: asset)?.updatedAt { dates.append(note) }
+        if let tags = tagStore.lastEdited(for: asset) { dates.append(tags) }
+        if let modified = asset.modificationDate, let created = asset.creationDate,
+           modified.timeIntervalSince(created) > 60 { dates.append(modified) }
+        return dates.max()
     }
 
     private func toggleFavorite(_ asset: PHAsset) {
-        Task { try? await library.setFavorite(asset, to: !asset.isFavorite) }
-    }
-
-    private func addToAlbum(_ asset: PHAsset, album: AlbumSummary) {
-        Task {
-            try? await library.addAsset(asset, toAlbumWithID: album.id)
-            albums = await library.userAlbums()
-        }
+        let current = library.asset(withID: asset.localIdentifier) ?? asset
+        Task { try? await library.setFavorite(current, to: !current.isFavorite) }
     }
 
     private func openJournal(for asset: PHAsset) {
@@ -295,15 +424,75 @@ struct PhotosTabView: View {
         }
     }
 
-    /// 篩選到標籤時，標題前面帶上那個標籤的圖示。
-    @ViewBuilder
-    private var titleView: some View {
-        HStack(spacing: 5) {
-            if case .tag(let id) = selection, let tag = tagStore.tag(withID: id) {
-                IconLabel(raw: tag.symbol, size: 15)
-            }
-            Text(selectionTitle).font(.headline)
+    /// 標題只放名稱；標籤的圖示留在選單裡。
+    private var displayTitle: String { selectionTitle }
+
+    /// 標題下面的項目數。
+    private var itemCountText: String {
+        String(format: String(localized: "%lld items"), assets.count)
+    }
+
+    /// 標題選單放在工具列左邊。iOS 26 以後工具列項目預設有玻璃底，標題不需要，所以關掉。
+    @ToolbarContentBuilder
+    private var titleToolbarItem: some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .topBarLeading) { titleMenu }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .topBarLeading) { titleMenu }
         }
+    }
+
+    /// 點標題切換標籤：所有項目、每一個標籤（照管理頁排的順序）、最後是管理標籤。
+    private var titleMenu: some View {
+        Menu {
+            Toggle(isOn: Binding(get: { selection.isAll },
+                                 set: { _ in choose(.filter(.all)) })) {
+                Label(String(localized: "All Items"), systemImage: "square.grid.2x2")
+            }
+
+            if !tagStore.tags.isEmpty {
+                Section(String(localized: "Tags")) {
+                    ForEach(tagStore.tags) { tag in
+                        tagButton(tag)
+                    }
+                }
+            }
+
+            Divider()
+            Button {
+                // 管理標籤在整理分頁的「標籤」子層。
+                model.organizeSection = .tags
+                model.selectedTab = 3
+            } label: {
+                Label("Manage tags", systemImage: "gearshape")
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 5) {
+                    // 篩選到標籤時，名稱前面顯示它的表情或圖示；所有項目不需要。
+                    if case .tag(let id) = selection, let tag = tagStore.tag(withID: id) {
+                        IconLabel(raw: tag.symbol, size: 22)
+                    }
+                    Text(displayTitle)
+                        .font(.title2.weight(.bold))
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+                Text(itemCountText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .foregroundStyle(.primary)
+            .contentShape(Rectangle())
+            // 跟右邊的按鈕視覺置中，不要偏上。
+            .offset(y: 4)
+        }
+        .accessibilityLabel(Text(displayTitle))
+        .accessibilityHint(Text("Switch tag"))
+        .accessibilityIdentifier("photos.title")
     }
 
     // MARK: - 內容
@@ -326,7 +515,6 @@ struct PhotosTabView: View {
                     anchorYearID = "yr\(bucket.year)"
                     switchScale(to: .month, keepAnchors: true)
                 }
-                .safeAreaInset(edge: .bottom) { countFooter("\(years.count) years") }
 
             case .month:
                 MonthCalendarGridView(years: monthCalendars, focusYearID: anchorYearID) { month in
@@ -334,7 +522,6 @@ struct PhotosTabView: View {
                     anchorMonthID = "md\(month.year)-\(month.month)"
                     switchScale(to: .day, keepAnchors: true)
                 }
-                .safeAreaInset(edge: .bottom) { countFooter("\(totalMonthCount) months") }
 
             case .day:
                 DayCalendarGridView(months: dayCalendars,
@@ -345,7 +532,6 @@ struct PhotosTabView: View {
                                         switchScale(to: .timeline, keepAnchors: true)
                                     },
                                     scrub: dayScrub)
-                .safeAreaInset(edge: .bottom) { countFooter("\(totalDayCount) days") }
 
             case .timeline:
                 TimelineView(sections: sections,
@@ -354,40 +540,21 @@ struct PhotosTabView: View {
                              isSelecting: isSelecting,
                              selectedIDs: $selectedIDs,
                              anniversaryTag: filteredAnniversaryTag,
-                             scrub: timelineScrub)
+                             scrub: timelineScrub,
+                             columnCount: model.gridColumns(for: .timeline),
+                             fitsAspect: model.gridFitsAspect(for: .timeline))
 
             case .all:
-                CompactGridView(assets: assets,
+                CompactGridView(assets: gridAssets,
+                                columns: model.gridColumns(for: .all),
+                                fitsAspect: model.gridFitsAspect(for: .all),
                                 actions: { AnyView(photoActions(for: $0)) },
                                 isSelecting: isSelecting,
                                 selectedIDs: $selectedIDs,
                                 scrub: allScrub)
 
-            case .journal:
-                JournalEntriesView(onEdit: { year, month, day in
-                    journalDate = JournalDate(year: year, month: month, day: day)
-                },
-                                   anniversaryTag: filteredAnniversaryTag,
-                                   allowedPhotoIDs: journalPhotoFilter)
             }
         }
-    }
-
-    private var totalMonthCount: Int {
-        monthCalendars.reduce(0) { $0 + $1.months.count }
-    }
-
-    private var totalDayCount: Int {
-        dayCalendars.reduce(0) { $0 + $1.cells.count }
-    }
-
-    private func countFooter(_ key: LocalizedStringKey) -> some View {
-        Text(key)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity)
-            .background(.ultraThinMaterial)
     }
 
     /// 切換子分頁。手動點子分頁列時清掉錨點，從卡片點進來時保留。
@@ -403,106 +570,135 @@ struct PhotosTabView: View {
 
     // MARK: - 篩選
 
+    /// 跟系統照片的篩選選單同一套：排序、過濾條件、媒體類型、顯示方式選項。
     private var filterMenu: some View {
         Menu {
-            Section(String(localized: "Filter")) {
-                ForEach(PhotoFilter.allCases) { option in
-                    Button {
-                        choose(.filter(option))
-                    } label: {
-                        Label {
-                            Text(option.title)
-                        } icon: {
-                            Image(systemName: selection == .filter(option) ? "checkmark" : option.systemImage)
-                        }
-                    }
+            // 排序：上面一排兩個「圖示加文字」，選中的有底色，跟系統一樣。
+            ControlGroup {
+                Toggle(isOn: Binding(get: { model.sortsByAdded }, set: { _ in model.sortsByAdded = true })) {
+                    Label(String(localized: "Date Added"), systemImage: "clock")
+                }
+                Toggle(isOn: Binding(get: { !model.sortsByAdded }, set: { _ in model.sortsByAdded = false })) {
+                    Label(String(localized: "Capture Date"), systemImage: "camera")
                 }
             }
 
-            if !tagStore.tags.isEmpty {
-                // 標籤收成下一層，標籤變多時上面那層才不會被灌爆。
+            Section(String(localized: "Filter by:")) {
+                ForEach([PhotoFilter.all, .favorites, .edited, .notInAlbum]) { option in
+                    filterButton(option)
+                }
                 Menu {
-                    ForEach(shortcutTags) { tag in
-                        tagButton(tag)
-                    }
-                    if tagStore.tags.count > shortcutTagLimit {
-                        Divider()
-                        Button {
-                            showTagFilterSheet = true
-                        } label: {
-                            Label("All tags…", systemImage: "ellipsis")
-                        }
+                    ForEach([PhotoFilter.photos, .videos, .screenshots]) { option in
+                        filterButton(option)
                     }
                 } label: {
-                    Label(selectedTagName ?? String(localized: "Tags"), systemImage: "tag")
+                    Label(String(localized: "Media Types"), systemImage: "photo.on.rectangle.angled")
+                }
+            }
+
+            // 跟系統照片一樣，這個子選單的標題沒有圖示。
+            // 全部、時間軸、日記各自設定；年、月、日沒有這個選項。
+            if let context = GridContext(scale) {
+                Menu(String(localized: "View Options")) {
+                    Button {
+                        model.zoom(context, in: true)
+                    } label: {
+                        Label(String(localized: "Zoom In"), systemImage: "plus.magnifyingglass")
+                    }
+                    .disabled(model.gridColumns(for: context) <= Self.columnRange.lowerBound)
+
+                    Button {
+                        model.zoom(context, in: false)
+                    } label: {
+                        Label(String(localized: "Zoom Out"), systemImage: "minus.magnifyingglass")
+                    }
+                    .disabled(model.gridColumns(for: context) >= Self.columnRange.upperBound)
+
+                    Toggle(isOn: Binding(get: { model.gridFitsAspect(for: context) },
+                                         set: { model.setGridFitsAspect($0, for: context) })) {
+                        Label(String(localized: "Aspect Ratio Grid"),
+                              systemImage: "rectangle.arrowtriangle.2.outward")
+                    }
+
+                    Section(String(localized: "Show:")) {
+                        Toggle(isOn: $model.showsScreenshots) {
+                            Label(String(localized: "Screenshots"), systemImage: "camera.viewfinder")
+                        }
+                    }
                 }
             }
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
                 .overlay(alignment: .topTrailing) {
-                    if !selection.isAll {
+                    if case .filter(let current) = selection, current != .all {
                         Circle().fill(.red).frame(width: 7, height: 7).offset(x: 4, y: -3)
                     }
                 }
         }
+        .accessibilityLabel(Text("Filter"))
         .accessibilityIdentifier("photos.filter")
-    }
-
-    /// 下一層直接列出來的標籤數量上限。超過就只列常用的，其餘進「全部標籤」。
-    private let shortcutTagLimit = 10
-
-    /// 選中的那個永遠在，其餘依使用次數排，取前幾個。
-    private var shortcutTags: [PhotoTag] {
-        let tags = tagStore.tags
-        guard tags.count > shortcutTagLimit else { return tags }
-
-        var picked: [PhotoTag] = []
-        if case .tag(let id) = selection, let current = tagStore.tag(withID: id) {
-            picked.append(current)
+        .onChange(of: model.showsScreenshots) { _ in Task { await reload() } }
+        .onChange(of: model.sortsByAdded) { newValue in
+            guard newValue, addedRanks.isEmpty else { return }
+            Task { addedRanks = await library.addedRanks() }
         }
-        // 順序由使用者在管理頁排好，這裡就照那個順序取前幾個。
-        let rest = tags.filter { tag in !picked.contains(where: { $0.id == tag.id }) }
-        picked.append(contentsOf: rest.prefix(shortcutTagLimit - picked.count))
-        return picked
     }
 
-    private var selectedTagID: UUID? {
-        if case .tag(let id) = selection { return id }
-        return nil
+    /// 選中的項目前面才有打勾，沒選中的留一格空位，圖示才會對齊。
+    private static var columnRange: ClosedRange<Int> { AppModel.gridColumnRange }
+
+    private func filterButton(_ option: PhotoFilter) -> some View {
+        Toggle(isOn: Binding(get: { selection == .filter(option) },
+                             set: { _ in choose(.filter(option)) })) {
+            Label(option.title, systemImage: option.systemImage)
+        }
     }
 
-    private var selectedTagName: String? {
-        guard case .tag(let id) = selection else { return nil }
-        return tagStore.tag(withID: id)?.name
-    }
-
+    /// 選單裡每個標籤：左邊是它自己的圖示（表情或圖示都一樣放在圖示位置），右邊只有名稱。
+    /// 選單只吃圖片，所以把圖示先畫成圖片。
     @ViewBuilder
     private func tagButton(_ tag: PhotoTag) -> some View {
-        Button {
-            choose(.tag(tag.id))
-        } label: {
+        Toggle(isOn: Binding(get: { selection == .tag(tag.id) },
+                             set: { _ in choose(.tag(tag.id)) })) {
             Label {
-                HStack(spacing: 4) {
-                    IconLabel(raw: tag.symbol, size: 15)
-                    Text(tag.name)
-                }
+                Text(tag.name)
             } icon: {
-                if selection == .tag(tag.id) {
-                    Image(systemName: "checkmark")
-                } else if !model.isUnlocked {
-                    Image(systemName: "lock.fill")
-                } else {
-                    Image(systemName: "tag")
-                }
+                menuIcon(for: tag)
             }
         }
         .accessibilityLabel(tag.name)
     }
 
+    @ViewBuilder
+    private func menuIcon(for tag: PhotoTag) -> some View {
+        if !model.isUnlocked {
+            Image(systemName: "lock.fill")
+        } else {
+            let renderer = ImageRenderer(content: IconLabel(raw: tag.symbol, size: 18)
+                .frame(width: 22, height: 22))
+            let _ = renderer.scale = 3
+            if let image = renderer.uiImage {
+                Image(uiImage: image).renderingMode(.original)
+            } else {
+                Image(systemName: "tag")
+            }
+        }
+    }
+
     /// 選篩選條件，沒解鎖就導到付費頁。
+    private func applyRequestedSelection() {
+        guard let requested = model.requestedSelection else { return }
+        model.requestedSelection = nil
+        choose(requested)
+    }
+
     private func choose(_ newSelection: PhotoSelection) {
         if model.canUse(newSelection) {
             selection = newSelection
+            // 有日子的標籤看時間軸（每天顯示過了多久），沒有的看全部。
+            if case .tag(let id) = newSelection, let tag = tagStore.tag(withID: id) {
+                switchScale(to: tag.hasAnniversary ? .timeline : .all, keepAnchors: false)
+            }
         } else {
             showPaywall = true
         }
@@ -527,17 +723,29 @@ struct PhotosTabView: View {
                         }
                     }
                     .font(.footnote.weight(scale == option ? .semibold : .regular))
-                    .foregroundStyle(scale == option ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(scale == option ? Color.accentColor : Color.primary.opacity(0.78))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("scale.\(option.rawValue)")
             }
         }
-        .background(.bar)
+        .padding(.horizontal, 8)
+        .floatingGlass(in: Capsule())
+        .padding(.horizontal, 20)
+        .padding(.vertical, 6)
     }
 
     // MARK: - 載入
+
+    /// 只重取照片與相簿清單，不動位置也不顯示載入中，變動很頻繁時畫面才不會閃。
+    private func refreshAssets() async {
+        assets = await loadAssets()
+        albums = await library.userAlbums()
+        await rebuildCurrentScale()
+    }
 
     private func reload() async {
         isLoading = true
@@ -552,13 +760,18 @@ struct PhotosTabView: View {
     }
 
     private func loadAssets() async -> [PHAsset] {
+        let loaded: [PHAsset]
         switch selection {
         case .filter(let filter):
-            return await library.assets(matching: filter)
+            loaded = await library.assets(matching: filter)
+            // 選「截圖」就是要看截圖，不受顯示開關影響。
+            if filter == .screenshots || model.showsScreenshots { return loaded }
+            return loaded.filter { !$0.mediaSubtypes.contains(.photoScreenshot) }
         case .tag(let tagID):
             // 標籤是 App 端資料，先取全部照片再依標籤過濾。
             let all = await library.assets(matching: .all)
-            return all.filter { tagStore.tagIDs(for: $0).contains(tagID) }
+            loaded = all.filter { tagStore.tagIDs(for: $0).contains(tagID) }
+            return model.showsScreenshots ? loaded : loaded.filter { !$0.mediaSubtypes.contains(.photoScreenshot) }
         }
     }
 
@@ -575,8 +788,6 @@ struct PhotosTabView: View {
             dayCalendars = await PhotoGrouping.dayCalendars(from: assets)
         case .timeline:
             sections = await PhotoGrouping.daySections(from: assets)
-        case .journal:
-            break
         case .all:
             break
         }
@@ -590,5 +801,7 @@ struct JournalDate: Identifiable, Hashable {
     let month: Int
     let day: Int
     var photoIDs: [String] = []
+    /// 從日記分頁的「＋」新增的，編輯畫面可以改日期。
+    var isNew = false
     var id: String { JournalStore.key(year: year, month: month, day: day) }
 }

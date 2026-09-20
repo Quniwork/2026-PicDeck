@@ -11,25 +11,31 @@ struct JournalEntriesView: View {
     var anniversaryTag: PhotoTag? = nil
     /// 目前篩選允許的照片。nil 代表沒有篩選，全部都顯示。
     var allowedPhotoIDs: Set<String>? = nil
+    /// 由新到舊（預設）或由舊到新。
+    var newestFirst: Bool = true
+    /// 照片每列幾張、是否依原比例顯示。
+    var columnCount: Int = 4
+    var fitsAspect: Bool = false
 
     /// 右側拖拉軸。依目前看得到的日記重新算。
     private var scrub: ScrubIndex {
-        let anchors = visibleEntries.compactMap { entry -> ScrubAnchor? in
+        ScrubIndex(anchors: visibleEntries.compactMap { entry -> ScrubAnchor? in
             guard let parts = JournalStore.components(fromKey: entry.id) else { return nil }
             var components = DateComponents()
             components.year = parts.year
             components.month = parts.month
             components.day = parts.day
             guard let date = PhotoGrouping.calendar.date(from: components) else { return nil }
-            return ScrubAnchor(id: entry.id, date: date, count: 1)
-        }
-        return ScrubIndex(anchors: anchors, itemsPerScreen: 3)
+            return ScrubAnchor(date: date, weight: 1)
+        })
     }
 
     /// 篩選中時，只留下有照片落在篩選結果裡的日記。
     private var visibleEntries: [JournalEntry] {
-        guard let allowedPhotoIDs else { return journalStore.sortedEntries }
-        return journalStore.sortedEntries.filter { entry in
+        // sortedEntries 是由新到舊；要由舊到新就反過來。
+        let ordered = newestFirst ? journalStore.sortedEntries : journalStore.sortedEntries.reversed()
+        guard let allowedPhotoIDs else { return Array(ordered) }
+        return ordered.filter { entry in
             entry.photoIDs.contains { allowedPhotoIDs.contains($0) }
         }
     }
@@ -50,7 +56,8 @@ struct JournalEntriesView: View {
                 AnchoredScrollView(anchorID: nil, isReady: true, scrub: scrub) {
                     LazyVStack(spacing: 14) {
                         ForEach(visibleEntries) { entry in
-                            JournalEntryRow(entry: entry, anniversaryTag: anniversaryTag) {
+                            JournalEntryRow(entry: entry, anniversaryTag: anniversaryTag,
+                                            columnCount: columnCount, fitsAspect: fitsAspect) {
                                 guard let parts = JournalStore.components(fromKey: entry.id) else { return }
                                 onEdit(parts.year, parts.month, parts.day)
                             }
@@ -59,7 +66,8 @@ struct JournalEntriesView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 16)
+                    .padding(.top, 10)
+                    .padding(.bottom, 16)
                 }
                 .background(Color(.systemGroupedBackground))
             }
@@ -75,21 +83,26 @@ struct JournalEntriesView: View {
 struct JournalEntryRow: View {
     let entry: JournalEntry
     var anniversaryTag: PhotoTag? = nil
+    var columnCount: Int = 4
+    var fitsAspect: Bool = false
     let onEdit: () -> Void
 
     @EnvironmentObject private var library: PhotoLibraryService
+    @EnvironmentObject private var journalStore: JournalStore
 
+    @State private var confirmDelete = false
     @State private var assets: [PHAsset] = []
     @State private var isPhotosExpanded = false
     @State private var isTextExpanded = false
     @State private var zoomAsset: PHAsset?
 
-    private let maxCollapsed = 4
+    /// 收合時只放一列。
+    private var maxCollapsed: Int { columnCount }
     private let collapsedLines = 5
     /// 超過這個長度才給展開按鈕，不用去量實際有沒有被截斷。
     private let longTextThreshold = 110
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 4)
+    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 2), count: columnCount) }
 
     private var visibleAssets: [PHAsset] {
         isPhotosExpanded ? assets : Array(assets.prefix(maxCollapsed))
@@ -119,7 +132,7 @@ struct JournalEntryRow: View {
 
                     if isLongText {
                         Button {
-                            withAnimation(.easeInOut(duration: 0.2)) { isTextExpanded.toggle() }
+                            withMotion(.easeInOut(duration: 0.2)) { isTextExpanded.toggle() }
                         } label: {
                             Text(isTextExpanded ? "Show less" : "Show more")
                                 .font(.caption.weight(.semibold))
@@ -144,6 +157,12 @@ struct JournalEntryRow: View {
             isPhotosExpanded = false
             isTextExpanded = false
         }
+        .confirmationDialog(String(localized: "Delete entry"), isPresented: $confirmDelete,
+                            titleVisibility: .visible) {
+            Button(String(localized: "Delete entry"), role: .destructive) {
+                journalStore.delete(forKey: entry.id)
+            }
+        }
         .fullScreenCover(item: $zoomAsset) { asset in
             ZoomedPhotoView(asset: asset)
         }
@@ -152,7 +171,7 @@ struct JournalEntryRow: View {
     // MARK: - 標題
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             // 心情。沒選心情時留一個淡淡的預設圖示，版面才不會忽大忽小。
             ZStack {
                 Circle()
@@ -176,14 +195,26 @@ struct JournalEntryRow: View {
 
             Spacer(minLength: 0)
 
-            Button(action: onEdit) {
-                Image(systemName: "square.and.pencil")
-                    .font(.footnote.weight(.semibold))
+            // 沒有底色的「…」，點開選編輯或刪除。
+            Menu {
+                Button(action: onEdit) {
+                    Label("Edit", systemImage: "square.and.pencil")
+                }
+                Button(role: .destructive) {
+                    confirmDelete = true
+                } label: {
+                    Label("Delete", systemImage: "xmark")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .padding(6)
-                    .background(Color(.tertiarySystemFill), in: Circle())
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            // 選單預設會染成主題藍，這顆要灰色。
+            .tint(Color.secondary)
+            .accessibilityLabel(Text("More"))
             .accessibilityIdentifier("journal.edit")
         }
         .contentShape(Rectangle())
@@ -193,7 +224,7 @@ struct JournalEntryRow: View {
     // MARK: - 照片
 
     private var photoGrid: some View {
-        LazyVGrid(columns: columns, spacing: 6) {
+        LazyVGrid(columns: columns, spacing: 2) {
             ForEach(Array(visibleAssets.enumerated()), id: \.element.localIdentifier) { index, asset in
                 thumbnail(asset, index: index)
             }
@@ -209,12 +240,13 @@ struct JournalEntryRow: View {
     private func thumbnail(_ asset: PHAsset, index: Int) -> some View {
         let isExpandTrigger = hiddenCount > 0 && index == maxCollapsed - 1
 
-        return AssetThumbnail(asset: asset, size: 100, showsDuration: false)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+        return AssetThumbnail(asset: asset, size: columnCount >= 6 ? 100 : (columnCount >= 4 ? 130 : 220),
+                              showsDuration: false, fitsAspect: fitsAspect)
+            .clipped()
             .overlay {
                 if isExpandTrigger {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10).fill(.black.opacity(0.45))
+                        Rectangle().fill(.black.opacity(0.45))
                         Text("+\(hiddenCount)")
                             .font(.title3.weight(.bold))
                             .foregroundStyle(.white)
@@ -225,7 +257,7 @@ struct JournalEntryRow: View {
             .onTapGesture {
                 if isExpandTrigger {
                     // 第一次點第四張：展開看全部。
-                    withAnimation(.easeInOut(duration: 0.2)) { isPhotosExpanded = true }
+                    withMotion(.easeInOut(duration: 0.2)) { isPhotosExpanded = true }
                 } else {
                     // 其餘情況一律放大，包含展開後再點同一張。
                     zoomAsset = asset

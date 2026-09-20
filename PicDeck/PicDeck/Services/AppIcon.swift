@@ -116,6 +116,14 @@ struct IconLabel: View {
     var placeholder: String? = nil
 
     var body: some View {
+        content
+            // 表情符號與系統圖示的字形大小和留白都不同，統一放進固定大小的方框並置中，
+            // 不同圖示排在一起時中心才會對齊。
+            .frame(width: size * 1.35, height: size * 1.35, alignment: .center)
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch AppIcon.decode(raw) {
         case .emoji(let value):
             Text(value)
@@ -145,86 +153,91 @@ enum IconCatalog {
 
     // MARK: - 表情符號
 
-    static let emojiGroups: [Group] = [
-        Group(id: "smileys", title: String(localized: "Smileys & people"), items: [
-            "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃",
-            "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙",
-            "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔",
-            "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "😮‍💨",
-            "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮",
-            "🥵", "🥶", "😵", "🤯", "🤠", "🥳", "😎", "🤓", "🧐", "😕",
-            "😟", "🙁", "😮", "😯", "😲", "😳", "🥺", "😦", "😧", "😨",
-            "😰", "😥", "😢", "😭", "😱", "😖", "😣", "😞", "😓", "😩",
-            "😫", "🥱", "😤", "😡", "😠", "🤬", "😈", "💀", "👻", "👽",
-            "👋", "👌", "✌️", "🤞", "🤟", "👍", "👎", "👏", "🙌", "🙏",
-            "💪", "🧒", "👶", "👦", "👧", "👨", "👩", "🧑", "👴", "👵",
-            "👨‍👩‍👧", "👨‍👩‍👦", "🐣", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤",
-            "🤍", "💔", "💕", "💖", "💯"
-        ]),
-        Group(id: "nature", title: String(localized: "Animals & nature"), items: [
-            "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
-            "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🦆", "🦉",
-            "🦄", "🐝", "🦋", "🐌", "🐞", "🐢", "🐍", "🐙", "🦀", "🐬",
-            "🐳", "🐟", "🐊", "🐘", "🦒", "🦓", "🐄", "🐑", "🐎", "🐕",
-            "🐈", "🌵", "🌲", "🌳", "🌴", "🌱", "🌿", "☘️", "🍀", "🍁",
-            "🍂", "🍃", "🌷", "🌹", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝",
-            "🌙", "⭐️", "🌟", "✨", "⚡️", "🔥", "🌈", "☀️", "⛅️", "☁️",
-            "🌧", "⛈", "❄️", "☃️", "💧", "🌊"
-        ]),
-        Group(id: "food", title: String(localized: "Food & drink"), items: [
-            "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍒",
-            "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑", "🥦", "🥕", "🌽",
-            "🥔", "🍠", "🥐", "🍞", "🥖", "🧀", "🥚", "🍳", "🥞", "🧇",
-            "🥓", "🍔", "🍟", "🍕", "🌭", "🥪", "🌮", "🌯", "🥗", "🍝",
-            "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🍤", "🍚", "🍙", "🍥",
-            "🥠", "🍦", "🍰", "🎂", "🧁", "🥧", "🍫", "🍬", "🍭", "🍮",
-            "🍯", "🍼", "☕️", "🍵", "🧋", "🥤", "🍺", "🍷", "🥂", "🍾"
-        ]),
-        Group(id: "activity", title: String(localized: "Activity"), items: [
-            "⚽️", "🏀", "🏈", "⚾️", "🎾", "🏐", "🏉", "🎱", "🏓", "🏸",
-            "🥅", "⛳️", "🏹", "🎣", "🥊", "🥋", "⛸", "🎿", "⛷", "🏂",
-            "🏋️", "🤸", "🤼", "🤽", "🚴", "🚵", "🏆", "🥇", "🥈", "🥉",
-            "🎖", "🏅", "🎪", "🎭", "🎨", "🎬", "🎤", "🎧", "🎼", "🎹",
-            "🥁", "🎷", "🎺", "🎸", "🪕", "🎻", "🎲", "🎯", "🎳", "🎮",
-            "🧩", "🪁", "🎈", "🎉", "🎊", "🎁", "🎀", "🎄", "🎃", "🧧"
-        ]),
-        Group(id: "travel", title: String(localized: "Travel & places"), items: [
-            "🚗", "🚕", "🚙", "🚌", "🚎", "🏎", "🚓", "🚑", "🚒", "🚐",
-            "🛻", "🚚", "🚛", "🚜", "🛵", "🏍", "🚲", "🛴", "🚂", "🚆",
-            "🚊", "🚉", "✈️", "🛫", "🛬", "🚀", "🛸", "🚁", "⛵️", "🚤",
-            "🛳", "⛴", "🗺", "🧭", "🏔", "⛰", "🌋", "🏕", "🏖", "🏝",
-            "🏜", "🏟", "🏛", "🏗", "🏘", "🏠", "🏡", "🏢", "🏥", "🏦",
-            "🏨", "🏩", "🏪", "🏫", "🏬", "🏭", "⛩", "🗼", "🗽", "🎡",
-            "🎢", "🎠", "⛲️", "🌉", "🌃", "🌆", "🌇", "🌌"
-        ]),
-        Group(id: "objects", title: String(localized: "Objects"), items: [
-            "⌚️", "📱", "💻", "⌨️", "🖥", "🖨", "🖱", "💽", "💾", "📷",
-            "📸", "📹", "🎥", "📺", "📻", "🎙", "⏰", "⏱", "⌛️", "🔋",
-            "🔌", "💡", "🔦", "🕯", "🧯", "🛢", "💸", "💰", "💳", "🧾",
-            "⚖️", "🔧", "🔨", "⚒", "🛠", "⛏", "🔩", "⚙️", "🧰", "🧲",
-            "🔬", "🔭", "📡", "💊", "🩹", "🩺", "🚪", "🛏", "🛋", "🚿",
-            "🛁", "🧴", "🧷", "🧹", "🧺", "🧻", "🔑", "🗝", "🔒", "🔓",
-            "📦", "📫", "📮", "📝", "✏️", "🖊", "🖍", "📒", "📓", "📔",
-            "📕", "📗", "📘", "📙", "📚", "📖", "🔖", "🏷️", "📅", "📆",
-            "📇", "📈", "📉", "📊", "📋", "📌", "📍", "📎", "🗂", "🗃",
-            "🗄", "🗑"
-        ]),
-        Group(id: "symbols", title: String(localized: "Symbols"), items: [
-            "✅", "❌", "⭕️", "❗️", "❓", "💤", "💢", "💬", "🗯", "💭",
-            "♻️", "🔱", "⚜️", "🔰", "✳️", "❇️", "🆗", "🆕", "🆙", "🔝",
-            "🔜", "🔙", "🔛", "🔚", "🔄", "🔃", "➕", "➖", "➗", "✖️",
-            "💲", "〽️", "⚠️", "🚸", "🔞", "📵", "🚭", "❤️‍🔥", "🩷", "🤎",
-            "🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫️", "⚪️", "🟥",
-            "🟧", "🟨", "🟩", "🟦", "🟪", "⬛️", "⬜️", "🔶", "🔷", "🔸",
-            "🔹", "🔺", "🔻", "💠", "🔘", "🔳", "🔲"
-        ])
-    ]
+    /// 系統內建的全部表情符號（Unicode emoji-test，目前系統畫得出來的）。
+    /// 膚色與髮色變體不在這裡，點人物或手勢時由 `variants(of:)` 展開。
+    static let emojiGroups: [Group] = {
+        var order: [String] = []
+        var buckets: [String: [String]] = [:]
+        var names: [String: String] = [:]
+        let supported = EmojiSupport.maxVersion
+
+        for line in EmojiData.raw.split(separator: "\n") {
+            let parts = line.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
+            guard parts.count == 4, let version = Double(parts[2]) else { continue }
+            let emoji = String(parts[1])
+            // 太新的表情，這個系統版本畫不出來（會變成方框），不列出。
+            guard version <= supported || EmojiSupport.canRender(emoji) else { continue }
+            let group = String(parts[0])
+            if buckets[group] == nil { order.append(group) }
+            buckets[group, default: []].append(emoji)
+            names[emoji] = String(parts[3]).lowercased()
+        }
+        emojiNameIndex = names
+        return order.map { Group(id: "emoji." + $0, title: emojiGroupTitle($0), items: buckets[$0] ?? []) }
+    }()
+
+    fileprivate nonisolated(unsafe) static var emojiNameIndex: [String: String] = [:]
+
+    private static func emojiGroupTitle(_ id: String) -> String {
+        switch id {
+        case "Smileys & Emotion": return String(localized: "Smileys & Emotion")
+        case "People & Body": return String(localized: "People & Body")
+        case "Animals & Nature": return String(localized: "Animals & Nature")
+        case "Food & Drink": return String(localized: "Food & Drink")
+        case "Travel & Places": return String(localized: "Travel & Places")
+        case "Activities": return String(localized: "Activities")
+        case "Objects": return String(localized: "Objects")
+        case "Symbols": return String(localized: "Symbols")
+        case "Flags": return String(localized: "Flags")
+        default: return id
+        }
+    }
+
+    // MARK: - 變體（膚色與髮色）
+
+    private static let skinTones: [UInt32] = [0x1F3FB, 0x1F3FC, 0x1F3FD, 0x1F3FE, 0x1F3FF]
+    /// 紅髮、捲髮、白髮、光頭。Unicode 只有成人的 🧑 👨 👩 支援。
+    private static let hairComponents: [UInt32] = [0x1F9B0, 0x1F9B1, 0x1F9B3, 0x1F9B2]
+    private static let hairCapableBases: Set<UInt32> = [0x1F9D1, 0x1F468, 0x1F469]
+
+    /// 這個表情符號的所有變體，一列一列排好。沒有變體就回空陣列。
+    ///
+    /// 第一列是原本的加上五種膚色。成人人物後面再接四種髮色，每種也都有六個膚色。
+    static func variants(of emoji: String) -> [[String]] {
+        let scalars = Array(emoji.unicodeScalars).filter { $0.value != 0xFE0F }
+        // 只處理單一字元的人物與手勢。多人組合、動物、食物這類沒有變體。
+        guard scalars.count == 1, let base = scalars.first,
+              base.properties.isEmojiModifierBase else { return [] }
+
+        func make(tone: UInt32?, hair: UInt32?) -> String {
+            var view = String.UnicodeScalarView()
+            view.append(base)
+            if let tone, let scalar = Unicode.Scalar(tone) { view.append(scalar) }
+            if let hair, let zwj = Unicode.Scalar(0x200D), let scalar = Unicode.Scalar(hair) {
+                view.append(zwj)
+                view.append(scalar)
+            }
+            return String(view)
+        }
+
+        var rows: [[String]] = []
+        rows.append([emoji] + skinTones.map { make(tone: $0, hair: nil) })
+
+        if hairCapableBases.contains(base.value) {
+            for hair in hairComponents {
+                rows.append([make(tone: nil, hair: hair)] + skinTones.map { make(tone: $0, hair: hair) })
+            }
+        }
+        return rows
+    }
 
     /// 全部表情符號，給隨機挑選用。
     static let allEmoji: [String] = emojiGroups.flatMap(\.items)
 
     /// 表情符號的英文名稱，用來搜尋。系統轉出來的是 `\N{GRINNING FACE}`，去掉外框就好。
     static func searchName(forEmoji emoji: String) -> String {
+        _ = emojiGroups
+        if let known = emojiNameIndex[emoji] { return known }
         if let cached = emojiNameCache.value(for: emoji) { return cached }
         let transformed = emoji.applyingTransform(.toUnicodeName, reverse: false) ?? emoji
         let cleaned = transformed
@@ -237,50 +250,58 @@ enum IconCatalog {
 
     private static let emojiNameCache = IconNameCache()
 
-    // MARK: - 系統圖示
+    // MARK: - 圖標（SF Symbols）
 
-    static let symbolGroups: [Group] = [
-        Group(id: "people", title: String(localized: "People"), items: [
-            "person", "person.fill", "person.2.fill", "person.3.fill", "figure.walk",
-            "figure.run", "figure.and.child.holdinghands", "figure.2.and.child.holdinghands",
-            "hand.wave.fill", "hand.thumbsup.fill", "hand.raised.fill", "face.smiling",
-            "brain.head.profile", "eye.fill", "ear.fill", "mouth.fill"
-        ]),
-        Group(id: "nature", title: String(localized: "Nature"), items: [
-            "leaf.fill", "tree.fill", "camera.macro", "pawprint.fill", "bird.fill",
-            "fish.fill", "ant.fill", "ladybug.fill", "tortoise.fill", "hare.fill",
-            "sun.max.fill", "moon.fill", "moon.stars.fill", "sparkles", "cloud.fill",
-            "cloud.rain.fill", "cloud.bolt.fill", "snowflake", "wind", "flame.fill",
-            "drop.fill", "water.waves", "mountain.2.fill", "globe.asia.australia.fill"
-        ]),
-        Group(id: "objects", title: String(localized: "Objects"), items: [
-            "house.fill", "building.2.fill", "car.fill", "bus.fill", "tram.fill",
-            "airplane", "bicycle", "sailboat.fill", "ferry.fill", "fuelpump.fill",
-            "bed.double.fill", "sofa.fill", "lamp.desk.fill", "cup.and.saucer.fill",
-            "fork.knife", "birthday.cake.fill", "gift.fill", "bag.fill", "cart.fill",
-            "creditcard.fill", "banknote.fill", "briefcase.fill", "suitcase.fill",
-            "backpack.fill", "book.fill", "books.vertical.fill", "graduationcap.fill",
-            "pencil", "paintbrush.fill", "hammer.fill", "wrench.and.screwdriver.fill",
-            "paperclip", "scissors", "key.fill", "lock.fill", "trash.fill"
-        ]),
-        Group(id: "media", title: String(localized: "Media"), items: [
-            "camera.fill", "photo.fill", "photo.stack.fill", "video.fill", "film.fill",
-            "music.note", "headphones", "mic.fill", "speaker.wave.2.fill", "tv.fill",
-            "gamecontroller.fill", "display", "iphone", "ipad", "applewatch",
-            "desktopcomputer", "printer.fill", "externaldrive.fill"
-        ]),
-        Group(id: "symbols", title: String(localized: "Symbols"), items: [
-            "heart.fill", "star.fill", "bolt.fill", "crown.fill", "flag.fill",
-            "bookmark.fill", "tag.fill", "bell.fill", "pin.fill", "mappin",
-            "map.fill", "location.fill", "calendar", "clock.fill", "alarm.fill",
-            "hourglass", "checkmark.circle.fill", "xmark.circle.fill",
-            "exclamationmark.triangle.fill", "questionmark.circle.fill",
-            "info.circle.fill", "plus.circle.fill", "minus.circle.fill",
-            "magnifyingglass", "gearshape.fill", "wand.and.stars", "target",
-            "chart.bar.fill", "list.bullet", "square.grid.2x2.fill", "folder.fill",
-            "doc.fill", "envelope.fill", "phone.fill", "message.fill", "link"
-        ])
-    ]
+    /// 系統 SF Symbols 的全部圖標，依分類排。目前系統沒有的會濾掉。
+    static let symbolGroups: [Group] = {
+        var order: [String] = []
+        var buckets: [String: [String]] = [:]
+        for line in SymbolData.raw.split(separator: "\n") {
+            let parts = line.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2 else { continue }
+            let name = String(parts[1])
+            guard UIImage(systemName: name) != nil else { continue }
+            let category = String(parts[0])
+            if buckets[category] == nil { order.append(category) }
+            buckets[category, default: []].append(name)
+        }
+        // 「其他」（沒有分類的）放最後。
+        let sorted = order.filter { $0 != "other" } + order.filter { $0 == "other" }
+        return sorted.map { Group(id: "symbol." + $0, title: symbolGroupTitle($0), items: buckets[$0] ?? []) }
+    }()
+
+    private static func symbolGroupTitle(_ id: String) -> String {
+        switch id {
+        case "communication": return String(localized: "Communication")
+        case "weather": return String(localized: "Weather")
+        case "maps": return String(localized: "Maps")
+        case "objectsandtools": return String(localized: "Objects & Tools")
+        case "devices": return String(localized: "Devices")
+        case "cameraandphotos": return String(localized: "Camera & Photos")
+        case "gaming": return String(localized: "Gaming")
+        case "connectivity": return String(localized: "Connectivity")
+        case "transportation": return String(localized: "Transportation")
+        case "automotive": return String(localized: "Automotive")
+        case "accessibility": return String(localized: "Accessibility")
+        case "privacyandsecurity": return String(localized: "Privacy & Security")
+        case "human": return String(localized: "Human")
+        case "home": return String(localized: "Home")
+        case "fitness": return String(localized: "Fitness")
+        case "nature": return String(localized: "Nature")
+        case "editing": return String(localized: "Editing")
+        case "textformatting": return String(localized: "Text Formatting")
+        case "media": return String(localized: "Media")
+        case "keyboard": return String(localized: "Keyboard")
+        case "commerce": return String(localized: "Commerce")
+        case "time": return String(localized: "Time")
+        case "health": return String(localized: "Health")
+        case "shapes": return String(localized: "Shapes")
+        case "arrows": return String(localized: "Arrows")
+        case "indices": return String(localized: "Indices")
+        case "math": return String(localized: "Math")
+        default: return String(localized: "Other")
+        }
+    }
 
     static let allSymbols: [String] = symbolGroups.flatMap(\.items)
 }
@@ -298,5 +319,29 @@ private final class IconNameCache: @unchecked Sendable {
     func store(_ value: String, for key: String) {
         lock.lock(); defer { lock.unlock() }
         storage[key] = value
+    }
+}
+
+
+/// 目前系統畫得出哪些表情符號。
+enum EmojiSupport {
+    /// 這個系統版本確定支援的最高 Emoji 版本。更新的表情再逐個檢查字型有沒有對應字形。
+    static var maxVersion: Double {
+        if #available(iOS 18.4, *) { return 16.0 }
+        if #available(iOS 17.4, *) { return 15.1 }
+        return 15.0
+    }
+
+    private static let font = CTFontCreateWithName("AppleColorEmoji" as CFString, 20, nil)
+
+    /// 每個字元（不含連接符與變體選擇符）字型裡都有字形才算畫得出來。
+    static func canRender(_ emoji: String) -> Bool {
+        for scalar in emoji.unicodeScalars where scalar.value != 0x200D && scalar.value != 0xFE0F {
+            var utf16 = Array(String(scalar).utf16)
+            var glyphs = [CGGlyph](repeating: 0, count: utf16.count)
+            guard CTFontGetGlyphsForCharacters(font, &utf16, &glyphs, utf16.count),
+                  glyphs.allSatisfy({ $0 != 0 }) else { return false }
+        }
+        return true
     }
 }

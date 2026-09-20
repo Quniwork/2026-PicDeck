@@ -17,6 +17,8 @@ struct IconPickerView: View {
 
     @State private var tab: Tab = .emoji
     @State private var query = ""
+    /// 正在挑變體的那個表情符號。
+    @State private var variantBase: String?
     @State private var tint: String?
     @State private var showColorPalette = false
     @State private var customColor = Color.orange
@@ -109,6 +111,7 @@ struct IconPickerView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Clear"))
                 }
             }
             .padding(.horizontal, 10)
@@ -121,6 +124,7 @@ struct IconPickerView: View {
                     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text("Random"))
             .accessibilityIdentifier("icon.shuffle")
 
             if tab == .symbol {
@@ -214,7 +218,11 @@ struct IconPickerView: View {
                 ForEach(items, id: \.self) { item in
                     let value = isRaw ? item : encoded(for: item)
                     Button {
-                        choose(value)
+                        if tab == .emoji, !isRaw, !IconCatalog.variants(of: item).isEmpty {
+                            variantBase = item
+                        } else {
+                            choose(value)
+                        }
                     } label: {
                         IconLabel(raw: value, size: 24)
                             .frame(width: 38, height: 38)
@@ -224,6 +232,10 @@ struct IconPickerView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(item)
                     .accessibilityIdentifier("icon.item")
+                    .popover(isPresented: variantBinding(for: item)) {
+                        variantPicker(for: item)
+                            .presentationCompactAdaptation(.popover)
+                    }
                 }
             }
         } header: {
@@ -285,6 +297,40 @@ struct IconPickerView: View {
         tab == .emoji
             ? AppIcon.emoji(item).encoded
             : AppIcon.symbol(name: item, tint: tint).encoded
+    }
+
+    // MARK: - 變體
+
+    private func variantBinding(for item: String) -> Binding<Bool> {
+        Binding(get: { variantBase == item },
+                set: { if !$0, variantBase == item { variantBase = nil } })
+    }
+
+    /// 點了有變體的表情符號之後跳出來的選單：原本的、膚色，成人另有髮色。
+    private func variantPicker(for item: String) -> some View {
+        let rows = IconCatalog.variants(of: item)
+
+        // 不用 LazyVGrid：彈出選單量不出它的高度，只會畫第一排。項目最多三十個，直接全畫。
+        return VStack(spacing: 6) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 6) {
+                    ForEach(row, id: \.self) { variant in
+                        Button {
+                            variantBase = nil
+                            choose(variant)
+                        } label: {
+                            Text(variant)
+                                .font(.system(size: 26))
+                                .frame(width: 38, height: 38)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(variant)
+                        .accessibilityIdentifier("icon.variant")
+                    }
+                }
+            }
+        }
+        .padding(12)
     }
 
     // MARK: - 動作

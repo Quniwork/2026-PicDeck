@@ -17,7 +17,7 @@ struct DayCalendarGridView: View {
 
     var body: some View {
         AnchoredScrollView(anchorID: focusMonthID, isReady: !months.isEmpty, scrub: scrub) {
-            LazyVStack(alignment: .leading, spacing: 26, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(alignment: .leading, spacing: 26) {
                 ForEach(months) { month in
                     Section {
                         VStack(spacing: 10) {
@@ -52,7 +52,6 @@ struct DayCalendarGridView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(.bar)
                     }
                     .id(month.id)
                 }

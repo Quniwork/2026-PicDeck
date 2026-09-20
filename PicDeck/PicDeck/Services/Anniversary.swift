@@ -2,7 +2,7 @@ import Foundation
 
 /// 紀念日的計算方式。
 ///
-/// 起算日當天，D-day 是 D+0、日數是第 1 天，兩者差一天，這與常見的紀念日 App 一致。
+/// 日期當天，D-day 是 D+0、日數是第 1 天，兩者差一天，這與常見的紀念日 App 一致。
 enum AnniversaryStyle: String, Codable, CaseIterable, Identifiable, Sendable {
     /// D+2237
     case dday
@@ -28,7 +28,7 @@ enum AnniversaryStyle: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// 從起算日到某一天的長度，依選定方式換算成文字。
+/// 從日期到某一天的長度，依選定方式換算成文字。
 enum Anniversary {
 
     /// 只取年月日，時分秒一律歸零，避免同一天因時間不同算出差一天。
@@ -36,7 +36,7 @@ enum Anniversary {
         PhotoGrouping.calendar.startOfDay(for: date)
     }
 
-    /// 起算日到目標日之間相隔幾天。起算日當天是 0，之前是負數。
+    /// 日期到目標日之間相隔幾天。日期當天是 0，之前是負數。
     static func elapsedDays(from start: Date, to target: Date) -> Int {
         let calendar = PhotoGrouping.calendar
         let parts = calendar.dateComponents([.day],
@@ -46,7 +46,7 @@ enum Anniversary {
     }
 
     /// 依方式算出顯示文字，例如「6 年 1 個月 15 天」。
-    /// 目標日早於起算日時，前面加上負號。
+    /// 目標日早於日期時，前面加上負號。
     static func text(from start: Date, to target: Date, style: AnniversaryStyle) -> String {
         let elapsed = elapsedDays(from: start, to: target)
 
@@ -56,7 +56,7 @@ enum Anniversary {
             return elapsed >= 0 ? "D+\(elapsed)" : "D-\(-elapsed)"
 
         case .days:
-            // 起算日當天算第 1 天。
+            // 日期當天算第 1 天。
             let days = elapsed >= 0 ? elapsed + 1 : elapsed - 1
             return signed(format("%lld days", abs(days)), isNegative: days < 0)
 
@@ -106,7 +106,7 @@ enum Anniversary {
     }
 
     private static func signed(_ text: String, isNegative: Bool) -> String {
-        isNegative ? "-" + text : text
+        text
     }
 
     /// 用固定的 key 取翻譯再套數字，避免字串插值產生不可預期的 key。

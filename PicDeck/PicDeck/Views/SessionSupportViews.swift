@@ -73,12 +73,10 @@ struct ZoomedPhotoView: View {
             VStack {
                 HStack {
                     Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title)
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, .white.opacity(0.25))
+                    GlassCircleButton { dismiss() } label: {
+                        Image(systemName: "xmark")
                     }
+                    .accessibilityLabel(Text("Close"))
                     .padding()
                 }
                 Spacer()
@@ -111,6 +109,7 @@ struct HelpSheet: View {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.headline)
                 }
+                .accessibilityLabel(Text("Close"))
                 .accessibilityIdentifier("help.close")
             }
 
@@ -207,7 +206,9 @@ struct PendingTrashView: View {
                             .disabled(isDeleting)
                         }
                         .padding(16)
-                        .background(.bar)
+                        .floatingGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 6)
                     }
                 }
             }

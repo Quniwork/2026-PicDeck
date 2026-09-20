@@ -94,12 +94,12 @@
         }
       }
     },
-    "%lld months": {
+    "%lld photos": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 個月份"
+            "value": "%lld 張"
           }
         }
       }
@@ -114,12 +114,22 @@
         }
       }
     },
-    "%lld years": {
+    "%lld years ago": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 個年份"
+            "value": "%lld 年前"
+          }
+        }
+      }
+    },
+    "A name like this already exists here.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這個位置已經有同名的項目了。"
           }
         }
       }
@@ -169,7 +179,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "加到相冊"
+            "value": "加到相簿"
           }
         }
       }
@@ -179,7 +189,17 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "已加入最愛"
+            "value": "已加入喜愛"
+          }
+        }
+      }
+    },
+    "Album": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相簿"
           }
         }
       }
@@ -200,6 +220,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "相簿"
+          }
+        }
+      }
+    },
+    "Albums and folders are created in your Photos library.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相簿與資料夾會建立在系統的照片裡。"
           }
         }
       }
@@ -274,16 +304,6 @@
         }
       }
     },
-    "All tags…": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "全部標籤…"
-          }
-        }
-      }
-    },
     "All unorganized": {
       "localizations": {
         "zh-Hant": {
@@ -329,7 +349,17 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "紀念日"
+            "value": "日子"
+          }
+        }
+      }
+    },
+    "Appearance": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外觀"
           }
         }
       }
@@ -350,6 +380,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "正式上線"
+          }
+        }
+      }
+    },
+    "Automatic": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動"
           }
         }
       }
@@ -389,7 +429,17 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "選擇圖示"
+            "value": "選擇圖標"
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         }
       }
@@ -424,6 +474,16 @@
         }
       }
     },
+    "Completed": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已完成"
+          }
+        }
+      }
+    },
     "Counting method": {
       "localizations": {
         "zh-Hant": {
@@ -450,6 +510,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "建立資料夾來歸檔照片，可加上標籤與筆記。"
+          }
+        }
+      }
+    },
+    "Create a tag in Organize, give it a start date such as a child's birthday, and it shows up here as a card.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "到「整理」建立標籤，設一個日期（例如孩子的生日），就會在這裡變成一張卡片。"
+          }
+        }
+      }
+    },
+    "Create album": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立相簿"
+          }
+        }
+      }
+    },
+    "Create album or folder": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立相簿或資料夾"
           }
         }
       }
@@ -504,6 +594,16 @@
         }
       }
     },
+    "Dark": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深色"
+          }
+        }
+      }
+    },
     "Day": {
       "localizations": {
         "zh-Hant": {
@@ -519,7 +619,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "日數"
+            "value": "日子"
           }
         }
       }
@@ -574,6 +674,16 @@
         }
       }
     },
+    "Delete note": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除備註"
+          }
+        }
+      }
+    },
     "Delete permanently": {
       "localizations": {
         "zh-Hant": {
@@ -604,12 +714,32 @@
         }
       }
     },
+    "Delete this folder?": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要刪除這個資料夾嗎？"
+          }
+        }
+      }
+    },
     "Deleting an album keeps its photos in your library.": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "刪除相簿不會刪掉照片，照片仍然留在圖庫裡。"
+          }
+        }
+      }
+    },
+    "Deleting an album keeps its photos in your library. A folder can only be deleted after everything inside it is removed.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除相簿不會刪掉照片，照片仍然留在圖庫裡。資料夾要先把裡面的相簿全部刪除，才能刪除資料夾。"
           }
         }
       }
@@ -650,6 +780,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "完成"
+          }
+        }
+      }
+    },
+    "Done selecting": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結束選取"
           }
         }
       }
@@ -749,7 +889,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "最愛"
+            "value": "喜愛"
           }
         }
       }
@@ -799,7 +939,17 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "分類到相冊…"
+            "value": "分類到相簿…"
+          }
+        }
+      }
+    },
+    "File into tag…": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分類到標籤…"
           }
         }
       }
@@ -839,7 +989,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "分類到相冊時，也會同時標記為已整理。"
+            "value": "分類到相簿時，也會同時標記為已整理。"
           }
         }
       }
@@ -874,12 +1024,42 @@
         }
       }
     },
+    "Folder": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料夾"
+          }
+        }
+      }
+    },
+    "Folder name": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料夾名稱"
+          }
+        }
+      }
+    },
     "Folders": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "資料夾"
+          }
+        }
+      }
+    },
+    "Folders and albums": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料夾及相簿"
           }
         }
       }
@@ -900,6 +1080,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "食物與飲料"
+          }
+        }
+      }
+    },
+    "For things to do later, such as a restaurant to try. Turn this on once you have been.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "給之後想做的事，例如想吃的餐廳。去過、吃過就打開。"
           }
         }
       }
@@ -934,6 +1124,16 @@
         }
       }
     },
+    "Home": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首頁"
+          }
+        }
+      }
+    },
     "How to use": {
       "localizations": {
         "zh-Hant": {
@@ -949,7 +1149,17 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "圖示"
+            "value": "圖標"
+          }
+        }
+      }
+    },
+    "Interface": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面設定"
           }
         }
       }
@@ -1014,12 +1224,42 @@
         }
       }
     },
+    "Light": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "淺色"
+          }
+        }
+      }
+    },
     "Linked": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "已連結"
+          }
+        }
+      }
+    },
+    "Location": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置"
+          }
+        }
+      }
+    },
+    "Long press a photo and choose Note. Great for restaurants and places you want to try.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "長按照片選「備註」。很適合記下想去的餐廳與景點。"
           }
         }
       }
@@ -1070,6 +1310,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "管理標籤"
+          }
+        }
+      }
+    },
+    "Mark as done": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標記為完成"
+          }
+        }
+      }
+    },
+    "Mark as not done": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標記為未完成"
           }
         }
       }
@@ -1159,7 +1419,17 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "更多相冊"
+            "value": "更多相簿"
+          }
+        }
+      }
+    },
+    "More tags": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多標籤"
           }
         }
       }
@@ -1194,12 +1464,32 @@
         }
       }
     },
+    "New album": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增相簿"
+          }
+        }
+      }
+    },
     "New album name": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "新相簿名稱"
+          }
+        }
+      }
+    },
+    "New folder": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增資料夾"
           }
         }
       }
@@ -1329,7 +1619,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "這天沒有照片。"
+            "value": "這天沒有照片，可以從整個相簿挑選。"
           }
         }
       }
@@ -1399,7 +1689,27 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "筆記"
+            "value": "備註"
+          }
+        }
+      }
+    },
+    "Notes": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備註"
+          }
+        }
+      }
+    },
+    "Nothing here yet.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這裡還沒有東西。"
           }
         }
       }
@@ -1410,6 +1720,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "這裡整理完了"
+          }
+        }
+      }
+    },
+    "Nothing left to do.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "都完成了。"
+          }
+        }
+      }
+    },
+    "Nothing pinned yet": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有內容"
           }
         }
       }
@@ -1430,6 +1760,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "物品"
+          }
+        }
+      }
+    },
+    "On this day": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "那年今天"
           }
         }
       }
@@ -1459,7 +1799,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "點進標籤可以換圖示，或設一個起算日，例如孩子的生日。"
+            "value": "點進標籤可以換圖標，或設一個日期，例如孩子的生日。"
           }
         }
       }
@@ -1469,7 +1809,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "點進標籤可以換圖示或設起算日。按編輯可以拖曳調整顯示順序。"
+            "value": "點進標籤可以換圖標或設日期。按編輯可以拖曳調整顯示順序。"
           }
         }
       }
@@ -1500,6 +1840,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "付費"
+          }
+        }
+      }
+    },
+    "Pending deletion": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待刪除"
           }
         }
       }
@@ -1629,7 +1979,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "下拉加入最愛"
+            "value": "下拉加入喜愛"
           }
         }
       }
@@ -1640,6 +1990,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "下拉加入喜愛"
+          }
+        }
+      }
+    },
+    "Random": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隨機"
           }
         }
       }
@@ -1679,7 +2039,17 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "已移出最愛"
+            "value": "已移出喜愛"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新命名"
           }
         }
       }
@@ -1744,6 +2114,16 @@
         }
       }
     },
+    "Restaurant, place, opening hours, how it was…": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "哪間餐廳、地點、營業時間、評價如何…"
+          }
+        }
+      }
+    },
     "Save": {
       "localizations": {
         "zh-Hant": {
@@ -1764,12 +2144,12 @@
         }
       }
     },
-    "Search tags": {
+    "Select": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜尋標籤"
+            "value": "選取"
           }
         }
       }
@@ -1789,7 +2169,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "設一個起算日，例如孩子的生日。之後瀏覽某一天時，就會顯示那天過了多久。"
+            "value": "設一個日期，例如孩子的生日。之後瀏覽某一天時，就會顯示那天過了多久。"
           }
         }
       }
@@ -1799,7 +2179,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "設一個起算日，例如孩子的生日。之後篩選這個標籤時，每一天都會顯示那天過了多久。"
+            "value": "設一個日期，例如孩子的生日。之後篩選這個標籤時，每一天都會顯示那天過了多久。"
           }
         }
       }
@@ -1859,7 +2239,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "以今天為例。起算日當天是 D+0，也是第 1 天。"
+            "value": "以今天為例。日期當天是 D+0，也是第 1 天。"
           }
         }
       }
@@ -1899,7 +2279,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "起算日"
+            "value": "日期"
           }
         }
       }
@@ -2004,6 +2384,16 @@
         }
       }
     },
+    "Switch tag": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切換標籤"
+          }
+        }
+      }
+    },
     "Symbols": {
       "localizations": {
         "zh-Hant": {
@@ -2089,7 +2479,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "點相冊進行分類"
+            "value": "點相簿進行分類"
           }
         }
       }
@@ -2184,12 +2574,32 @@
         }
       }
     },
+    "To do": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待辦"
+          }
+        }
+      }
+    },
     "Today": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "今日已處理"
+          }
+        }
+      }
+    },
+    "Top level": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最上層"
           }
         }
       }
@@ -2274,12 +2684,22 @@
         }
       }
     },
+    "Unorganized photos": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未整理照片"
+          }
+        }
+      }
+    },
     "Unorganized screenshots": {
       "localizations": {
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "未整理的截圖"
+            "value": "未整理截圖"
           }
         }
       }
@@ -2289,7 +2709,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "未整理的影片"
+            "value": "未整理影片"
           }
         }
       }
@@ -2410,6 +2830,656 @@
           "stringUnit": {
             "state": "translated",
             "value": "這一批已經看到最後了。"
+          }
+        }
+      }
+    },
+    "Pinned collections": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "釘選的收藏"
+          }
+        }
+      }
+    },
+    "Pin to Home": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "釘選在首頁"
+          }
+        }
+      }
+    },
+    "A pinned tag shows on Home as a collection. Open it to narrow down with other tags.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "釘選後會以收藏的形式顯示在首頁，點進去可以再用其他標籤篩選。"
+          }
+        }
+      }
+    },
+    "Recent notes": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近的備註"
+          }
+        }
+      }
+    },
+    "Search notes": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋備註"
+          }
+        }
+      }
+    },
+    "Add a short note": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為這張照片加入簡短備註"
+          }
+        }
+      }
+    },
+    "Nothing matches.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有符合的項目"
+          }
+        }
+      }
+    },
+    "Create a tag in Organize and pin it to Home, or give it a start date such as a child's birthday, and it shows up here as a card.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在「整理」建立標籤並釘選在首頁，或設定日期（例如孩子的生日），就會在這裡變成卡片。"
+          }
+        }
+      }
+    },
+    "Edited %@": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯於 %@"
+          }
+        }
+      }
+    },
+    "Not in an album": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不在相簿中"
+          }
+        }
+      }
+    },
+    "Filter by:": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過濾條件："
+          }
+        }
+      }
+    },
+    "Media Types": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "媒體類型"
+          }
+        }
+      }
+    },
+    "View Options": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示方式選項"
+          }
+        }
+      }
+    },
+    "Show:": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示："
+          }
+        }
+      }
+    },
+    "Sort": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排序"
+          }
+        }
+      }
+    },
+    "Date Added": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已加入"
+          }
+        }
+      }
+    },
+    "Capture Date": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拍攝時間"
+          }
+        }
+      }
+    },
+    "Zoom In": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放大"
+          }
+        }
+      }
+    },
+    "Zoom Out": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "縮小"
+          }
+        }
+      }
+    },
+    "Aspect Ratio Grid": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示比例格線"
+          }
+        }
+      }
+    },
+    "Select All": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全選"
+          }
+        }
+      }
+    },
+    "Deselect All": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消全選"
+          }
+        }
+      }
+    },
+    "Yesterday": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "昨天"
+          }
+        }
+      }
+    },
+    "Today (date)": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今天"
+          }
+        }
+      }
+    },
+    "New journal entry": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增日記"
+          }
+        }
+      }
+    },
+    "Add photos": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入照片"
+          }
+        }
+      }
+    },
+    "Add more photos": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入更多照片"
+          }
+        }
+      }
+    },
+    "Selected %lld": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已選 %lld 張"
+          }
+        }
+      }
+    },
+    "Smileys & Emotion": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情與情緒"
+          }
+        }
+      }
+    },
+    "People & Body": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "人物與身體"
+          }
+        }
+      }
+    },
+    "Animals & Nature": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動物與自然"
+          }
+        }
+      }
+    },
+    "Food & Drink": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "食物與飲料"
+          }
+        }
+      }
+    },
+    "Travel & Places": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旅行與地點"
+          }
+        }
+      }
+    },
+    "Activities": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "活動"
+          }
+        }
+      }
+    },
+    "Flags": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旗幟"
+          }
+        }
+      }
+    },
+    "Communication": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通訊"
+          }
+        }
+      }
+    },
+    "Weather": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "天氣"
+          }
+        }
+      }
+    },
+    "Maps": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "地圖"
+          }
+        }
+      }
+    },
+    "Objects & Tools": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "物品與工具"
+          }
+        }
+      }
+    },
+    "Devices": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "裝置"
+          }
+        }
+      }
+    },
+    "Camera & Photos": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相機與照片"
+          }
+        }
+      }
+    },
+    "Gaming": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遊戲"
+          }
+        }
+      }
+    },
+    "Connectivity": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連線"
+          }
+        }
+      }
+    },
+    "Transportation": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交通"
+          }
+        }
+      }
+    },
+    "Automotive": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "汽車"
+          }
+        }
+      }
+    },
+    "Accessibility": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助使用"
+          }
+        }
+      }
+    },
+    "Privacy & Security": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱私與安全"
+          }
+        }
+      }
+    },
+    "Human": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "人體"
+          }
+        }
+      }
+    },
+    "Fitness": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "健身"
+          }
+        }
+      }
+    },
+    "Editing": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯"
+          }
+        }
+      }
+    },
+    "Text Formatting": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字格式"
+          }
+        }
+      }
+    },
+    "Keyboard": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵盤"
+          }
+        }
+      }
+    },
+    "Commerce": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "商業"
+          }
+        }
+      }
+    },
+    "Time": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "時間"
+          }
+        }
+      }
+    },
+    "Health": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "健康"
+          }
+        }
+      }
+    },
+    "Shapes": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "形狀"
+          }
+        }
+      }
+    },
+    "Arrows": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "箭頭"
+          }
+        }
+      }
+    },
+    "Indices": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "索引"
+          }
+        }
+      }
+    },
+    "Math": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數學"
+          }
+        }
+      }
+    },
+    "Other": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他"
+          }
+        }
+      }
+    },
+    "Journal is part of the paid unlock.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日記是付費解鎖的功能。"
+          }
+        }
+      }
+    },
+    "Date": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日期"
+          }
+        }
+      }
+    },
+    "This day already has an entry. Saving will replace it.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這天已經有日記，儲存會取代它。"
+          }
+        }
+      }
+    },
+    "Sort by Date": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按照時間排序"
+          }
+        }
+      }
+    },
+    "%lld journal entries": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 則日記"
           }
         }
       }

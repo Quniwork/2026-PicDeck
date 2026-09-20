@@ -15,41 +15,84 @@ struct OrganizeTabView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if isLoading {
-                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        Section {
-                            bucketRow(.allUnorganized, count: summary.allCount, tint: Color(.systemGray4))
-                            bucketRow(.unorganizedVideos, count: summary.videoCount, tint: Color(.systemGray4))
-                            bucketRow(.unorganizedScreenshots, count: summary.screenshotCount, tint: Color(.systemGray4))
-                        }
-
-                        Section {
-                            ForEach(summary.months) { month in
-                                bucketRow(.month(year: month.year, month: month.month),
-                                          count: month.count,
-                                          tint: month.tint,
-                                          title: month.title)
-                            }
-                        }
-                    }
-                    .listStyle(.insetGrouped)
+                switch model.organizeSection {
+                case .photos: photosContent
+                case .tags: TagManagerList()
+                case .albums: AlbumManagerList()
                 }
             }
             .navigationTitle("Organize")
-            .task { await reload() }
-            .refreshable { await reload() }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { LeadingTitleToolbar(title: String(localized: "Organize"), font: .title) }
+            // 只有照片子層需要載入，而且不能掛在會消失又出現的清單上，不然會一直重載。
+            .task(id: model.organizeSection) {
+                if model.organizeSection == .photos { await reload() }
+            }
             .navigationDestination(item: $selectedBucket) { bucket in
                 ReviewSessionView(bucket: bucket)
             }
             .sheet(isPresented: $showPaywall) { PaywallView() }
+            // 三個子層放在底部分頁列上方，跟照片分頁的子分類同一種浮動玻璃樣式。
+            .safeAreaInset(edge: .bottom, spacing: 0) { sectionPicker }
         }
+    }
+
+    /// 照片：固定三個入口，底下接未整理照片依月份分組。
+    @ViewBuilder
+    private var photosContent: some View {
+        if isLoading {
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List {
+                Section {
+                    bucketRow(.allUnorganized, count: summary.allCount)
+                    bucketRow(.unorganizedPhotos, count: summary.photoCount)
+                    bucketRow(.unorganizedVideos, count: summary.videoCount)
+                    bucketRow(.unorganizedScreenshots, count: summary.screenshotCount)
+                }
+
+                Section {
+                    ForEach(summary.months) { month in
+                        bucketRow(.month(year: month.year, month: month.month),
+                                  count: month.count,
+                                  title: month.title)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            // 群組之間的距離縮小，預設的太大。
+            .listSectionSpacing(.custom(10))
+            // 標題下到第一列的距離跟其他分頁一致。
+            .contentMargins(.top, 0, for: .scrollContent)
+            .refreshable { await reload() }
+        }
+    }
+
+    private var sectionPicker: some View {
+        HStack(spacing: 0) {
+            ForEach(OrganizeSection.allCases) { option in
+                Button {
+                    model.organizeSection = option
+                } label: {
+                    Text(option.title)
+                        .font(.footnote.weight(model.organizeSection == option ? .semibold : .regular))
+                        .foregroundStyle(model.organizeSection == option ? Color.accentColor : Color.primary.opacity(0.78))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("organize.section.\(option.rawValue)")
+            }
+        }
+        .padding(.horizontal, 8)
+        .floatingGlass(in: Capsule())
+        .padding(.horizontal, 20)
+        .padding(.vertical, 6)
     }
 
     private func bucketRow(_ bucket: OrganizeBucket,
                            count: Int,
-                           tint: Color,
                            title: String? = nil) -> some View {
         Button {
             if model.canUse(bucket) {
@@ -60,7 +103,6 @@ struct OrganizeTabView: View {
         } label: {
             HStack {
                 Text(title ?? bucket.title)
-                    .foregroundStyle(.primary)
                 Spacer()
                 if !model.canUse(bucket) {
                     Image(systemName: "lock.fill")
@@ -69,9 +111,13 @@ struct OrganizeTabView: View {
                 }
                 Text("\(count)")
                     .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .contentShape(Rectangle())
         }
-        .listRowBackground(tint)
+        .buttonStyle(.plain)
         .disabled(count == 0 && model.canUse(bucket))
     }
 
@@ -99,6 +145,7 @@ struct UnorganizedSummary {
     }
 
     var allCount = 0
+    var photoCount = 0
     var videoCount = 0
     var screenshotCount = 0
     var months: [MonthBucket] = []
@@ -120,6 +167,7 @@ struct UnorganizedSummary {
         return await Task.detached(priority: .userInitiated) {
             var summary = UnorganizedSummary()
             summary.allCount = assets.count
+            summary.photoCount = assets.filter { $0.mediaType == .image }.count
             summary.videoCount = assets.filter { $0.mediaType == .video }.count
             summary.screenshotCount = assets.filter { screenshotIDs.contains($0.localIdentifier) }.count
 

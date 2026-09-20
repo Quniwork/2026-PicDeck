@@ -19,6 +19,7 @@ struct TagFormView: View {
     @State private var hasAnniversary = false
     @State private var anniversary = Date()
     @State private var style: AnniversaryStyle = .yearMonthDay
+    @State private var pinnedOnHome = false
 
     private var editingTag: PhotoTag? {
         if case .edit(let tag) = mode { return tag }
@@ -58,17 +59,26 @@ struct TagFormView: View {
                     }
                 }
 
+                Section {
+                    Toggle(isOn: $pinnedOnHome) {
+                        Label("Pin to Home", systemImage: "pin")
+                    }
+                    .accessibilityIdentifier("tag.pinHome")
+                } footer: {
+                    Text("A pinned tag shows on Home as a collection. Open it to narrow down with other tags.")
+                }
+
                 AnniversaryFields(hasAnniversary: $hasAnniversary,
                                   anniversary: $anniversary,
                                   style: $style)
 
                 if let editingTag {
                     Section {
-                        Button(String(localized: "Delete tag"), role: .destructive) {
+                        DestructiveRowButton(title: String(localized: "Delete tag"),
+                                             identifier: "tag.delete") {
                             tagStore.deleteTag(id: editingTag.id)
                             dismiss()
                         }
-                        .accessibilityIdentifier("tag.delete")
                     }
                 }
             }
@@ -99,6 +109,7 @@ struct TagFormView: View {
         hasAnniversary = tag.hasAnniversary
         anniversary = tag.anniversary ?? Date()
         style = tag.anniversaryStyle
+        pinnedOnHome = tag.pinnedOnHome
     }
 
     private func confirm() {
@@ -110,7 +121,8 @@ struct TagFormView: View {
                                                symbol: symbol,
                                                anniversary: hasAnniversary ? anniversary : nil,
                                                anniversaryStyle: style,
-                                               isPinned: hasAnniversary) else { return }
+                                               isPinned: hasAnniversary,
+                                               pinnedOnHome: pinnedOnHome) else { return }
             if !assets.isEmpty { tagStore.addTag(tag.id, to: assets) }
 
         case .edit(let tag):
@@ -119,7 +131,8 @@ struct TagFormView: View {
                                symbol: symbol,
                                anniversary: hasAnniversary ? anniversary : nil,
                                anniversaryStyle: style,
-                               isPinned: hasAnniversary)
+                               isPinned: hasAnniversary,
+                               pinnedOnHome: pinnedOnHome)
         }
         dismiss()
     }
@@ -148,7 +161,7 @@ struct CreateTagButton: View {
 
 /// 某一天旁邊的紀念日文字，例如「🧒 堯 6年1個月15天」。
 ///
-/// 只有在篩選到某個設了起算日的標籤時才顯示，平常瀏覽維持原本乾淨的日期標題。
+/// 只有在篩選到某個設了日期的標籤時才顯示，平常瀏覽維持原本乾淨的日期標題。
 struct AnniversaryChips: View {
     let date: Date
     /// 目前篩選到的紀念日標籤。沒有就整個不顯示。
@@ -157,9 +170,8 @@ struct AnniversaryChips: View {
 
     var body: some View {
         if let tag, let text = tag.anniversaryText(on: date) {
+            // 已經篩選到這個標籤，標題就是它了，這裡只顯示過了多久。
             HStack(spacing: 3) {
-                IconLabel(raw: tag.symbol, size: 11)
-                Text(tag.name)
                 Text(text).fontWeight(.semibold)
             }
             .font(font)

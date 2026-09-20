@@ -13,14 +13,18 @@ struct AnchoredScrollView<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @State private var isPositioned = false
+    /// 拖拉軸用。放在 @State 裡但這個 View 不訂閱它，捲動時只有拖拉軸自己會更新。
+    @State private var scrubController = ScrubController()
 
     private var needsPositioning: Bool { anchorID != nil }
     private var isHidden: Bool { needsPositioning && !isPositioned }
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
+            // 有拖拉把手的畫面就不用系統捲軸，兩個並排會打架。
+            ScrollView(showsIndicators: !(scrub?.isUsable ?? false)) {
                 content()
+                    .trackedByScrubber(scrubController)
             }
             .opacity(isHidden ? 0 : 1)
             .overlay {
@@ -28,8 +32,7 @@ struct AnchoredScrollView<Content: View>: View {
             }
             .overlay(alignment: .trailing) {
                 if let scrub, scrub.isUsable, !isHidden {
-                    ScrubberOverlay(index: scrub, proxy: proxy)
-                        .frame(width: 150)
+                    ScrubberOverlay(index: scrub, controller: scrubController)
                 }
             }
             .task(id: "\(anchorID ?? "")-\(isReady)") {
@@ -45,7 +48,7 @@ struct AnchoredScrollView<Content: View>: View {
                 try? await Task.sleep(nanoseconds: 120_000_000)
                 proxy.scrollTo(anchorID, anchor: .top)
                 try? await Task.sleep(nanoseconds: 80_000_000)
-                withAnimation(.easeIn(duration: 0.12)) { isPositioned = true }
+                withMotion(.easeIn(duration: 0.12)) { isPositioned = true }
             }
         }
     }
@@ -82,6 +85,7 @@ struct BucketGridView: View {
 struct CompactGridView: View {
     let assets: [PHAsset]
     var columns: Int = 4
+    var fitsAspect: Bool = false
     /// 長按照片時要顯示的操作選單。
     var actions: ((PHAsset) -> AnyView?)? = nil
     /// 多選模式。
@@ -96,11 +100,12 @@ struct CompactGridView: View {
                       spacing: 2) {
                 ForEach(assets, id: \.localIdentifier) { asset in
                     SelectableThumbnail(asset: asset,
-                                        size: columns == 4 ? 100 : 130,
+                                        size: columns >= 6 ? 100 : (columns >= 4 ? 130 : 220),
                                         isSelecting: isSelecting,
                                         isSelected: selectedIDs?.wrappedValue.contains(asset.localIdentifier) ?? false,
                                         onToggle: { toggle(asset) },
-                                        menu: { actions?(asset) })
+                                        menu: { actions?(asset) },
+                                        fitsAspect: fitsAspect)
                         .id(asset.localIdentifier)
                 }
             }
@@ -145,32 +150,64 @@ struct TimelineView: View {
     var anniversaryTag: PhotoTag? = nil
     /// 右側拖拉軸。
     var scrub: ScrubIndex? = nil
+    /// 每列幾張、是否依原比例顯示。
+    var columnCount: Int = 4
+    var fitsAspect: Bool = false
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 4)
+    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 2), count: columnCount) }
+
+    /// 時間軸線靠左，線上每一天有一個圓點，內容整體往右縮進去。
+    private let railWidth: CGFloat = 30
+    private let dotSize: CGFloat = 7
 
     var body: some View {
         AnchoredScrollView(anchorID: focusSectionID, isReady: !sections.isEmpty, scrub: scrub) {
-            LazyVStack(alignment: .leading, spacing: 18, pinnedViews: [.sectionHeaders]) {
-                ForEach(sections) { section in
-                    Section {
-                        LazyVGrid(columns: columns, spacing: 2) {
-                            ForEach(section.assets, id: \.localIdentifier) { asset in
-                                SelectableThumbnail(asset: asset,
-                                                    size: 100,
-                                                    isSelecting: isSelecting,
-                                                    isSelected: selectedIDs?.wrappedValue.contains(asset.localIdentifier) ?? false,
-                                                    onToggle: { toggle(asset) },
-                                                    menu: { actions?(asset) })
-                            }
-                        }
-                        .padding(.horizontal, 2)
-                    } header: {
-                        header(for: section)
-                    }
-                    .id(section.id)
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                    daySection(section, isFirst: index == 0, isLast: index == sections.count - 1)
+                        .id(section.id)
                 }
             }
             .padding(.bottom, 20)
+        }
+    }
+
+    private func daySection(_ section: PhotoGrouping.DaySection,
+                            isFirst: Bool,
+                            isLast: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header(for: section)
+
+            LazyVGrid(columns: columns, spacing: 2) {
+                ForEach(section.assets, id: \.localIdentifier) { asset in
+                    SelectableThumbnail(asset: asset,
+                                        size: columnCount >= 6 ? 100 : (columnCount >= 4 ? 130 : 220),
+                                        isSelecting: isSelecting,
+                                        isSelected: selectedIDs?.wrappedValue.contains(asset.localIdentifier) ?? false,
+                                        onToggle: { toggle(asset) },
+                                        menu: { actions?(asset) },
+                                        fitsAspect: fitsAspect)
+                }
+            }
+            .padding(.trailing, 2)
+        }
+        .padding(.leading, railWidth)
+        .padding(.bottom, 22)
+        // 線畫在內容後面，高度自動跟著這一天的內容走，天與天之間就連成一條。
+        .background(alignment: .topLeading) {
+            Rectangle()
+                .fill(Color.secondary.opacity(0.16))
+                .frame(width: 1)
+                .padding(.leading, railWidth / 2 - 0.5)
+                .padding(.top, isFirst ? 11.5 : 0)
+                .padding(.bottom, isLast ? 22 : 0)
+        }
+        .overlay(alignment: .topLeading) {
+            Circle()
+                .fill(Color.accentColor)
+                .frame(width: dotSize, height: dotSize)
+                .padding(.leading, railWidth / 2 - dotSize / 2)
+                .padding(.top, 8)
         }
     }
 
@@ -184,26 +221,35 @@ struct TimelineView: View {
         }
     }
 
+    /// 有篩選到紀念日標籤：「6年4個月5天 2026年1月4日 星期六」。
+    /// 沒有：「2026年1月4日 星期六」。標籤名稱不重複顯示，標題已經是那個標籤了。
     private func header(for section: PhotoGrouping.DaySection) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        let elapsed = anniversaryTag?.anniversaryText(on: section.date)
+
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if let elapsed {
+                Text(elapsed)
+                    .font(.headline)
+                    .accessibilityIdentifier("anniversary.chip")
+                Text("\(section.title) \(section.weekday)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
                 Text(section.title)
                     .font(.headline)
                 Text(section.weekday)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
-                Spacer()
+            }
+            Spacer(minLength: 8)
+            if elapsed == nil {
                 Text("\(section.count)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .padding(.trailing, 12)
             }
-            // 篩選到紀念日標籤時，顯示那天過了多久。
-            AnniversaryChips(date: section.date, tag: anniversaryTag)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.bar)
     }
 }
 

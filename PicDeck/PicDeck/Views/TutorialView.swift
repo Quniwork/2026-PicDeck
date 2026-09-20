@@ -58,7 +58,7 @@ struct TutorialView: View {
             VStack(spacing: 12) {
                 Button {
                     if page < pages.count - 1 {
-                        withAnimation { page += 1 }
+                        withMotion { page += 1 }
                     } else {
                         onFinish()
                     }

@@ -10,9 +10,10 @@ struct SelectableThumbnail: View {
     let onToggle: () -> Void
     /// 非多選模式時的長按選單。
     var menu: (() -> AnyView?)? = nil
+    var fitsAspect: Bool = false
 
     var body: some View {
-        AssetThumbnail(asset: asset, size: size)
+        AssetThumbnail(asset: asset, size: size, fitsAspect: fitsAspect, showsFavorite: true)
             .overlay {
                 if isSelecting && isSelected {
                     Rectangle().fill(Color.accentColor.opacity(0.25))

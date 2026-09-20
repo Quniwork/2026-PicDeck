@@ -19,21 +19,31 @@ struct RootView: View {
     }
 }
 
-/// 底部五個分頁：照片、資料夾、整理、更多。地圖之後再加。
+/// 底部四個分頁：首頁、照片、整理、更多。地圖之後再加。
 struct MainTabView: View {
+    @EnvironmentObject private var model: AppModel
+
     var body: some View {
-        TabView {
+        TabView(selection: $model.selectedTab) {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house") }
+                .tag(0)
+
+            JournalTabView()
+                .tabItem { Label("Journal", systemImage: "book") }
+                .tag(1)
+
             PhotosTabView()
                 .tabItem { Label("Photos", systemImage: "square.grid.2x2") }
-
-            AlbumsTabView()
-                .tabItem { Label("Folders", systemImage: "folder") }
+                .tag(2)
 
             OrganizeTabView()
                 .tabItem { Label("Organize", systemImage: "rectangle.stack") }
+                .tag(3)
 
             MoreTabView()
                 .tabItem { Label("More", systemImage: "line.3.horizontal") }
+                .tag(4)
         }
     }
 }

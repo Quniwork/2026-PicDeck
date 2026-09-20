@@ -8,6 +8,22 @@ final class PhotoLibraryService: ObservableObject {
 
     @Published var authorizationStatus: PHAuthorizationStatus = .notDetermined
     @Published private(set) var isLoading = false
+    /// 系統相簿有任何變動（在別的 App 改了喜愛、刪了照片、加了相簿）就加一。
+    /// 畫面看到它變了，就重新取最新的照片狀態。
+    @Published private(set) var libraryChangeCount = 0
+
+    private let changeObserver = LibraryChangeObserver()
+
+    init() {
+        changeObserver.onChange = { [weak self] in
+            Task { @MainActor in self?.libraryChangeCount += 1 }
+        }
+        PHPhotoLibrary.shared().register(changeObserver)
+    }
+
+    deinit {
+        PHPhotoLibrary.shared().unregisterChangeObserver(changeObserver)
+    }
 
     // MARK: - 權限
 
@@ -68,14 +84,63 @@ final class PhotoLibraryService: ObservableObject {
         }
     }
 
-    /// 建立系統相簿，回傳其 localIdentifier。
-    func createAlbum(named name: String) async throws -> String? {
+    /// 建立系統相簿，回傳其 localIdentifier。給了資料夾就建在那個資料夾底下。
+    func createAlbum(named name: String, inFolderID folderID: String? = nil) async throws -> String? {
+        let parent = folderID.flatMap {
+            PHCollectionList.fetchCollectionLists(withLocalIdentifiers: [$0], options: nil).firstObject
+        }
         var placeholder: PHObjectPlaceholder?
         try await PHPhotoLibrary.shared().performChanges {
             let request = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: name)
             placeholder = request.placeholderForCreatedAssetCollection
+            if let parent, let placeholder {
+                PHCollectionListChangeRequest(for: parent)?.addChildCollections([placeholder] as NSArray)
+            }
         }
         return placeholder?.localIdentifier
+    }
+
+    /// 建立系統相簿資料夾，回傳其 localIdentifier。資料夾裡面還可以再放資料夾。
+    func createFolder(named name: String, inFolderID folderID: String? = nil) async throws -> String? {
+        let parent = folderID.flatMap {
+            PHCollectionList.fetchCollectionLists(withLocalIdentifiers: [$0], options: nil).firstObject
+        }
+        var placeholder: PHObjectPlaceholder?
+        try await PHPhotoLibrary.shared().performChanges {
+            let request = PHCollectionListChangeRequest.creationRequestForCollectionList(withTitle: name)
+            placeholder = request.placeholderForCreatedCollectionList
+            if let parent, let placeholder {
+                PHCollectionListChangeRequest(for: parent)?.addChildCollections([placeholder] as NSArray)
+            }
+        }
+        return placeholder?.localIdentifier
+    }
+
+    /// 系統相簿的階層：最上層是資料夾與相簿，資料夾底下還有資料夾與相簿。
+    func albumTree() -> [AlbumNode] {
+        nodes(from: PHCollectionList.fetchTopLevelUserCollections(with: nil))
+    }
+
+    private func nodes(from result: PHFetchResult<PHCollection>) -> [AlbumNode] {
+        var output: [AlbumNode] = []
+        result.enumerateObjects { collection, _, _ in
+            if let album = collection as? PHAssetCollection {
+                let count = PHAsset.fetchAssets(in: album, options: nil).count
+                output.append(AlbumNode(id: album.localIdentifier,
+                                        title: album.localizedTitle ?? "",
+                                        isFolder: false,
+                                        count: count,
+                                        children: []))
+            } else if let list = collection as? PHCollectionList {
+                let children = self.nodes(from: PHCollection.fetchCollections(in: list, options: nil))
+                output.append(AlbumNode(id: list.localIdentifier,
+                                        title: list.localizedTitle ?? "",
+                                        isFolder: true,
+                                        count: 0,
+                                        children: children))
+            }
+        }
+        return output
     }
 
     func addAsset(_ asset: PHAsset, toAlbumWithID albumID: String) async throws {
@@ -99,6 +164,24 @@ final class PhotoLibraryService: ObservableObject {
         }
     }
 
+    /// 資料夾改名。
+    func renameFolder(id: String, to title: String) async throws {
+        guard let list = PHCollectionList
+            .fetchCollectionLists(withLocalIdentifiers: [id], options: nil).firstObject else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHCollectionListChangeRequest(for: list)?.title = title
+        }
+    }
+
+    /// 刪除資料夾。資料夾底下的相簿會一起移除，照片仍然留在圖庫裡。
+    func deleteFolder(id: String) async throws {
+        let lists = PHCollectionList.fetchCollectionLists(withLocalIdentifiers: [id], options: nil)
+        guard lists.firstObject != nil else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHCollectionListChangeRequest.deleteCollectionLists(lists)
+        }
+    }
+
     /// 刪除相簿本身。相簿裡的照片還留在圖庫，只是不再屬於這個相簿。
     func deleteAlbum(id: String) async throws {
         let collections = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [id], options: nil)
@@ -107,6 +190,44 @@ final class PhotoLibraryService: ObservableObject {
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetCollectionChangeRequest.deleteAssetCollections(collections)
         }
+    }
+
+    /// 一次把多張照片加進相簿。
+    func addAssets(_ assets: [PHAsset], toAlbumWithID albumID: String) async throws {
+        guard !assets.isEmpty,
+              let collection = PHAssetCollection
+                .fetchAssetCollections(withLocalIdentifiers: [albumID], options: nil).firstObject
+        else { return }
+
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCollectionChangeRequest(for: collection)?.addAssets(assets as NSArray)
+        }
+    }
+
+    /// 把多張照片從相簿移出。只是不再屬於這個相簿，照片本身還在圖庫裡。
+    func removeAssets(_ assets: [PHAsset], fromAlbumWithID albumID: String) async throws {
+        guard !assets.isEmpty,
+              let collection = PHAssetCollection
+                .fetchAssetCollections(withLocalIdentifiers: [albumID], options: nil).firstObject
+        else { return }
+
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCollectionChangeRequest(for: collection)?.removeAssets(assets as NSArray)
+        }
+    }
+
+    /// 這些照片「全部」都已經在哪些相簿裡。多張時取交集，跟標籤的勾選規則一樣。
+    func albumIDs(containingAll assets: [PHAsset]) -> Set<String> {
+        var result: Set<String>?
+        for asset in assets {
+            let ids = Set(PHAssetCollection
+                .fetchAssetCollectionsContaining(asset, with: .album, options: nil)
+                .objects(at: IndexSet(0..<PHAssetCollection
+                    .fetchAssetCollectionsContaining(asset, with: .album, options: nil).count))
+                .map(\.localIdentifier))
+            result = result.map { $0.intersection(ids) } ?? ids
+        }
+        return result ?? []
     }
 
     func asset(withID id: String) -> PHAsset? {
@@ -150,7 +271,34 @@ extension PhotoLibraryService {
                 return Self.collect(PHAsset.fetchAssets(with: options))
             case .screenshots:
                 return Self.collect(inSmartAlbum: .smartAlbumScreenshots, options: options)
+            case .edited:
+                return Self.collect(PHAsset.fetchAssets(with: options)).filter(\.hasAdjustments)
+            case .notInAlbum:
+                var inAlbums = Set<String>()
+                let albums = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
+                albums.enumerateObjects { album, _, _ in
+                    PHAsset.fetchAssets(in: album, options: nil)
+                        .enumerateObjects { asset, _, _ in inAlbums.insert(asset.localIdentifier) }
+                }
+                return Self.collect(PHAsset.fetchAssets(with: options))
+                    .filter { !inAlbums.contains($0.localIdentifier) }
             }
+        }.value
+    }
+
+    /// 依「加入照片庫的時間」由新到舊排的名次。
+    /// PhotoKit 沒有公開這個日期，只能用 fetch 的排序鍵 `addedDate`（未列在文件中）取得順序。
+    func addedRanks() async -> [String: Int] {
+        await Task.detached(priority: .userInitiated) {
+            let options = PHFetchOptions()
+            options.sortDescriptors = [NSSortDescriptor(key: "addedDate", ascending: false)]
+            var ranks: [String: Int] = [:]
+            var index = 0
+            PHAsset.fetchAssets(with: options).enumerateObjects { asset, _, _ in
+                ranks[asset.localIdentifier] = index
+                index += 1
+            }
+            return ranks
         }.value
     }
 
@@ -238,8 +386,31 @@ extension PhotoLibraryService {
 }
 
 /// 相簿摘要，給資料夾分頁與歸檔快捷列用。
+/// 相簿樹上的一個節點：相簿或資料夾。
+struct AlbumNode: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let isFolder: Bool
+    /// 相簿裡的照片數。資料夾是 0。
+    let count: Int
+    let children: [AlbumNode]
+
+    /// 給 `List(_, children:)` 用。相簿回 nil，資料夾回它底下的項目。
+    var outlineChildren: [AlbumNode]? { isFolder ? children : nil }
+}
+
 struct AlbumSummary: Identifiable, Hashable {
     let id: String
     let title: String
     let count: Int
+}
+
+
+/// 系統相簿變動的通知會在背景執行緒送來，這裡只負責轉交，不碰任何畫面狀態。
+private final class LibraryChangeObserver: NSObject, PHPhotoLibraryChangeObserver, @unchecked Sendable {
+    var onChange: (() -> Void)?
+
+    func photoLibraryDidChange(_ changeInstance: PHChange) {
+        onChange?()
+    }
 }

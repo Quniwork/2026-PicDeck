@@ -31,6 +31,64 @@
 
 停止執行按 **⌘.**（Command + 句點）。
 
+### 1-1a Xcode 27 的模擬器在哪裡（重要）
+
+Xcode 26 以前有獨立的 Simulator.app，**Xcode 27 沒有**。模擬器視窗改由 **DeviceHub** 負責。
+
+**怎麼打開：**
+
+- 在 Xcode 選單列點 **Window → Devices**，或
+- Finder 到 `/Applications/Xcode.app/Contents/Applications/`，雙擊 `DeviceHub.app`，或
+- 終端機執行：
+
+```bash
+open /Applications/Xcode.app/Contents/Applications/DeviceHub.app
+```
+
+**視窗怎麼看：**
+
+- 左邊列出所有模擬器，標示 Simulator 與系統版本，例如 iPhone 16（18.6）、iPhone 18 Pro（27.0）。
+- 點一台，右邊就是那台的畫面。左上角的 **＋** 可以新增模擬器。
+- 每台模擬器是各自獨立的。**在 A 機裝的 App，B 機看不到**，照片與權限也各自獨立。
+
+**找不到 PicDeck 時：**
+
+1. 先確認左邊選到的是你要的那一台。
+2. 在那一台的主畫面往左滑，App 圖示會排在後面幾頁；也可以從主畫面往下拉，用搜尋輸入 PicDeck。
+3. 還是沒有，代表 App 沒裝到這台，照 1-1 選這台當目標再按 ⌘R，或用下面的指令裝。
+
+**第一次用新模擬器要先裝 iOS 27 執行環境（約 8 GB，只需一次）：**
+
+```bash
+xcodebuild -downloadPlatform iOS
+```
+
+**把 PicDeck 裝到指定的一台（不用開 Xcode）：**
+
+```bash
+cd /Library/WebServer/Documents/photo-app/PicDeck
+
+# 1. 查你要的那台的 ID
+xcrun simctl list devices | grep "iPhone 18 Pro"
+
+# 2. 編譯（把 <ID> 換成上一步查到的）
+xcodebuild -scheme PicDeck -destination "id=<ID>" -configuration Debug build
+
+# 3. 安裝並啟動
+APP=$(find ~/Library/Developer/Xcode/DerivedData/PicDeck-*/Build/Products \
+      -name "PicDeck.app" -path "*Debug-iphonesimulator*" -maxdepth 4 | head -1)
+xcrun simctl install <ID> "$APP"
+xcrun simctl launch <ID> com.picdeck.app
+```
+
+**新模擬器是空的。** 沒有測試照片，App 會顯示沒有內容。灌照片的方法看 1-3。
+
+**第一次在新 Mac 上：** 要先同意授權條款，否則所有 `xcodebuild` 與 `simctl` 都會被拒絕。
+
+```bash
+sudo xcodebuild -license accept
+```
+
 ### 1-2 用終端機指令跑（不開 Xcode）
 
 ```bash
@@ -81,6 +139,26 @@ for i, c in enumerate([(220,60,60),(60,160,220),(240,200,60),(120,220,120)]):
 xcrun simctl addmedia booted /tmp/test-*.png
 ```
 
+### 1-3a 一次灌大量測試照片（有不同拍攝日期）
+
+模擬器只有幾張照片時，拖拉軸、年月日分頁與時間軸都看不出效果。用專案內建的腳本一次灌幾百張，每張的拍攝日期都不同，分佈在 2009 到現在，有些天很多張、有些天只有一張：
+
+```bash
+cd /Library/WebServer/Documents/photo-app/PicDeck
+
+# 查模擬器 ID
+xcrun simctl list devices | grep iPhone
+
+# 灌 600 張（把 <ID> 換成上面查到的，也可以寫 booted 代表目前開著的那台）
+python3 tools/make_test_photos.py <ID> 600
+```
+
+- 照片是程式畫的漸層與色塊，左上角印著拍攝日期與編號，看畫面就知道是哪一天。
+- 拍攝時間寫在 EXIF 裡，系統照片會照這個時間排序與分組。
+- 同樣的張數會產生同樣的照片，重跑不會亂。
+- 重複執行會再多加一批，不會覆蓋。想清掉全部照片，用 `xcrun simctl erase <ID>`，但這會把整台模擬器（含 App）重設。
+- 需要 Python 的 Pillow：`pip3 install pillow`。
+
 ### 1-4 重設照片權限
 
 測試授權流程時需要讓 App 回到「尚未詢問」狀態：
@@ -100,7 +178,7 @@ xcrun simctl io booted recordVideo ~/Desktop/picdeck.mp4   # Ctrl+C 停止
 
 ### 1-6 自動化冒煙測試
 
-專案內建 `PicDeckUITests`，會自動走完：授權 → 照片首頁 → 月曆檢視 → 點年份跳到月 → 點月份跳到日 → 點某天跳到時間軸 → 時間軸子分頁 → 重啟驗證記憶子分頁 → 資料夾分頁 → 整理分頁 → 點月份進審核 → 保留 → 右滑回上一張 → 幫助 → 刪除 → 待刪清單，全程自動截圖。測試也會驗證右滑不會誤觸系統的「滑回上一頁」，以及全部子分頁的多選：勾選後底部要出現寫日記／標籤／最愛／加到相冊，批次加入最愛後會自動離開多選，批次寫日記會把勾選的照片預先帶進編輯畫面。
+專案內建 `PicDeckUITests`，會自動走完：授權 → 照片首頁 → 月曆檢視 → 點年份跳到月 → 點月份跳到日 → 點某天跳到時間軸 → 時間軸子分頁 → 重啟驗證記憶子分頁 → 資料夾分頁 → 整理分頁 → 點月份進審核 → 保留 → 右滑回上一張 → 幫助 → 刪除 → 待刪清單，全程自動截圖。測試也會驗證右滑不會誤觸系統的「滑回上一頁」，以及全部子分頁的多選：勾選後底部要出現寫日記／標籤／喜愛／加到相簿，批次加入喜愛後會自動離開多選，批次寫日記會把勾選的照片預先帶進編輯畫面。
 
 ```bash
 cd /Library/WebServer/Documents/photo-app/PicDeck
@@ -162,6 +240,19 @@ open /tmp/shots
 ```
 
 最近一次通過的截圖已存在 `docs/dev/screenshots/`。
+
+### 1-6a 截圖直接寫成檔案（比匯出測試結果快）
+
+Xcode 27 的測試結果包（`.xcresult`）在較長的測試後，收尾常常要好幾分鐘，有時看起來像卡住。
+測試裡的 `attachScreenshot` 現在除了附加到結果包，也會把每張截圖直接寫到 **`/tmp/picdeck-shots/`**，
+測試一跑完（甚至跑到一半）就能直接打開看，不必等結果包，也不必用 `xcresulttool` 匯出。
+
+- 想清掉舊的：`rm -rf /tmp/picdeck-shots`
+- **不要在 xcodebuild 還在收尾時就去匯出結果包**，兩邊會互相干擾，收尾會卡得更久。
+- 介面檢查有兩個測試：`testUIAuditTour`（走遍全部畫面，淺色與深色各一輪，約 4 分半）與
+  `testUIAuditQuick`（只拍五個關鍵畫面，約一分半）。
+- 測試切換過深色模式，如果中途中斷，模擬器會留在深色。跑 `testResetAppearanceToAutomatic` 就能還原。
+  （用 `simctl` 或直接改偏好檔沒用，App 讀的是它自己容器裡有快取的偏好。）
 
 ### 1-7 桌機測試常見問題
 
@@ -266,7 +357,7 @@ v0.1.0 已實作的核心流程：
 | 點年份／月份／某天會切換子分頁並定位，不推入新畫面，分頁列全程保留 | 完成 |
 | 子分頁：日記（付費） | 完成（僅呈現，不提供寫日記） |
 | 篩選：所有項目、喜好項目、照片、影片、截圖（付費） | 完成 |
-| 長按照片的操作選單：寫日記、標籤、喜愛、加到相冊（子選單） | 完成 |
+| 長按照片的操作選單：寫日記、標籤、喜愛、加到相簿（子選單） | 完成 |
 | 自訂標籤：長按照片或審核畫面加標籤（免費）、標籤篩選（付費）、更多分頁管理標籤 | 完成 |
 | 標籤名稱不可重複，忽略前後空白與大小寫、全形半形差異，改名也擋重複 | 完成 |
 | 標籤紀念日：起算日 + 五種換算（D-day、日數、週數、月數、年月日） | 完成 |
@@ -281,8 +372,8 @@ v0.1.0 已實作的核心流程：
 | 相簿新增、改名、刪除（刪相簿不刪照片），同名相簿擋下來 | 完成 |
 | 紀念日只在篩選到該標籤時顯示（時間軸日期標題與日記卡片），沒篩選維持原樣 | 完成 |
 | 日記卡片版面：心情圓標、日期星期、紀念日、長文收合、一排四張方形照片 | 完成 |
-| 多選：全部與時間軸右上角的選擇按鈕，可批次寫日記、加標籤、加入最愛、加到相冊 | 完成 |
-| 批次寫日記只在同一天時出現；批次加入最愛會跳過原本就已是最愛的照片 | 完成 |
+| 多選：全部與時間軸右上角的選擇按鈕，可批次寫日記、加標籤、加入喜愛、加到相簿 | 完成 |
+| 批次寫日記只在同一天時出現；批次加入喜愛會跳過原本就已是喜愛的照片 | 完成 |
 | 長按照片選寫日記時，該張照片預設已勾選 | 完成 |
 | 日記：一天一篇，含心情表情、文字與自選照片，日檢視格子右上角顯示心情 | 完成 |
 | 日記分頁只列有日記的日子，一排四張照片，超過四張標示 +N | 完成 |

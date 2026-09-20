@@ -8,14 +8,16 @@ struct PhotoTag: Identifiable, Codable, Hashable {
     /// 顯示用的表情符號。
     var symbol: String
     var createdAt: Date = Date()
-    /// 紀念日的起算日。沒設就是一般標籤。
+    /// 紀念日的日期。沒設就是一般標籤。
     var anniversary: Date?
     /// 紀念日的換算方式。
     var anniversaryStyle: AnniversaryStyle = .yearMonthDay
     /// 釘選後會顯示在時間軸與日記的日期旁邊。
     var isPinned: Bool = false
+    /// 釘在首頁。首頁會把它當成一個收藏，點進去可以再用其他標籤篩選。
+    var pinnedOnHome: Bool = false
 
-    /// 有起算日才算紀念日標籤。
+    /// 有日期才算紀念日標籤。
     var hasAnniversary: Bool { anniversary != nil }
 
     /// 這個標籤在某一天要顯示的文字，沒有紀念日就回 nil。
@@ -51,6 +53,7 @@ struct PhotoTag: Identifiable, Codable, Hashable {
         anniversaryStyle = try container.decodeIfPresent(AnniversaryStyle.self,
                                                          forKey: .anniversaryStyle) ?? .yearMonthDay
         isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        pinnedOnHome = try container.decodeIfPresent(Bool.self, forKey: .pinnedOnHome) ?? false
     }
 }
 
@@ -65,6 +68,8 @@ final class TagStore: ObservableObject {
         var localIdentifier: String
         var fingerprint: String
         var tagIDs: [UUID]
+        /// 最後一次改標籤的時間。舊資料沒有。
+        var updatedAt: Date? = nil
     }
 
     private struct Payload: Codable {
@@ -101,12 +106,14 @@ final class TagStore: ObservableObject {
             tags[index].anniversary = date
             tags[index].anniversaryStyle = .yearMonthDay
             tags[index].isPinned = true
+            tags[index].pinnedOnHome = true
         } else {
             tags.append(PhotoTag(name: name,
                                  symbol: "🧒",
                                  anniversary: date,
                                  anniversaryStyle: .yearMonthDay,
                                  isPinned: true))
+            tags[tags.count - 1].pinnedOnHome = true
         }
         scheduleSave()
     }
@@ -132,6 +139,11 @@ final class TagStore: ObservableObject {
 
     func tag(withID id: UUID) -> PhotoTag? {
         tags.first { $0.id == id }
+    }
+
+    /// 掛著這個標籤的照片識別碼。
+    func assetIDs(withTag tagID: UUID) -> [String] {
+        assignments.values.filter { $0.tagIDs.contains(tagID) }.map(\.localIdentifier)
     }
 
     /// 這個標籤被用在幾張照片上。
@@ -164,14 +176,16 @@ final class TagStore: ObservableObject {
                    symbol: String,
                    anniversary: Date? = nil,
                    anniversaryStyle: AnniversaryStyle = .yearMonthDay,
-                   isPinned: Bool = false) -> PhotoTag? {
+                   isPinned: Bool = false,
+                   pinnedOnHome: Bool = false) -> PhotoTag? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !nameExists(trimmed) else { return nil }
-        let tag = PhotoTag(name: trimmed,
+        var tag = PhotoTag(name: trimmed,
                            symbol: symbol,
                            anniversary: anniversary.map { Anniversary.startOfDay($0) },
                            anniversaryStyle: anniversaryStyle,
                            isPinned: anniversary == nil ? false : isPinned)
+        tag.pinnedOnHome = pinnedOnHome
         tags.append(tag)
         scheduleSave()
         return tag
@@ -196,7 +210,8 @@ final class TagStore: ObservableObject {
                    symbol: String,
                    anniversary: Date?,
                    anniversaryStyle: AnniversaryStyle,
-                   isPinned: Bool) -> Bool {
+                   isPinned: Bool,
+                   pinnedOnHome: Bool? = nil) -> Bool {
         guard let index = tags.firstIndex(where: { $0.id == id }) else { return false }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !nameExists(trimmed, excluding: id) else { return false }
@@ -204,10 +219,24 @@ final class TagStore: ObservableObject {
         tags[index].symbol = symbol
         tags[index].anniversary = anniversary.map { Anniversary.startOfDay($0) }
         tags[index].anniversaryStyle = anniversaryStyle
-        // 沒有起算日就沒有東西好釘。
+        // 沒有日期就沒有東西好釘。
         tags[index].isPinned = anniversary == nil ? false : isPinned
+        if let pinnedOnHome { tags[index].pinnedOnHome = pinnedOnHome }
         scheduleSave()
         return true
+    }
+
+    /// 釘在首頁的標籤（不含紀念日標籤，那些本來就有自己的卡片）。
+    var homePinnedTags: [PhotoTag] { tags.filter { $0.pinnedOnHome && !$0.hasAnniversary } }
+
+    /// 跟這個標籤出現在同一張照片上的其他標籤，依使用次數多到少。首頁收藏用來做二次篩選。
+    func coTags(of tagID: UUID) -> [PhotoTag] {
+        var counts: [UUID: Int] = [:]
+        for assignment in assignments.values where assignment.tagIDs.contains(tagID) {
+            for other in assignment.tagIDs where other != tagID { counts[other, default: 0] += 1 }
+        }
+        return tags.filter { counts[$0.id] != nil }
+            .sorted { (counts[$0.id] ?? 0) > (counts[$1.id] ?? 0) }
     }
 
     /// 調整標籤的顯示順序。這個順序會套用到篩選選單、加標籤與管理頁。
@@ -216,7 +245,7 @@ final class TagStore: ObservableObject {
         scheduleSave()
     }
 
-    /// 釘選且有起算日的標籤，依建立順序。這些會顯示在時間軸與日記的日期旁邊。
+    /// 釘選且有日期的標籤，依建立順序。這些會顯示在時間軸與日記的日期旁邊。
     var pinnedAnniversaryTags: [PhotoTag] {
         tags.filter { $0.isPinned && $0.hasAnniversary }
     }
@@ -253,10 +282,16 @@ final class TagStore: ObservableObject {
         } else {
             assignments[key] = Assignment(localIdentifier: key,
                                           fingerprint: fingerprint,
-                                          tagIDs: Array(tagIDs))
+                                          tagIDs: Array(tagIDs),
+                                          updatedAt: Date())
             fingerprintIndex[fingerprint] = key
         }
         scheduleSave()
+    }
+
+    /// 這張照片標籤最後一次被改的時間。
+    func lastEdited(for asset: PHAsset) -> Date? {
+        assignments[asset.localIdentifier]?.updatedAt
     }
 
     func toggleTag(_ tagID: UUID, for asset: PHAsset) {
