@@ -217,11 +217,23 @@ struct TagManagerList: View {
                             tagStore.deleteTag(id: tagStore.tags[index].id)
                         }
                     }
+                    .onMove { source, destination in
+                        tagStore.moveTags(fromOffsets: source, toOffset: destination)
+                    }
                 }
             } header: {
-                Text("Tags")
+                HStack {
+                    Text("Tags")
+                    Spacer()
+                    if tagStore.tags.count > 1 {
+                        EditButton()
+                            .font(.footnote)
+                            .textCase(nil)
+                            .accessibilityIdentifier("manage.tag.edit")
+                    }
+                }
             } footer: {
-                Text("Open a tag to change its icon or give it a start date, such as a child's birthday.")
+                Text("Open a tag to change its icon or give it a start date. Tap Edit to drag them into the order you want.")
             }
         }
         .scrollDismissesKeyboard(.immediately)

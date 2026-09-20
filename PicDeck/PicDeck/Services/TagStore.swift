@@ -210,6 +210,12 @@ final class TagStore: ObservableObject {
         return true
     }
 
+    /// 調整標籤的顯示順序。這個順序會套用到篩選選單、加標籤與管理頁。
+    func moveTags(fromOffsets source: IndexSet, toOffset destination: Int) {
+        tags.move(fromOffsets: source, toOffset: destination)
+        scheduleSave()
+    }
+
     /// 釘選且有起算日的標籤，依建立順序。這些會顯示在時間軸與日記的日期旁邊。
     var pinnedAnniversaryTags: [PhotoTag] {
         tags.filter { $0.isPinned && $0.hasAnniversary }

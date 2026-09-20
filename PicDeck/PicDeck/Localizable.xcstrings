@@ -1464,6 +1464,16 @@
         }
       }
     },
+    "Open a tag to change its icon or give it a start date. Tap Edit to drag them into the order you want.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點進標籤可以換圖示或設起算日。按編輯可以拖曳調整顯示順序。"
+          }
+        }
+      }
+    },
     "Organize": {
       "localizations": {
         "zh-Hant": {

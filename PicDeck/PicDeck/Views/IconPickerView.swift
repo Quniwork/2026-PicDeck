@@ -238,8 +238,19 @@ struct IconPickerView: View {
 
     // MARK: - 資料
 
+    /// 最近使用只列目前這一頁的類型，表情符號那頁就不要混進系統圖示。
     private var recents: [String] {
-        recentsRaw.split(separator: ",").map(String.init).filter { !$0.isEmpty }
+        recentsRaw
+            .split(separator: ",")
+            .map(String.init)
+            .filter { value in
+                guard !value.isEmpty else { return false }
+                switch AppIcon.decode(value) {
+                case .emoji: return tab == .emoji
+                case .symbol: return tab == .symbol
+                case .none: return false
+                }
+            }
     }
 
     private var groups: [IconCatalog.Group] {

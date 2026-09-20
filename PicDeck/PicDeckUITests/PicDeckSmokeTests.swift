@@ -711,6 +711,89 @@ final class PicDeckSmokeTests: XCTestCase {
         attachScreenshot(app, name: "32-scrubber-timeline")
     }
 
+    /// 只檢查標籤排序，以及篩選標籤後上方的快速切換列。
+    func testTagOrderAndSwitcherBar() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-seedAnniversaryTag"]
+        app.launch()
+
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 20), "首頁沒有載入")
+
+        // 先到管理頁把第一個標籤往下搬一格。
+        app.tabBars.buttons.element(boundBy: 3).tap()
+        sleep(2)
+        tapByCoordinate(app.buttons["more.manage"])
+        sleep(2)
+        tapByCoordinate(firstButton(in: app, labels: ["標籤", "Tags"]))
+        sleep(2)
+
+        let rows = app.buttons.matching(identifier: "manage.tag.row")
+        guard rows.count >= 2 else {
+            XCTFail("標籤不夠兩個，沒辦法測排序")
+            return
+        }
+        let firstBefore = rows.element(boundBy: 0).label
+        let secondBefore = rows.element(boundBy: 1).label
+
+        let edit = app.buttons["manage.tag.edit"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 8), "標籤清單沒有編輯")
+        tapByCoordinate(edit)
+        sleep(2)
+        attachScreenshot(app, name: "33-tag-reorder-edit")
+
+        // 把第一列拖到第二列下面。
+        let source = rows.element(boundBy: 0)
+        let target = rows.element(boundBy: 1)
+        source.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5))
+            .press(forDuration: 0.9,
+                   thenDragTo: target.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 1.2)))
+        sleep(3)
+
+        let firstAfter = rows.element(boundBy: 0).label
+        XCTAssertEqual(firstAfter, secondBefore, "拖曳後第一列不是原本的第二列")
+        XCTAssertNotEqual(firstAfter, firstBefore, "順序沒有改變")
+        attachScreenshot(app, name: "34-tag-reordered")
+
+        tapByCoordinate(firstButton(in: app, labels: ["完成", "Done"]))
+        sleep(2)
+
+        // 回照片分頁，篩選到堯。
+        app.tabBars.buttons.element(boundBy: 0).tap()
+        sleep(3)
+        XCTAssertEqual(app.buttons.matching(identifier: "tagbar.tag").count, 0,
+                       "還沒篩選就出現標籤切換列")
+
+        openTagFilter(in: app, named: "堯")
+        let sponsor = firstButton(in: app, labels: ["以 NT$99 贊助開發", "Sponsor for NT$99"])
+        if sponsor.waitForExistence(timeout: 4) {
+            tapByCoordinate(sponsor)
+            sleep(3)
+            openTagFilter(in: app, named: "堯")
+        }
+
+        // 上方要出現所有標籤。
+        let chips = app.buttons.matching(identifier: "tagbar.tag")
+        XCTAssertGreaterThan(chips.count, 1, "篩選後上方沒有標籤切換列")
+        XCTAssertTrue(app.buttons["tagbar.all"].exists, "切換列沒有回到所有項目的入口")
+        attachScreenshot(app, name: "35-tag-switcher-bar")
+
+        // 點另一個標籤要能直接換。
+        let other = chips.matching(NSPredicate(format: "label != %@", "堯")).firstMatch
+        XCTAssertTrue(other.waitForExistence(timeout: 5), "切換列只有一個標籤")
+        let otherName = other.label
+        tapByCoordinate(other)
+        sleep(3)
+        XCTAssertTrue(app.staticTexts[otherName].exists, "點了切換列卻沒有換標籤：\(otherName)")
+        attachScreenshot(app, name: "36-tag-switched")
+
+        // 回到所有項目，切換列要收起來。
+        tapByCoordinate(app.buttons["tagbar.all"])
+        sleep(3)
+        XCTAssertEqual(app.buttons.matching(identifier: "tagbar.tag").count, 0,
+                       "回到所有項目後切換列還在")
+    }
+
     // MARK: - 工具
 
     private func grantPhotoAccessIfNeeded(_ app: XCUIApplication) {

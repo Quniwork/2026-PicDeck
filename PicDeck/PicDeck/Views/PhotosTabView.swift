@@ -38,6 +38,12 @@ struct PhotosTabView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // 依標籤篩選時，上面列出所有標籤方便快速換一個看。
+                if selectedTagID != nil {
+                    TagSwitcherBar(selected: selectedTagID,
+                                   onPick: { choose(.tag($0.id)) },
+                                   onClear: { choose(.filter(.all)) })
+                }
                 content
                 scalePicker
             }
@@ -454,9 +460,8 @@ struct PhotosTabView: View {
         if case .tag(let id) = selection, let current = tagStore.tag(withID: id) {
             picked.append(current)
         }
-        let rest = tags
-            .filter { tag in !picked.contains(where: { $0.id == tag.id }) }
-            .sorted { tagStore.usageCount(of: $0.id) > tagStore.usageCount(of: $1.id) }
+        // 順序由使用者在管理頁排好，這裡就照那個順序取前幾個。
+        let rest = tags.filter { tag in !picked.contains(where: { $0.id == tag.id }) }
         picked.append(contentsOf: rest.prefix(shortcutTagLimit - picked.count))
         return picked
     }
