@@ -104,10 +104,10 @@ struct MoreTabView: View {
     }
 
     private var anniversaryStatus: String {
-        let count = tagStore.anniversaryCount()
-        return model.isUnlocked
-            ? String(format: String(localized: "%lld tags"), count)
-            : String(format: String(localized: "%lld / %lld tags"), count, TagStore.freeAnniversaryLimit)
+        // 訂閱後不限個數；免費版顯示 目前 / 上限。
+        model.isUnlocked
+            ? String(localized: "Unlimited")
+            : String(format: String(localized: "%lld / %lld tags"), tagStore.anniversaryCount(), TagStore.freeAnniversaryLimit)
     }
 
     private var journalStatus: String {

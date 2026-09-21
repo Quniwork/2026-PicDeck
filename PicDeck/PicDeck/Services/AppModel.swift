@@ -79,8 +79,60 @@ final class AppModel: ObservableObject {
         didSet { defaults.set(journalNewestFirst, forKey: Key.journalNewestFirst) }
     }
 
+    // MARK: - 選集：日子卡片的外觀（App 與桌面小工具共用）
+
+    @Published var cardTextPosition: CardTextPosition = .bottom {
+        didSet { defaults.set(cardTextPosition.rawValue, forKey: Key.cardPosition) }
+    }
+    @Published var cardTextStyle: CardTextStyle = .shadow {
+        didSet { defaults.set(cardTextStyle.rawValue, forKey: Key.cardStyle) }
+    }
+
+    // MARK: - 選集：區塊
+
+    /// 選集頁上的區塊。使用者自己建立、命名、排序；每個區塊有自己的標籤與顯示方式。
+    @Published var homeBlocks: [HomeBlock] = HomeBlock.defaults {
+        didSet {
+            if let data = try? JSONEncoder().encode(homeBlocks) { defaults.set(data, forKey: Key.homeBlocks) }
+        }
+    }
+
+    /// 讓區塊裡的標籤跟目前的標籤一致：不存在或不符條件的拿掉，釘選了卻不在任何日子／標籤區塊的補進去。
+    func reconcileHomeBlocks(tags: [PhotoTag]) {
+        let byID = Dictionary(uniqueKeysWithValues: tags.map { ($0.id, $0) })
+        var blocks = homeBlocks
+        for index in blocks.indices {
+            var seen = Set<UUID>()
+            let kept: [UUID] = blocks[index].tagIDs.filter { id in
+                guard let tag = byID[id], seen.insert(id).inserted else { return false }
+                switch blocks[index].mode {
+                case .days: return tag.hasAnniversary && tag.pinnedOnHome
+                case .tags: return tag.pinnedOnHome
+                default: return true
+                }
+            }
+            if kept != blocks[index].tagIDs { blocks[index].tagIDs = kept }
+        }
+        // 釘選的標籤一定要在某個日子或標籤區塊裡；沒有的話放進第一個同類區塊，沒有區塊就建一個。
+        let placed = Set(blocks.filter { $0.mode == .days || $0.mode == .tags }.flatMap(\.tagIDs))
+        for tag in tags where tag.pinnedOnHome && !placed.contains(tag.id) {
+            let mode: HomeBlock.Mode = tag.hasAnniversary ? .days : .tags
+            if let index = blocks.firstIndex(where: { $0.mode == mode }) {
+                blocks[index].tagIDs.append(tag.id)
+            } else {
+                let at = blocks.firstIndex { $0.mode == .onThisDay } ?? blocks.count
+                blocks.insert(HomeBlock(mode: mode, tagIDs: [tag.id]), at: at)
+            }
+        }
+        if blocks != homeBlocks { homeBlocks = blocks }
+    }
+
     private let defaults = UserDefaults.standard
     private enum Key {
+        static let homeBlocks = "picdeck.homeBlocks"
+        static let homeSections = "picdeck.homeSections"
+        static let cardPosition = "picdeck.cardTextPosition"
+        static let cardStyle = "picdeck.cardTextStyle"
         static let journalNewestFirst = "picdeck.journalNewestFirst"
         static let gridColumns = "picdeck.gridColumns"
         static let gridFitsAspect = "picdeck.gridFitsAspect"
@@ -109,7 +161,42 @@ final class AppModel: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("-resetUnlock") { resetUnlockForTesting() }
         // UI 測試用：帶 -subscribeForTesting 啟動時直接變成已訂閱（測完還原使用者的狀態用）。
         if ProcessInfo.processInfo.arguments.contains("-subscribeForTesting") { purchase(.monthly) }
+        // UI 測試用：帶 -resetHomeSections 啟動時，選集的區塊回到預設，並清掉測試加的月曆。
+        // UI 測試用：帶 -fakeTrash 21 啟動時，待刪清單顯示 21 個假的項目（不寫入磁碟），用來看數字有沒有被截掉。
+        if let at = ProcessInfo.processInfo.arguments.firstIndex(of: "-fakeTrash"),
+           let count = ProcessInfo.processInfo.arguments[safe: at + 1].flatMap(Int.init) {
+            trashedAssetIDs = (0..<count).map { "fake-\($0)" }
+        }
+        if ProcessInfo.processInfo.arguments.contains("-resetHomeSections") { homeBlocks = HomeBlock.defaults }
         _sortsByAdded = Published(initialValue: defaults.bool(forKey: Key.sortsByAdded))
+        if let raw = defaults.string(forKey: Key.cardPosition), let v = CardTextPosition(rawValue: raw) { _cardTextPosition = Published(initialValue: v) }
+        if let raw = defaults.string(forKey: Key.cardStyle), let v = CardTextStyle(rawValue: raw) { _cardTextStyle = Published(initialValue: v) }
+        if let data = defaults.data(forKey: Key.homeBlocks),
+           let saved = try? JSONDecoder().decode([HomeBlock].self, from: data), !saved.isEmpty {
+            _homeBlocks = Published(initialValue: saved)
+        } else if let data = defaults.data(forKey: Key.homeSections),
+                  let old = try? JSONDecoder().decode([HomeSectionConfig].self, from: data), !old.isEmpty {
+            // 舊版的「每個標籤一列」轉成區塊：日子、標籤各合成一個區塊，月曆與週曆一個標籤一個區塊。
+            var blocks: [HomeBlock] = []
+            var days = HomeBlock(mode: .days), tags = HomeBlock(mode: .tags)
+            for section in old {
+                switch section.kind {
+                case .dayCard: if let id = section.tagID { days.tagIDs.append(id) }
+                case .tagCard: if let id = section.tagID { tags.tagIDs.append(id) }
+                case .tagPeriod:
+                    if let id = section.tagID {
+                        blocks.append(HomeBlock(mode: section.period == .week ? .weekCalendar : .monthCalendar,
+                                                tagIDs: [id], isHidden: section.isHidden))
+                    }
+                case .onThisDay: blocks.append(HomeBlock(mode: .onThisDay, isHidden: section.isHidden))
+                case .days, .pinnedTags: break
+                }
+            }
+            blocks.insert(days, at: 0)
+            blocks.insert(tags, at: 1)
+            _homeBlocks = Published(initialValue: blocks)
+        }
+
         if defaults.object(forKey: Key.journalNewestFirst) != nil {
             _journalNewestFirst = Published(initialValue: defaults.bool(forKey: Key.journalNewestFirst))
         }
@@ -408,4 +495,8 @@ enum AppAppearance: String, CaseIterable, Identifiable {
             }
         }
     }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }

@@ -98,70 +98,38 @@ private struct TagIcon: View {
 private struct CoverView: View {
     let file: String?
     var body: some View {
-        if let file, let image = coverImage(file) {
-            Image(uiImage: image).resizable().scaledToFill()
-        } else {
-            LinearGradient(colors: [Color(red: 0.25, green: 0.6, blue: 1), Color(red: 0.0, green: 0.42, blue: 1)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-        }
-    }
-}
-
-struct SmallTagView: View {
-    let entry: TagEntry
-
-    var body: some View {
-        if let tag = entry.tag {
-            ZStack(alignment: .bottomLeading) {
-                CoverView(file: tag.coverFiles.first)
-                LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .center, endPoint: .bottom)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        TagIcon(tag: tag).font(.caption)
-                        Text(tag.name).font(.caption.weight(.semibold)).lineLimit(1)
-                    }
-                    Text(entry.dayText ?? tag.countText)
-                        .font(.headline.weight(.bold))
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
+        // 圖片放在透明底的 overlay 裡再裁切：圖片再大也不會撐大外面的版面，
+        // 疊在上面的文字才會留在卡片範圍內（中尺寸比較寬，以前文字被擠出畫面外）。
+        Color.clear
+            .overlay {
+                if let file, let image = coverImage(file) {
+                    Image(uiImage: image).resizable().scaledToFill()
+                } else {
+                    LinearGradient(colors: [Color(red: 0.25, green: 0.6, blue: 1), Color(red: 0.0, green: 0.42, blue: 1)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
                 }
-                .foregroundStyle(.white)
-                .padding(12)
             }
-            .widgetURL(URL(string: "picdeck://tag/\(tag.id)"))
-        } else {
-            EmptyTagView()
-        }
+            .clipped()
     }
 }
 
-struct MediumTagView: View {
+struct TagCardView: View {
     let entry: TagEntry
+    var scale: CGFloat
 
     var body: some View {
         if let tag = entry.tag {
-            // 跟小尺寸一樣：封面滿版，字疊在下面。中尺寸比較寬，字放大一點，右下角多放張數。
-            ZStack(alignment: .bottomLeading) {
+            let snapshot = WidgetSnapshot.load()
+            ZStack {
                 CoverView(file: tag.coverFiles.first)
-                LinearGradient(colors: [.clear, .black.opacity(0.72)], startPoint: .center, endPoint: .bottom)
-                HStack(alignment: .bottom) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 5) {
-                            TagIcon(tag: tag).font(.subheadline)
-                            Text(tag.name).font(.subheadline.weight(.semibold)).lineLimit(1)
-                        }
-                        Text(entry.dayText ?? tag.countText)
-                            .font(.title2.weight(.bold))
-                            .minimumScaleFactor(0.6)
-                            .lineLimit(1)
-                    }
-                    Spacer(minLength: 8)
-                    if entry.dayText != nil {
-                        Text(tag.countText).font(.caption).opacity(0.85)
-                    }
+                CardTextOverlay(name: tag.name,
+                                primary: entry.dayText ?? tag.countText,
+                                secondary: entry.dayText != nil ? tag.countText : nil,
+                                position: snapshot?.textPosition ?? .bottom,
+                                style: snapshot?.textStyle ?? .shadow,
+                                scale: scale) {
+                    TagIcon(tag: tag)
                 }
-                .foregroundStyle(.white)
-                .padding(16)
             }
             .widgetURL(URL(string: "picdeck://tag/\(tag.id)"))
         } else {
@@ -185,10 +153,8 @@ struct TagWidgetView: View {
     let entry: TagEntry
 
     var body: some View {
-        switch family {
-        case .systemMedium: MediumTagView(entry: entry)
-        default: SmallTagView(entry: entry)
-        }
+        // 小尺寸與中尺寸都是封面滿版加文字，文字位置與樣式跟 App 的設定同步。
+        TagCardView(entry: entry, scale: family == .systemMedium ? 1.0 : 0.85)
     }
 }
 

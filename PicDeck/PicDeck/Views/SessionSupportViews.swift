@@ -13,7 +13,11 @@ struct SessionPhotoCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color(.secondarySystemBackground))
 
-            if let image {
+            if asset.mediaType == .video {
+                // 影片：點一下就播放，不需要另外進放大。
+                InlineVideoView(asset: asset, poster: image)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+            } else if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
@@ -37,7 +41,8 @@ struct SessionPhotoCard: View {
                 .padding(12)
             }
         }
-        .onTapGesture(count: 2) { isZoomed = true }
+        // 圖片雙擊放大；影片單擊就是播放，不搶手勢。
+        .onTapGesture(count: 2) { if asset.mediaType != .video { isZoomed = true } }
         .fullScreenCover(isPresented: $isZoomed) {
             ZoomedPhotoView(asset: asset)
         }

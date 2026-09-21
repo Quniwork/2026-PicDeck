@@ -116,6 +116,11 @@ struct TagCollectionView: View {
     /// 右上角：顯示方式（單張／柵欄）、放大縮小（柵欄）、過濾條件。跟照片分頁的篩選選單同一款。
     private var optionsMenu: some View {
         Menu {
+            ResetFiltersButton(isActive: filter != .all || !selectedSubTags.isEmpty) {
+                filter = .all
+                selectedSubTags.removeAll()
+            }
+
             Section(String(localized: "Display")) {
                 Toggle(isOn: Binding(get: { mode == .single }, set: { _ in modeRaw = DisplayMode.single.rawValue })) {
                     Label(String(localized: "Single view"), systemImage: "rectangle.grid.1x2")
@@ -142,10 +147,9 @@ struct TagCollectionView: View {
             }
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .overlay(alignment: .topTrailing) {
-                    if filter != .all {
-                        Circle().fill(.red).frame(width: 7, height: 7).offset(x: 4, y: -3)
-                    }
+                .filterIndicator(isActive: filter != .all || !selectedSubTags.isEmpty) {
+                    filter = .all
+                    selectedSubTags.removeAll()
                 }
         }
         .accessibilityLabel(Text("Filter"))

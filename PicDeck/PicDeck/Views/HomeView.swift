@@ -13,14 +13,66 @@ struct HomeView: View {
     @EnvironmentObject private var tagStore: TagStore
 
     @State private var openedCollection: PhotoTag?
+    /// 這個畫面會跳出的表單，合成一個 sheet，避免多個 .sheet 疊在同一個畫面上。
+    private enum HomeSheet: Identifiable {
+        case cardStyle, arrange
+        case editTag(PhotoTag)
+        var id: String {
+            switch self {
+            case .cardStyle: return "cardStyle"
+            case .arrange: return "arrange"
+            case .editTag(let tag): return "edit-\(tag.id)"
+            }
+        }
+    }
+    @State private var sheet: HomeSheet?
+    /// 編輯標籤模式：卡片上出現鉛筆，點了改成編輯那個標籤。
+    @State private var isEditingTags = false
+    /// 選集內容的寬度，卡片依它算大小。
+    @State private var contentWidth: CGFloat = 390
     @State private var covers: [UUID: PHAsset] = [:]
     @State private var counts: [UUID: Int] = [:]
     @State private var onThisDay: [OnThisDayItem] = []
+    /// 點那年今天的照片打開放大檢視，可以左右滑看其他張。
+    @State private var onThisDayViewer: String?
 
     private struct OnThisDayItem: Identifiable {
         let asset: PHAsset
         let yearsAgo: Int
         var id: String { asset.localIdentifier }
+    }
+
+    private struct ViewerStart: Identifiable { let id: String }
+
+    private func tags(of block: HomeBlock) -> [PhotoTag] {
+        block.tagIDs.compactMap { tagStore.tag(withID: $0) }
+    }
+
+    /// 區塊有沒有東西可以顯示。空的日子、標籤區塊不占位置。
+    private func hasContent(_ block: HomeBlock) -> Bool {
+        block.mode == .onThisDay ? !onThisDay.isEmpty : !tags(of: block).isEmpty
+    }
+
+    private var isEmpty: Bool {
+        !model.homeBlocks.contains { !$0.isHidden && hasContent($0) }
+    }
+
+    /// 使用者取的標題；沒取就用種類的預設名稱。
+    private func title(for block: HomeBlock) -> String {
+        if !block.title.trimmingCharacters(in: .whitespaces).isEmpty { return block.title }
+        return HomeBlockNames.defaultTitle(for: block.mode)
+    }
+
+    @ViewBuilder
+    private func blockView(_ block: HomeBlock) -> some View {
+        if hasContent(block) {
+            switch block.mode {
+            case .days: daysBlock(block)
+            case .tags: tagsBlock(block)
+            case .monthCalendar, .weekCalendar: calendarBlock(block)
+            case .onThisDay: onThisDayBlock(block)
+            }
+        }
     }
 
     private var anniversaryTags: [PhotoTag] { tagStore.tags.filter { $0.hasAnniversary && $0.pinnedOnHome } }
@@ -29,25 +81,69 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    if anniversaryTags.isEmpty && tagStore.homePinnedTags.isEmpty && onThisDay.isEmpty {
-                        emptyState
-                    }
-                    if !anniversaryTags.isEmpty { anniversarySection }
-                    if !tagStore.homePinnedTags.isEmpty { collectionsSection }
-                    if !onThisDay.isEmpty { onThisDaySection }
+                    if isEmpty { emptyState }
+                    // 依使用者排的順序，一個區塊一個區塊往下放。
+                    ForEach(model.homeBlocks.filter { !$0.isHidden }) { block in blockView(block) }
                 }
                 .padding(.top, PageMetrics.contentTopGap)
                 .padding(.bottom, 12)
             }
             .background(Color(.systemGroupedBackground))
+            .background(GeometryReader { proxy in
+                Color.clear.onAppear { contentWidth = proxy.size.width }
+                    .onChange(of: proxy.size.width) { _, width in contentWidth = width }
+            })
             .navigationDestination(item: $openedCollection) { tag in
                 TagCollectionView(tag: tag)
             }
-            .onAppear(perform: openRequestedCollection)
+            .onAppear {
+                reconcileSections()
+                openRequestedCollection()
+            }
+            .onChange(of: tagStore.tags) { _, _ in reconcileSections() }
             .onChange(of: model.requestedCollectionTagID) { _, _ in openRequestedCollection() }
             .navigationTitle("Collections")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { LeadingTitleToolbar(title: String(localized: "Collections")) }
+            .toolbar {
+                LeadingTitleToolbar(title: String(localized: "Collections"))
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { sheet = .cardStyle } label: {
+                            Label(String(localized: "Card style"), systemImage: "slider.horizontal.3")
+                        }
+                        .accessibilityIdentifier("home.cardStyle")
+                        Button { sheet = .arrange } label: {
+                            Label(String(localized: "Manage blocks"), systemImage: "square.stack.3d.up")
+                        }
+                        .accessibilityIdentifier("home.arrange")
+                        Button { withMotion { isEditingTags.toggle() } } label: {
+                            Label(isEditingTags ? String(localized: "Done editing tags") : String(localized: "Edit tags"),
+                                  systemImage: isEditingTags ? "checkmark" : "pencil")
+                        }
+                        .accessibilityIdentifier("home.editTags")
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                    }
+                    .accessibilityLabel(Text("Customize"))
+                    .accessibilityIdentifier("home.cardSettings")
+                }
+            }
+            .fullScreenCover(item: Binding(get: { onThisDayViewer.map(ViewerStart.init) },
+                                           set: { onThisDayViewer = $0?.id })) { start in
+                PhotoDetailView(assets: onThisDay.map(\.asset), startID: start.id)
+            }
+            .sheet(item: $sheet) { which in
+                switch which {
+                case .arrange:
+                    HomeArrangeView()
+                case .cardStyle:
+                    CardSettingsView(sampleTag: anniversaryTags.first,
+                                     sampleCover: anniversaryTags.first.flatMap { covers[$0.id] })
+                        .presentationDetents([.large])
+                case .editTag(let tag):
+                    TagFormView(mode: .edit(tag))
+                }
+            }
             .task(id: tagStore.assignments.count + tagStore.tags.count) { loadCoversAndCounts() }
             .task { await loadOnThisDay() }
         }
@@ -55,114 +151,157 @@ struct HomeView: View {
 
     // MARK: - 日子
 
-    private var anniversarySection: some View {
+    private func daysBlock(_ block: HomeBlock) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionTitle("Days")
+            sectionTitle(title(for: block))
+            cardsLayout(tags(of: block), block: block) { tag, dimension in
+                Button { activate(tag, opensCollection: false) } label: {
+                    coverCard(tag, dimension: dimension,
+                              primary: tag.anniversaryText(on: Date()) ?? "",
+                              secondary: String(format: String(localized: "%lld photos"), counts[tag.id] ?? 0))
+                        .editBadge(isEditingTags)
+                }
+                .buttonStyle(.plain)
+                .contextMenu { editMenu(tag) }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("home.anniversary")
+            }
+        }
+        .motionAnimation(value: block.size)
+        .motionAnimation(value: block.wraps)
+    }
 
+    /// 卡片的排法：自動換行就是一格一格往下排；橫向捲動就是一列往右滑，最右邊那張被切掉一截，提示還可以滑。
+    @ViewBuilder
+    private func cardsLayout<Content: View>(_ items: [PhotoTag], block: HomeBlock,
+                                            @ViewBuilder content: @escaping (PhotoTag, CGSize) -> Content) -> some View {
+        let dimension = block.size.dimensions(contentWidth: contentWidth, wraps: block.wraps)
+        if block.wraps {
+            let columns = Array(repeating: GridItem(.fixed(dimension.width), spacing: 12), count: block.size == .large ? 1 : 2)
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
+                ForEach(items) { tag in content(tag, dimension) }
+            }
+            .padding(.horizontal, 16)
+        } else {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(anniversaryTags) { tag in
-                        Button { open(tag) } label: { anniversaryCard(tag) }
-                            .buttonStyle(.plain)
-                            .accessibilityElement(children: .combine)
-                            .accessibilityIdentifier("home.anniversary")
-                    }
+                LazyHStack(spacing: 12) {
+                    ForEach(items) { tag in content(tag, dimension) }
                 }
-                .padding(.horizontal, 16)
+                .scrollTargetLayout()
             }
+            .contentMargins(.leading, 16, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .frame(height: dimension.height + 8)
         }
     }
 
-    private func anniversaryCard(_ tag: PhotoTag) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            cover(for: tag)
-                .frame(width: 210, height: 250)
+    // MARK: - 標籤
 
-            // 封面下方漸層，字才讀得清楚。
-            LinearGradient(colors: [.clear, .black.opacity(0.72)],
-                           startPoint: .center, endPoint: .bottom)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    IconLabel(raw: tag.symbol, size: 17)
-                    Text(tag.name).font(.headline)
-                }
-                if let text = tag.anniversaryText(on: Date()) {
-                    Text(text)
-                        .font(.title3.weight(.bold))
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
-                }
-                Text("\(counts[tag.id] ?? 0) photos")
-                    .font(.caption)
-                    .opacity(0.85)
-            }
-            .foregroundStyle(.white)
-            .padding(14)
-        }
-        .frame(width: 210, height: 250)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
-    }
-
-    // MARK: - 釘選在首頁的標籤
-
-    private var collectionsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionTitle("Tags")
-
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
-                      spacing: 8) {
-                ForEach(tagStore.homePinnedTags) { tag in
-                    NavigationLink {
-                        TagCollectionView(tag: tag)
-                    } label: {
-                        tagCard(tag)
+    private func tagsBlock(_ block: HomeBlock) -> some View {
+        let items = tags(of: block)
+        return VStack(alignment: .leading, spacing: 8) {
+            sectionTitle(title(for: block))
+            if block.layout == .cards {
+                cardsLayout(items, block: block) { tag, dimension in
+                    Button { activate(tag, opensCollection: true) } label: {
+                        coverCard(tag, dimension: dimension,
+                                  primary: String(format: String(localized: "%lld photos"), counts[tag.id] ?? 0),
+                                  secondary: nil)
+                            .editBadge(isEditingTags)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu { editMenu(tag) }
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("home.collection")
                 }
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, tag in
+                        Button { activate(tag, opensCollection: true) } label: {
+                            tagRow(tag).editBadge(isEditingTags)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu { editMenu(tag) }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("home.collection")
+                        if index < items.count - 1 { Divider().padding(.leading, 64) }
+                    }
+                }
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
+        }
+        .motionAnimation(value: block.layout)
+        .motionAnimation(value: block.size)
+        .motionAnimation(value: block.wraps)
+    }
+
+    private func tagRow(_ tag: PhotoTag) -> some View {
+        HStack(spacing: 12) {
+            cover(for: tag)
+                .frame(width: 40, height: 40)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            HStack(spacing: 6) {
+                IconLabel(raw: tag.symbol, size: 16)
+                Text(tag.name).font(.body)
+            }
+            Spacer()
+            Text("\(counts[tag.id] ?? 0)").foregroundStyle(.secondary)
+            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - 月曆、週曆
+
+    private func calendarBlock(_ block: HomeBlock) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionTitle(title(for: block))
+            let items = tags(of: block)
+            ForEach(items) { tag in
+                // 區塊標題跟標籤名稱一樣（或只有一個標籤且標題就是它）就不重複顯示標籤名稱。
+                let sameAsTitle = title(for: block).trimmingCharacters(in: .whitespaces)
+                    .caseInsensitiveCompare(tag.name) == .orderedSame
+                TagPeriodSection(tag: tag, period: block.mode == .weekCalendar ? .week : .month,
+                                 showsTagName: !sameAsTitle)
+            }
         }
     }
 
-    private func tagCard(_ tag: PhotoTag) -> some View {
-        HStack(spacing: 10) {
-            cover(for: tag)
-                .frame(width: 52, height: 52)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    // MARK: - 共用卡片
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    IconLabel(raw: tag.symbol, size: 13)
-                    Text(tag.name).font(.subheadline.weight(.semibold)).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                }
-                Text("\(counts[tag.id] ?? 0) photos")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    /// 封面滿版，疊上名稱與文字。日子卡片、標籤卡片、桌面小工具同一種樣子。
+    private func coverCard(_ tag: PhotoTag, dimension: CGSize,
+                           primary: String, secondary: String?) -> some View {
+        let scale = CardSize.textScale(for: dimension)
+        return ZStack {
+            cover(for: tag)
+            CardTextOverlay(name: tag.name,
+                            primary: primary,
+                            secondary: secondary,
+                            position: model.cardTextPosition,
+                            style: model.cardTextStyle,
+                            scale: scale) {
+                IconLabel(raw: tag.symbol, size: 17 * scale)
             }
-            Spacer(minLength: 0)
         }
-        .padding(8)
-        .background(Color(.secondarySystemGroupedBackground),
-                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        // 淺色底上卡片邊界不明顯，加一圈很淡的線。
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
-        .contentShape(Rectangle())
+        .frame(width: dimension.width, height: dimension.height)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
     }
 
     // MARK: - 那年今天
 
-    private var onThisDaySection: some View {
+    private func onThisDayBlock(_ block: HomeBlock) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionTitle("On this day")
+            sectionTitle(title(for: block))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(onThisDay) { item in
+                        Button { onThisDayViewer = item.asset.localIdentifier } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             AssetThumbnail(asset: item.asset, size: 160, showsDuration: false)
                                 .frame(width: 120, height: 120)
@@ -171,6 +310,9 @@ struct HomeView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("home.onthisday.photo")
                     }
                 }
                 .padding(.horizontal, 16)
@@ -199,8 +341,8 @@ struct HomeView: View {
 
     // MARK: - 共用
 
-    private func sectionTitle(_ key: LocalizedStringKey) -> some View {
-        Text(key)
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
             .font(.title3.weight(.bold))
             .padding(.horizontal, 16)
     }
@@ -211,11 +353,17 @@ struct HomeView: View {
             // 填滿的封面。AssetThumbnail 固定是正方形，放進直的卡片會留一塊空。
             CoverImage(assetID: asset.localIdentifier, size: 400)
         } else {
-            ZStack {
+            // 沒有照片時放灰底加圖標。圖標放右上角，不會壓到底下的文字。
+            ZStack(alignment: .topTrailing) {
                 Rectangle().fill(Color(.tertiarySystemFill))
-                IconLabel(raw: tag.symbol, size: 26)
+                IconLabel(raw: tag.symbol, size: 22).padding(12)
             }
         }
+    }
+
+    /// 區塊清單跟著標籤變動：新釘選的標籤自動出現，不再符合的消失。
+    private func reconcileSections() {
+        model.reconcileHomeBlocks(tags: tagStore.tags)
     }
 
     /// 小工具點進來：直接打開那個標籤的選集頁。
@@ -223,6 +371,22 @@ struct HomeView: View {
         guard let id = model.requestedCollectionTagID else { return }
         model.requestedCollectionTagID = nil
         if let tag = tagStore.tag(withID: id) { openedCollection = tag }
+    }
+
+    /// 點卡片：編輯模式就改標籤，平常是打開那個標籤的收藏頁。
+    /// 日子卡片跳到照片分頁並套用標籤；釘選標籤卡片打開收藏頁。
+    private func activate(_ tag: PhotoTag, opensCollection: Bool) {
+        if isEditingTags { sheet = .editTag(tag) }
+        else if opensCollection { openedCollection = tag }
+        else { open(tag) }
+    }
+
+    /// 長按卡片的選單，不用先進編輯模式。
+    @ViewBuilder
+    private func editMenu(_ tag: PhotoTag) -> some View {
+        Button { sheet = .editTag(tag) } label: {
+            Label(String(localized: "Edit tag"), systemImage: "pencil")
+        }
     }
 
     /// 點卡片：切到照片分頁，並套用那個標籤。
@@ -268,5 +432,24 @@ struct HomeView: View {
         }.value
 
         onThisDay = found.prefix(12).map { OnThisDayItem(asset: $0.0, yearsAgo: $0.1) }
+    }
+}
+
+private extension View {
+    /// 編輯標籤模式下，卡片右上角的鉛筆。
+    @ViewBuilder
+    func editBadge(_ isOn: Bool) -> some View {
+        if isOn {
+            overlay(alignment: .topTrailing) {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.title2)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color.accentColor)
+                    .shadow(radius: 2)
+                    .padding(8)
+            }
+        } else {
+            self
+        }
     }
 }

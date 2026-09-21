@@ -226,6 +226,17 @@ final class TagStore: ObservableObject {
         return true
     }
 
+    /// 釘在首頁與否。取消釘選時標籤本身（含日子）都保留，只是不再出現在選集。
+    func setPinnedOnHome(_ id: UUID, _ value: Bool) {
+        guard let index = tags.firstIndex(where: { $0.id == id }), tags[index].pinnedOnHome != value else { return }
+        tags[index].pinnedOnHome = value
+        scheduleSave()
+    }
+
+    /// 選集裡日子卡片的標籤（有日期、釘選）與標籤卡片的標籤（沒日期、釘選）。
+    var homeDayTagIDs: [UUID] { tags.filter { $0.hasAnniversary && $0.pinnedOnHome }.map(\.id) }
+    var homeCardTagIDs: [UUID] { tags.filter { !$0.hasAnniversary && $0.pinnedOnHome }.map(\.id) }
+
     /// 免費版可以有幾個設了日子的標籤。
     static let freeAnniversaryLimit = 1
 
@@ -275,7 +286,35 @@ final class TagStore: ObservableObject {
 
     // MARK: - 指派
 
+    // MARK: - 最近使用
+
+    /// 標籤最後一次被拿來標照片的時間。選標籤時最近用過的排最前面，不動管理頁自己排的順序。
+    private var lastUsed: [String: Date] {
+        get { (UserDefaults.standard.dictionary(forKey: "picdeck.tagLastUsed") as? [String: Date]) ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: "picdeck.tagLastUsed") }
+    }
+
+    /// 最近用過的在前（越新越前面），沒用過的維持原本順序排在後面。
+    var tagsByRecentUse: [PhotoTag] {
+        let used = lastUsed
+        return tags.enumerated().sorted { a, b in
+            switch (used[a.element.id.uuidString], used[b.element.id.uuidString]) {
+            case let (x?, y?): return x > y
+            case (_?, nil): return true
+            case (nil, _?): return false
+            default: return a.offset < b.offset
+            }
+        }.map(\.element)
+    }
+
     func setTags(_ tagIDs: Set<UUID>, for asset: PHAsset) {
+        let added = tagIDs.subtracting(self.tagIDs(for: asset))
+        if !added.isEmpty {
+            var used = lastUsed
+            let now = Date()
+            for id in added { used[id.uuidString] = now }
+            lastUsed = used
+        }
         let fingerprint = OrganizedStore.fingerprint(for: asset)
         let key = asset.localIdentifier
 

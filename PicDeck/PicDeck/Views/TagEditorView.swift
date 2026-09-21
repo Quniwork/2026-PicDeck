@@ -10,6 +10,9 @@ struct TagFormView: View {
     }
 
     let mode: Mode
+    /// 從「新增區塊」進來時的預設：直接釘在選集、直接打開日子。
+    var startsPinned = false
+    var startsWithDays = false
 
     @EnvironmentObject private var tagStore: TagStore
     @EnvironmentObject private var model: AppModel
@@ -17,6 +20,8 @@ struct TagFormView: View {
 
     @State private var showAnniversaryLimit = false
     @State private var showPaywall = false
+    /// 按下建立／儲存之後為 true。這時標籤已經存進去了，名稱檢查不能再把自己算成重複。
+    @State private var didSubmit = false
     @State private var name = ""
     @State private var symbol = TagStore.defaultSymbol
     @State private var hasAnniversary = false
@@ -34,7 +39,7 @@ struct TagFormView: View {
     }
 
     private var isDuplicate: Bool {
-        !trimmedName.isEmpty && tagStore.nameExists(trimmedName, excluding: editingTag?.id)
+        !didSubmit && !trimmedName.isEmpty && tagStore.nameExists(trimmedName, excluding: editingTag?.id)
     }
 
     private var canConfirm: Bool {
@@ -120,17 +125,23 @@ struct TagFormView: View {
     }
 
     private func load() {
-        guard let tag = editingTag else { return }
+        guard let tag = editingTag else {
+            pinnedOnHome = startsPinned
+            hasAnniversary = startsWithDays
+            return
+        }
         name = tag.name
         symbol = tag.symbol
         hasAnniversary = tag.hasAnniversary
         anniversary = tag.anniversary ?? Date()
         style = tag.anniversaryStyle
-        pinnedOnHome = tag.pinnedOnHome
+        pinnedOnHome = tag.pinnedOnHome || startsPinned
+        if startsWithDays { hasAnniversary = true }
     }
 
     private func confirm() {
         guard canConfirm else { return }
+        didSubmit = true
 
         switch mode {
         case .create(let assets):

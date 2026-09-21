@@ -351,12 +351,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = PicDeck.entitlements;
-				INFOPLIST_FILE = "PicDeck-Info.plist";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = G5549NZ8QF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PicDeck-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PicDeck;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PicDeck needs access to your photo library so you can review, organize and delete photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -381,12 +382,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = PicDeck.entitlements;
-				INFOPLIST_FILE = "PicDeck-Info.plist";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = G5549NZ8QF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PicDeck-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PicDeck;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PicDeck needs access to your photo library so you can review, organize and delete photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -442,6 +444,7 @@
 				CODE_SIGN_ENTITLEMENTS = PicDeckWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G5549NZ8QF;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PicDeckWidget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PicDeck;
@@ -467,6 +470,7 @@
 				CODE_SIGN_ENTITLEMENTS = PicDeckWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G5549NZ8QF;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PicDeckWidget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PicDeck;

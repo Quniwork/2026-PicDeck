@@ -198,3 +198,36 @@ struct RelativeTypeSize: ViewModifier {
         return content.dynamicTypeSize(all[max(0, index - steps)])
     }
 }
+
+extension View {
+    /// 篩選鈕的狀態提示：有套用篩選（不是預設）就在右上角放紅點。
+    /// 系統的選單會吃掉點擊，快速點兩下打不到這顆鈕，所以恢復預設放在選單最上面（見 `ResetFiltersButton`）。
+    func filterIndicator(isActive: Bool, reset: @escaping () -> Void) -> some View {
+        overlay(alignment: .topTrailing) {
+            if isActive {
+                Circle().fill(.red).frame(width: 7, height: 7).offset(x: 4, y: -3)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityValue(isActive ? Text("Filtered") : Text(""))
+        .accessibilityAction(named: Text("Reset filters")) { if isActive { reset() } }
+    }
+}
+
+/// 選單最上面的「恢復預設篩選」，有套用篩選時才出現。
+struct ResetFiltersButton: View {
+    let isActive: Bool
+    let reset: () -> Void
+
+    var body: some View {
+        if isActive {
+            Button(role: .destructive) {
+                withMotion { reset() }
+            } label: {
+                Label(String(localized: "Reset filters"), systemImage: "arrow.counterclockwise")
+            }
+            .accessibilityIdentifier("filter.reset")
+            Divider()
+        }
+    }
+}

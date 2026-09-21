@@ -21,12 +21,28 @@ struct AlbumPickerView: View {
         tree.flattened(collapsed: collapsed)
     }
 
+    /// 用過的相簿（不含資料夾），最近的在前，最多三個。
+    private var recentAlbums: [AlbumNode] {
+        let used = (UserDefaults.standard.dictionary(forKey: "picdeck.albumLastUsed") as? [String: Date]) ?? [:]
+        func flat(_ nodes: [AlbumNode]) -> [AlbumNode] { nodes.flatMap { $0.isFolder ? flat($0.children) : [$0] } }
+        return flat(tree).filter { used[$0.id] != nil }.sorted { (used[$0.id] ?? .distantPast) > (used[$1.id] ?? .distantPast) }.prefix(3).map { $0 }
+    }
+
     var body: some View {
         NavigationStack {
             List {
                 Section {
                     AlbumCreateButton(assets: assets, tree: tree) {
                         Task { await reload() }
+                    }
+                }
+
+                // 最近用過的相簿放最上面，不用在階層裡找。
+                if !recentAlbums.isEmpty {
+                    Section(String(localized: "Recently used")) {
+                        ForEach(recentAlbums, id: \.id) { node in
+                            rowView(node, depth: 0)
+                        }
                     }
                 }
 

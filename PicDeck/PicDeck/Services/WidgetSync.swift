@@ -10,13 +10,13 @@ enum WidgetSync {
     private static var isRunning = false
     private static var pending = false
 
-    static func sync(tagStore: TagStore, library: PhotoLibraryService) async {
+    static func sync(tagStore: TagStore, library: PhotoLibraryService, model: AppModel) async {
         // 連續觸發時只留最後一次，不要同時跑好幾份。
         guard !isRunning else { pending = true; return }
         isRunning = true
         defer {
             isRunning = false
-            if pending { pending = false; Task { await sync(tagStore: tagStore, library: library) } }
+            if pending { pending = false; Task { await sync(tagStore: tagStore, library: library, model: model) } }
         }
         guard let coversDirectory = WidgetSnapshot.coversDirectory else { return }
         try? FileManager.default.createDirectory(at: coversDirectory, withIntermediateDirectories: true)
@@ -76,7 +76,8 @@ enum WidgetSync {
                 try? FileManager.default.removeItem(at: coversDirectory.appendingPathComponent(name))
             }
         }
-        WidgetSnapshot(day: today, tags: output).write()
+        WidgetSnapshot(day: today, tags: output,
+                       textPosition: model.cardTextPosition, textStyle: model.cardTextStyle).write()
         WidgetCenter.shared.reloadAllTimelines()
     }
 }

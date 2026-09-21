@@ -22,6 +22,9 @@ struct WidgetSnapshot: Codable {
     /// 產生的那一天的 0 點。小工具用它算今天對應 `dayTexts` 的第幾個。
     var day: Date
     var tags: [WidgetTag]
+    /// 日子卡片文字的位置與樣式（跟 App 的「選集」同一份設定）。舊資料沒有就用預設。
+    var textPosition: CardTextPosition?
+    var textStyle: CardTextStyle?
 
     static let groupID = "group.com.picdeck.app"
     static let dayCount = 21

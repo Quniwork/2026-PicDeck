@@ -1131,10 +1131,12 @@ final class PicDeckSmokeTests: XCTestCase {
         }
         attachScreenshot(app, name: "49-organize-list")
 
-        let monthRow = app.cells.element(boundBy: 4)
+        // 用固定的舊月份（2025 年 11 月），不受今天新拍的照片影響。
+        let monthRow = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "2025年11月")).firstMatch
         XCTAssertTrue(monthRow.waitForExistence(timeout: 10), "整理分頁沒有月份列")
-        monthRow.tap()
+        tapByCoordinate(monthRow)
         sleep(4)
+        attachScreenshot(app, name: "49b-review-opened")
 
         // 功能列：標籤、相簿、喜愛、保留、刪除。沒有寫日記、也沒有幫助。
         for id in ["session.tags", "session.albums", "session.favorite", "session.keep", "session.delete"] {
@@ -2157,7 +2159,7 @@ final class PicDeckSmokeTests: XCTestCase {
     /// 把 App 設成已訂閱。改過付費狀態的測試之後跑一次，還原使用者的模擬器。
     func testRestoreSubscribedState() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-subscribeForTesting"]
+        app.launchArguments += ["-subscribeForTesting", "-resetHomeSections"]
         app.launch()
         grantPhotoAccessIfNeeded(app)
         XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30), "沒有分頁列")
@@ -2290,6 +2292,282 @@ final class PicDeckSmokeTests: XCTestCase {
             if let match = tags.first(where: { ($0["name"] as? String) == name }) { return match["id"] as? String }
         }
         return nil
+    }
+
+    /// 選集內直接編輯標籤：進編輯模式點日子卡片、或長按卡片選「編輯標籤」，都會開標籤表單。
+    func testEditTagsInCollections() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-seedAnniversaryTag"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30))
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        let any = { (id: String) in app.descendants(matching: .any)[id] }
+        let card = app.descendants(matching: .any).matching(identifier: "home.anniversary").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "沒有日子卡片")
+
+        // 編輯模式：點卡片開標籤表單。
+        tapByCoordinate(any("home.cardSettings"))
+        tapByCoordinate(any("home.editTags"))
+        sleep(1)
+        attachScreenshot(app, name: "140-edit-mode")
+        tapByCoordinate(card)
+        XCTAssertTrue(app.textFields["tag.name"].waitForExistence(timeout: 8), "編輯模式點卡片沒有開標籤表單")
+        attachScreenshot(app, name: "141-edit-form")
+        tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
+        sleep(1)
+        // 關掉編輯模式。
+        tapByCoordinate(any("home.cardSettings"))
+        tapByCoordinate(any("home.editTags"))
+        sleep(1)
+
+        // 長按：直接選「編輯標籤」。
+        card.press(forDuration: 1.2)
+        let edit = app.buttons["編輯標籤"].exists ? app.buttons["編輯標籤"] : app.buttons["Edit tag"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "長按卡片沒有編輯標籤")
+        edit.tap()
+        XCTAssertTrue(app.textFields["tag.name"].waitForExistence(timeout: 8), "長按編輯沒有開標籤表單")
+        tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
+    }
+
+    /// 卡片樣式：文字位置與樣式（大小在每個區塊裡設定）；測完還原成預設。
+    func testCardSettings() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-seedAnniversaryTag", "-resetHomeSections"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30))
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        let any = { (id: String) in app.descendants(matching: .any)[id] }
+        let card = app.descendants(matching: .any).matching(identifier: "home.anniversary").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "選集沒有日子卡片")
+        attachScreenshot(app, name: "120-cards-default")
+
+        tapByCoordinate(any("home.cardSettings"))
+        tapByCoordinate(any("home.cardStyle"))
+        XCTAssertTrue(any("cards.position").waitForExistence(timeout: 8), "沒有卡片樣式設定")
+        attachScreenshot(app, name: "121-card-settings")
+        app.segmentedControls["cards.position"].buttons.element(boundBy: 0).tap()   // 上
+        tapByCoordinate(any("cards.style.plate"))
+        tapByCoordinate(any("cards.done"))
+        sleep(2)
+        attachScreenshot(app, name: "123-cards-top-plate")
+
+        // 還原。
+        tapByCoordinate(any("home.cardSettings"))
+        tapByCoordinate(any("home.cardStyle"))
+        XCTAssertTrue(any("cards.position").waitForExistence(timeout: 8))
+        app.segmentedControls["cards.position"].buttons.element(boundBy: 2).tap()
+        tapByCoordinate(any("cards.style.shadow"))
+        tapByCoordinate(any("cards.done"))
+    }
+
+    /// 區塊：建立月曆區塊、取標題、加標籤，選集出現月曆與標題；再刪掉還原。
+    func testCalendarBlock() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-seedAnniversaryTag", "-resetHomeSections"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30))
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        let any = { (id: String) in app.descendants(matching: .any)[id] }
+        XCTAssertTrue(any("home.cardSettings").waitForExistence(timeout: 20))
+        tapByCoordinate(any("home.cardSettings"))
+        tapByCoordinate(any("home.arrange"))
+        tapByCoordinate(any("arrange.new"))
+        XCTAssertTrue(any("add.mode.monthCalendar").waitForExistence(timeout: 8), "沒有選種類的彈窗")
+        attachScreenshot(app, name: "150-add-block")
+        tapByCoordinate(any("add.mode.monthCalendar"))
+
+        // 直接進到區塊設定：取標題、加標籤。
+        let title = app.textFields["block.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 8), "建立後沒有進到區塊設定")
+        title.tap()
+        title.typeText("測試月曆")
+        tapByCoordinate(any("block.addTag"))
+        let pick = app.buttons.matching(identifier: "add.tag").matching(NSPredicate(format: "label CONTAINS %@", "堯")).firstMatch
+        XCTAssertTrue(pick.waitForExistence(timeout: 8), "選標籤畫面沒有堯（月曆區塊要能選到有日子的標籤）")
+        attachScreenshot(app, name: "151-block-tag-picker")
+        pick.tap()
+        sleep(1)
+        attachScreenshot(app, name: "152-block-editor")
+        // 回排列清單，完成。
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        sleep(1)
+        tapByCoordinate(any("arrange.done"))
+        sleep(2)
+        let period = app.descendants(matching: .any).matching(identifier: "home.period").firstMatch
+        for _ in 0..<5 where !period.exists { app.swipeUp() }
+        XCTAssertTrue(period.exists, "選集沒有出現月曆")
+        XCTAssertTrue(app.staticTexts["測試月曆"].exists, "選集沒有顯示區塊標題")
+        attachScreenshot(app, name: "153-home-calendar-block")
+    }
+
+    /// 標籤區塊：新增標籤、切換卡片／列表，取消釘選時標籤不會被刪掉；並確認建立瞬間沒有重複名稱提示。
+    func testTagsBlockNewTagAndLayout() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-seedAnniversaryTag", "-resetHomeSections"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30))
+        deleteTestTags(in: app)
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        let any = { (id: String) in app.descendants(matching: .any)[id] }
+        XCTAssertTrue(any("home.cardSettings").waitForExistence(timeout: 20))
+        tapByCoordinate(any("home.cardSettings"))
+        tapByCoordinate(any("home.arrange"))
+        tapByCoordinate(any("arrange.new"))
+        tapByCoordinate(any("add.mode.tags"))
+        XCTAssertTrue(any("block.addTag").waitForExistence(timeout: 8), "沒有進到標籤區塊設定")
+        tapByCoordinate(any("block.addTag"))
+        tapByCoordinate(any("add.newTag"))
+        let field = app.textFields["tag.name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 8), "沒有標籤表單")
+        field.tap()
+        field.typeText("測試卡片")
+        sleep(1)
+        tapByCoordinate(app.buttons["tag.save"])
+        XCTAssertFalse(app.staticTexts["tag.duplicate"].exists, "建立瞬間閃出重複名稱提示")
+        sleep(3)
+        attachScreenshot(app, name: "160-tags-block")
+        // 切成列表。
+        XCTAssertTrue(app.segmentedControls["block.layout"].waitForExistence(timeout: 8), "沒有卡片／列表切換")
+        app.segmentedControls["block.layout"].buttons.element(boundBy: 1).tap()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        sleep(1)
+        tapByCoordinate(any("arrange.done"))
+        sleep(2)
+        attachScreenshot(app, name: "161-home-tags-list")
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "home.collection").firstMatch.waitForExistence(timeout: 8), "選集沒有標籤列表")
+        deleteTestTags(in: app)
+    }
+
+    /// 日子區塊的排法：橫向捲動與自動換行，各種大小；拍截圖檢查（最後還原）。
+    func testBlockLayouts() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-seedAnniversaryTag", "-resetHomeSections"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30))
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        let any = { (id: String) in app.descendants(matching: .any)[id] }
+        XCTAssertTrue(any("home.cardSettings").waitForExistence(timeout: 20))
+        sleep(2)
+        attachScreenshot(app, name: "170-nowrap-small")
+
+        func apply(wrap: Int, size: Int, name: String) {
+            tapByCoordinate(any("home.cardSettings"))
+            tapByCoordinate(any("home.arrange"))
+            tapByCoordinate(app.descendants(matching: .any).matching(identifier: "arrange.edit").firstMatch)
+            XCTAssertTrue(app.segmentedControls["block.wrap"].waitForExistence(timeout: 8), "沒有排列方式")
+            app.segmentedControls["block.wrap"].buttons.element(boundBy: wrap).tap()
+            app.segmentedControls["block.size"].buttons.element(boundBy: size).tap()
+            sleep(1)
+            if name == "171-nowrap-large" { attachScreenshot(app, name: "170b-block-editor") }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            sleep(1)
+            tapByCoordinate(any("arrange.done"))
+            sleep(2)
+            attachScreenshot(app, name: name)
+        }
+        apply(wrap: 0, size: 2, name: "171-nowrap-large")
+        apply(wrap: 1, size: 0, name: "172-wrap-small")
+        apply(wrap: 1, size: 1, name: "173-wrap-medium")
+        apply(wrap: 1, size: 2, name: "174-wrap-large")
+        apply(wrap: 0, size: 0, name: "175-restored")
+    }
+
+    /// 整理審核：頁首選單可以切換其他未整理集合（0 張的不列）；待刪數字兩位數不會被截掉；影片可以播放。
+    func testReviewSourceSwitchAndVideo() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-subscribeForTesting", "-fakeTrash", "21"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).waitForExistence(timeout: 30))
+        openOrganize("photos", in: app)
+        let allRow = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "所有未整理")).firstMatch
+        XCTAssertTrue(allRow.waitForExistence(timeout: 15), "整理沒有所有未整理")
+        tapByCoordinate(allRow)
+        let source = app.descendants(matching: .any)["session.source"]
+        XCTAssertTrue(source.waitForExistence(timeout: 15), "審核頁首沒有來源選單")
+        sleep(2)
+        attachScreenshot(app, name: "180-review-header")
+        // 待刪數字 21 完整顯示（截圖看；這裡確認徽章存在）。
+        XCTAssertTrue(app.descendants(matching: .any)["session.trash.count"].exists, "沒有待刪數字")
+        tapByCoordinate(source)
+        sleep(1)
+        attachScreenshot(app, name: "181-source-menu")
+        // 選影片：切過去，畫面出現影片播放器。
+        let video = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "未整理影片")).firstMatch
+        XCTAssertTrue(video.waitForExistence(timeout: 4), "選單沒有未整理影片（測試影片沒加進去？）")
+        video.tap()
+        sleep(3)
+        let player = app.descendants(matching: .any)["video.player"]
+        XCTAssertTrue(player.waitForExistence(timeout: 10), "影片沒有播放器")
+        attachScreenshot(app, name: "182-video-before")
+        player.tap()
+        sleep(2)
+        attachScreenshot(app, name: "183-video-playing")
+        // 再打開選單，0 張的集合不該出現。
+        tapByCoordinate(source)
+        sleep(1)
+        attachScreenshot(app, name: "184-source-menu-video")
+    }
+
+    /// 篩選鈕：套用篩選出現紅點，快速點兩下恢復預設。
+    func testFilterDotAndDoubleTapReset() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos", "-subscribeForTesting"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["photos.filter"].waitForExistence(timeout: 30))
+        attachScreenshot(app, name: "190-filter-default")
+        tapByCoordinate(app.buttons["photos.filter"])
+        sleep(1)
+        tapByCoordinate(app.buttons["媒體類型"])
+        sleep(1)
+        tapByCoordinate(app.buttons["影片"])
+        sleep(2)
+        attachScreenshot(app, name: "191-filter-video")
+        // 選單最上面的「恢復預設篩選」。
+        tapByCoordinate(app.buttons["photos.filter"])
+        sleep(1)
+        tapByCoordinate(app.descendants(matching: .any)["filter.reset"])
+        sleep(2)
+        attachScreenshot(app, name: "192-filter-reset")
+    }
+
+    /// 選集：字級與月曆標題（看截圖）。
+    func testCollectionsVisuals() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-seedAnniversaryTag", "-resetHomeSections"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30))
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        sleep(3)
+        attachScreenshot(app, name: "195-collections")
+    }
+
+    /// 單張檢視往下滑就關閉。
+    func testDetailSwipeDownCloses() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30))
+        tapByCoordinate(app.buttons["scale.all"])
+        sleep(3)
+        let thumbs = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'"))
+        guard let first = waitFirst(thumbs, timeout: 10) else { XCTFail("沒有照片"); return }
+        tapByCoordinate(first)
+        let close = app.descendants(matching: .any)["detail.close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 8), "沒有打開檢視")
+        sleep(2)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+        start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8)))
+        sleep(2)
+        XCTAssertFalse(close.exists, "往下滑之後檢視沒有關閉")
     }
 
     // MARK: - 工具

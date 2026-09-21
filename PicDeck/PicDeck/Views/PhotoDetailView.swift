@@ -19,6 +19,8 @@ struct PhotoDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var sheet: DetailSheet?
+    /// 往下滑關閉時，畫面跟著手指往下走的距離。
+    @State private var dragDown: CGFloat = 0
     @State private var showTrash = false
     /// 這次自己改過的喜愛狀態，系統照片庫通知回來之前先用它顯示。
     @State private var favoriteState: [String: Bool] = [:]
@@ -61,6 +63,25 @@ struct PhotoDetailView: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                // 往下滑就關閉：畫面跟著手指往下走，滑超過一段距離放開就關掉，不夠就彈回來。
+                // 只在明顯是垂直的滑動才算，左右翻頁不受影響。
+                .offset(y: dragDown)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 20)
+                        .onChanged { value in
+                            let vertical = value.translation.height
+                            guard vertical > 0, vertical > abs(value.translation.width) * 1.5 else { return }
+                            dragDown = vertical
+                        }
+                        .onEnded { value in
+                            let vertical = value.translation.height
+                            if vertical > 110, vertical > abs(value.translation.width) * 1.5 {
+                                dismiss()
+                            } else {
+                                withMotion(.spring(response: 0.3, dampingFraction: 0.8)) { dragDown = 0 }
+                            }
+                        }
+                )
 
                 actionBar
             }
@@ -119,6 +140,8 @@ struct PhotoDetailView: View {
                             Text("\(model.trashedAssetIDs.count)")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .fixedSize()
                                 .padding(.horizontal, 5)
                                 .frame(minWidth: 18, minHeight: 18)
                                 .background(Color.red, in: Capsule())
@@ -279,7 +302,11 @@ private struct DetailPage: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(white: 0.11))
 
-            if let image {
+            if asset.mediaType == .video {
+                InlineVideoView(asset: asset, poster: image)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()

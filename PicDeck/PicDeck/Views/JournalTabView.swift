@@ -112,6 +112,11 @@ struct JournalTabView: View {
 
     private var filterMenu: some View {
         Menu {
+            ResetFiltersButton(isActive: tagID != nil || !model.journalNewestFirst) {
+                tagID = nil
+                model.journalNewestFirst = true
+            }
+
             // 一排文字：預設由新到舊；點一下（打勾）就變成由舊到新，再點回來。
             Toggle(isOn: Binding(get: { !model.journalNewestFirst },
                                  set: { model.journalNewestFirst = !$0 })) {
@@ -157,10 +162,9 @@ struct JournalTabView: View {
             }
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .overlay(alignment: .topTrailing) {
-                    if tagID != nil {
-                        Circle().fill(.red).frame(width: 7, height: 7).offset(x: 4, y: -3)
-                    }
+                .filterIndicator(isActive: tagID != nil || !model.journalNewestFirst) {
+                    tagID = nil
+                    model.journalNewestFirst = true
                 }
         }
         .accessibilityLabel(Text("Filter"))

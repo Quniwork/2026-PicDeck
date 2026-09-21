@@ -167,6 +167,7 @@ final class PhotoLibraryService: ObservableObject {
     }
 
     func addAsset(_ asset: PHAsset, toAlbumWithID albumID: String) async throws {
+        Self.noteAlbumUsed(albumID)
         let collections = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumID], options: nil)
         guard let collection = collections.firstObject else { return }
 
@@ -217,6 +218,7 @@ final class PhotoLibraryService: ObservableObject {
 
     /// 一次把多張照片加進相簿。
     func addAssets(_ assets: [PHAsset], toAlbumWithID albumID: String) async throws {
+        Self.noteAlbumUsed(albumID)
         guard !assets.isEmpty,
               let collection = PHAssetCollection
                 .fetchAssetCollections(withLocalIdentifiers: [albumID], options: nil).firstObject
@@ -355,8 +357,19 @@ extension PhotoLibraryService {
     }
 
     /// 本機所有使用者相簿，含張數。
+    /// 相簿最後一次被加進照片的時間。選相簿時最近用過的排最前面。
+    private static let albumUsedKey = "picdeck.albumLastUsed"
+
+    static func noteAlbumUsed(_ id: String) {
+        var used = (UserDefaults.standard.dictionary(forKey: albumUsedKey) as? [String: Date]) ?? [:]
+        used[id] = Date()
+        UserDefaults.standard.set(used, forKey: albumUsedKey)
+    }
+
+    /// 相簿清單：最近用過的在前，沒用過的照名稱排。
     func userAlbums() async -> [AlbumSummary] {
-        await Task.detached(priority: .userInitiated) {
+        let used = (UserDefaults.standard.dictionary(forKey: Self.albumUsedKey) as? [String: Date]) ?? [:]
+        return await Task.detached(priority: .userInitiated) {
             var result: [AlbumSummary] = []
 
             let regular = PHAssetCollection.fetchAssetCollections(with: .album,
@@ -368,7 +381,14 @@ extension PhotoLibraryService {
                                            title: collection.localizedTitle ?? "—",
                                            count: count))
             }
-            return result.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+            return result.sorted { a, b in
+                switch (used[a.id], used[b.id]) {
+                case let (x?, y?): return x > y
+                case (_?, nil): return true
+                case (nil, _?): return false
+                default: return a.title.localizedStandardCompare(b.title) == .orderedAscending
+                }
+            }
         }.value
     }
 

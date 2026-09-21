@@ -21,7 +21,7 @@ struct TagPickerView: View {
                 if !tagStore.tags.isEmpty {
                     Section(assets.count == 1 ? String(localized: "Tags")
                                               : String(localized: "Apply to \(assets.count) photos")) {
-                        ForEach(tagStore.tags) { tag in
+                        ForEach(tagStore.tagsByRecentUse) { tag in
                             Button {
                                 toggle(tag)
                             } label: {

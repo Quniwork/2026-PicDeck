@@ -1,4125 +1,5033 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "": {},
-    " ": {},
-    "%@ %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ %2$@"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    " " : {
+
+    },
+    "/month" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " / 月"
+          }
+        }
+      }
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@（%lld）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@（%2$lld）"
+          }
+        }
+      }
+    },
+    "%1$@ – %2$@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 至 %2$@"
+          }
+        }
+      }
+    },
+    "%1$lldmo %2$lldd" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld個月%2$lld天"
+          }
+        }
+      }
+    },
+    "%1$lldw %2$lldd" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld週%2$lld天"
+          }
+        }
+      }
+    },
+    "%1$lldy %2$lldmo %3$lldd" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld年%2$lld個月%3$lld天"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld / %lld entries" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld 則"
+          }
+        }
+      }
+    },
+    "%lld / %lld entries today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天已新增 %lld / %lld 則"
+          }
+        }
+      }
+    },
+    "%lld / %lld photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld 張"
+          }
+        }
+      }
+    },
+    "%lld / %lld photos today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天已整理 %lld / %lld 張"
+          }
+        }
+      }
+    },
+    "%lld / %lld tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld 個"
+          }
+        }
+      }
+    },
+    "%lld days" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld天"
+          }
+        }
+      }
+    },
+    "%lld days recorded" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已記錄 %lld 天"
+          }
+        }
+      }
+    },
+    "%lld filed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已歸檔 %lld 張"
+          }
+        }
+      }
+    },
+    "%lld items" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個項目"
+          }
+        }
+      }
+    },
+    "%lld journal entries" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 則日記"
+          }
+        }
+      }
+    },
+    "%lld left today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日還剩 %lld 張"
+          }
+        }
+      }
+    },
+    "%lld marked" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已標記 %lld 張"
+          }
+        }
+      }
+    },
+    "%lld photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 張"
+          }
+        }
+      }
+    },
+    "%lld selected" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取 %lld 張"
+          }
+        }
+      }
+    },
+    "%lld tags" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個"
+          }
+        }
+      }
+    },
+    "%lld years ago" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 年前"
+          }
+        }
+      }
+    },
+    "+%lld" : {
+
+    },
+    "🧒" : {
+
+    },
+    "A card that shows how long it has been since a date, such as a birthday." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示從某一天起過了多久的卡片，例如生日。"
+          }
+        }
+      }
+    },
+    "A card with the cover photo and the number of photos of a tag." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示標籤封面與張數的卡片。"
+          }
+        }
+      }
+    },
+    "A name like this already exists here." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個位置已經有同名的項目了。"
+          }
+        }
+      }
+    },
+    "A pinned tag shows on Home as a collection. Open it to narrow down with other tags." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "釘選後會以收藏的形式顯示在首頁，點進去可以再用其他標籤篩選。"
+          }
+        }
+      }
+    },
+    "A tag with this name already exists." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已經有同名的標籤了。"
+          }
+        }
+      }
+    },
+    "About the price of a coffee. Cancel anytime." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大約一杯咖啡的錢，隨時可以取消。"
+          }
+        }
+      }
+    },
+    "Accessibility" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輔助使用"
+          }
+        }
+      }
+    },
+    "Activities" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活動"
+          }
+        }
+      }
+    },
+    "Activity" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活動"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
+          }
+        }
+      }
+    },
+    "Add a short note" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為這張照片加入簡短備註"
+          }
+        }
+      }
+    },
+    "Add a tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入標籤"
+          }
+        }
+      }
+    },
+    "Add a tag calendar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入標籤月曆"
+          }
+        }
+      }
+    },
+    "Add a tag with a date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入有日期的標籤"
+          }
+        }
+      }
+    },
+    "Add more photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入更多照片"
+          }
+        }
+      }
+    },
+    "Add photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入照片"
+          }
+        }
+      }
+    },
+    "Add tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入標籤"
+          }
+        }
+      }
+    },
+    "Add tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加標籤"
+          }
+        }
+      }
+    },
+    "Add to album" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加到相簿"
+          }
+        }
+      }
+    },
+    "Add to Collections" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增到選集"
           }
         }
       }
     },
-    "%1$@ – %2$@": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ 至 %2$@"
+    "Add to favorites" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入喜愛"
           }
         }
       }
     },
-    "%1$lldmo %2$lldd": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld個月%2$lld天"
+    "Added to favorites" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已加入喜愛"
           }
         }
       }
     },
-    "%1$lldw %2$lldd": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld週%2$lld天"
+    "Album" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相簿"
           }
         }
       }
     },
-    "%1$lldy %2$lldmo %3$lldd": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld年%2$lld個月%3$lld天"
+    "Album name" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相簿名稱"
           }
         }
       }
+    },
+    "Albums" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相簿"
+          }
+        }
+      }
+    },
+    "Albums and folders are created in your Photos library." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相簿與資料夾會建立在系統的照片裡。"
+          }
+        }
+      }
+    },
+    "Albums you create in the Photos app show up here." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在照片 App 建立的相簿會顯示在這裡。"
+          }
+        }
+      }
+    },
+    "All" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部"
+          }
+        }
+      }
+    },
+    "All done" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整理完成"
+          }
+        }
+      }
+    },
+    "All filters" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有篩選全開"
+          }
+        }
+      }
+    },
+    "All five sources" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "五個來源分類全開"
+          }
+        }
+      }
+    },
+    "All Items" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有項目"
+          }
+        }
+      }
+    },
+    "All sources unlocked" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有來源已解鎖"
+          }
+        }
+      }
+    },
+    "All unorganized" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有未整理"
+          }
+        }
+      }
+    },
+    "Allow Photo Access" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許取用照片"
+          }
+        }
+      }
+    },
+    "An album with this name already exists." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已經有同名的相簿了。"
+          }
+        }
+      }
+    },
+    "Animals & nature" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動物與自然"
+          }
+        }
+      }
+    },
+    "Animals & Nature" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動物與自然"
+          }
+        }
+      }
+    },
+    "Anniversary" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日子"
+          }
+        }
+      }
+    },
+    "Any tags, including tags with a date, shown as cards or a list." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任何標籤（包含有日期的），用卡片或列表顯示。"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀"
+          }
+        }
+      }
+    },
+    "Apply to %lld photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用到 %lld 張照片"
+          }
+        }
+      }
+    },
+    "Arrange Collections" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "區塊管理"
+          }
+        }
+      }
+    },
+    "Arrange sections" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "區塊管理"
+          }
+        }
+      }
+    },
+    "Arrangement" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排列方式"
+          }
+        }
+      }
+    },
+    "Arrows" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "箭頭"
+          }
+        }
+      }
+    },
+    "Aspect Ratio Grid" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示比例格線"
+          }
+        }
+      }
+    },
+    "At launch" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正式上線"
+          }
+        }
+      }
+    },
+    "Automatic" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動"
+          }
+        }
+      }
+    },
+    "Automotive" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汽車"
+          }
+        }
+      }
+    },
+    "Back" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一張"
+          }
+        }
+      }
+    },
+    "Black" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "黑字"
+          }
+        }
+      }
+    },
+    "Blocks" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "區塊"
+          }
+        }
+      }
+    },
+    "Blue" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "藍字"
+          }
+        }
+      }
+    },
+    "Bottom" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下"
+          }
+        }
+      }
+    },
+    "Buy once for %@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "買斷 %@"
+          }
+        }
+      }
+    },
+    "By month" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年月"
+          }
+        }
+      }
+    },
+    "Camera & Photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相機與照片"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "Capture Date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍攝時間"
+          }
+        }
+      }
+    },
+    "Card size" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片大小"
+          }
+        }
+      }
+    },
+    "Card style" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片樣式"
+          }
+        }
+      }
+    },
+    "Cards" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片"
+          }
+        }
+      }
+    },
+    "Cards go down in rows." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片一排一排往下放。"
+          }
+        }
+      }
+    },
+    "Cards slide sideways; the last card is cut off a little to show there is more." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片可以左右滑動，最右邊那張會被切掉一截，提示還可以再滑。"
+          }
+        }
+      }
+    },
+    "Cards that show how long it has been since a date, such as a birthday. You can add tags with a date here." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示從某一天起過了多久的卡片，例如生日。可以在這裡新增有日期的標籤。"
+          }
+        }
+      }
+    },
+    "Changed your mind? Swipe right to undo the last action and return to the previous photo." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "改變主意了？右滑可以復原上一個動作，回到前一張照片。"
+          }
+        }
+      }
+    },
+    "checked" : {
+
     },
-    "%lld": {},
-    "%lld days": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld天"
+    "Choose a block type" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇區塊種類"
           }
         }
       }
     },
-    "%lld filed": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已歸檔 %lld 張"
+    "Choose a tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇標籤"
           }
         }
       }
     },
-    "%lld items": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 個項目"
+    "Choose icon" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇圖標"
           }
         }
       }
     },
-    "%lld journal entries": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 則日記"
+    "Clear" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除"
           }
         }
       }
     },
-    "%lld left today": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日還剩 %lld 張"
+    "Close" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉"
           }
         }
       }
     },
-    "%lld marked": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已標記 %lld 張"
+    "Collections" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選集"
           }
         }
       }
     },
-    "%lld photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 張"
+    "Color" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顏色"
           }
         }
       }
     },
-    "%lld selected": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已選取 %lld 張"
+    "Comma separated" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用逗號分隔"
           }
         }
       }
     },
-    "%lld years ago": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 年前"
+    "Commerce" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "商業"
           }
         }
       }
     },
-    "+%lld": {},
-    "A name like this already exists here.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這個位置已經有同名的項目了。"
+    "Communication" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通訊"
           }
         }
       }
     },
-    "A pinned tag shows on Home as a collection. Open it to narrow down with other tags.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "釘選後會以收藏的形式顯示在首頁，點進去可以再用其他標籤篩選。"
+    "Completed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已完成"
           }
         }
       }
     },
-    "A tag with this name already exists.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已經有同名的標籤了。"
+    "Connectivity" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連線"
           }
         }
       }
     },
-    "Accessibility": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "輔助使用"
+    "Couldn't add to the album" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法加到相簿"
           }
         }
       }
     },
-    "Activities": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "活動"
+    "Couldn't change favorites" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法更改喜愛"
           }
         }
       }
     },
-    "Activity": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "活動"
+    "Couldn't create the album" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法建立相簿"
           }
         }
       }
     },
-    "Add": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增"
+    "Couldn't create the folder" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法建立資料夾"
           }
         }
       }
     },
-    "Add a short note": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為這張照片加入簡短備註"
+    "Couldn't delete" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法刪除"
           }
         }
       }
     },
-    "Add more photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加入更多照片"
+    "Couldn't rename" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法重新命名"
           }
         }
       }
     },
-    "Add photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加入照片"
+    "Couldn't update the album" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法更新相簿"
           }
         }
       }
     },
-    "Add tag": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加入標籤"
+    "Counting method" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "計算方式"
           }
         }
       }
     },
-    "Add tags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加標籤"
+    "Create" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立"
           }
         }
       }
     },
-    "Add to album": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加到相簿"
+    "Create a folder to file photos into, with tags and notes." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立資料夾來歸檔照片，可加上標籤與筆記。"
           }
         }
       }
     },
-    "Add to favorites": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加入喜愛"
+    "Create a tag in Organize and pin it to Home, or give it a start date such as a child's birthday, and it shows up here as a card." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「整理」建立標籤並釘選在首頁，或設定日期（例如孩子的生日），就會在這裡變成卡片。"
           }
         }
       }
     },
-    "Added to favorites": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已加入喜愛"
+    "Create a tag in Organize, give it a start date such as a child's birthday, and it shows up here as a card." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到「整理」建立標籤，設一個日期（例如孩子的生日），就會在這裡變成一張卡片。"
           }
         }
       }
     },
-    "Album": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相簿"
+    "Create album" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立相簿"
           }
         }
       }
     },
-    "Album name": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相簿名稱"
+    "Create album or folder" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立相簿或資料夾"
           }
         }
       }
     },
-    "Albums": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相簿"
+    "Create tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立標籤"
           }
         }
       }
     },
-    "Albums and folders are created in your Photos library.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相簿與資料夾會建立在系統的照片裡。"
+    "Current plan" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前方案"
           }
         }
       }
     },
-    "Albums you create in the Photos app show up here.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你在照片 App 建立的相簿會顯示在這裡。"
+    "Custom" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自訂"
           }
         }
       }
     },
-    "All": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "全部"
+    "Customize" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自訂"
           }
         }
       }
     },
-    "All done": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "整理完成"
+    "D-day" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "D-day"
           }
         }
       }
     },
-    "All filters": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有篩選全開"
+    "Daily limit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日上限"
           }
         }
       }
     },
-    "All five sources": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "五個來源分類全開"
+    "Daily limit reached" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日額度已用完"
           }
         }
       }
     },
-    "All Items": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有項目"
+    "Daily status" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日狀態"
           }
         }
       }
     },
-    "All sources unlocked": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有來源已解鎖"
+    "Dark" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
           }
         }
       }
     },
-    "All unorganized": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有未整理"
+    "Date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
           }
         }
       }
     },
-    "Allow Photo Access": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許取用照片"
+    "Date Added" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已加入"
           }
         }
       }
     },
-    "An album with this name already exists.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已經有同名的相簿了。"
+    "Day" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日"
           }
         }
       }
     },
-    "Animals & nature": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "動物與自然"
+    "Days" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日子"
           }
         }
       }
     },
-    "Animals & Nature": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "動物與自然"
+    "Days card size" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日子卡片"
           }
         }
       }
     },
-    "Anniversary": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日子"
+    "Default" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設"
           }
         }
       }
     },
-    "Appearance": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "外觀"
+    "Delete" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
           }
         }
       }
     },
-    "Apply to %lld photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "套用到 %lld 張照片"
+    "Delete %lld photos?" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定刪除 %lld 張照片？"
           }
         }
       }
     },
-    "Arrows": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "箭頭"
+    "Delete block" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除區塊"
           }
         }
       }
     },
-    "Aspect Ratio Grid": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示比例格線"
+    "Delete entry" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除這篇"
           }
         }
       }
     },
-    "At launch": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正式上線"
+    "Delete failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除失敗"
           }
         }
       }
     },
-    "Automatic": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動"
+    "Delete note" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除備註"
           }
         }
       }
     },
-    "Automotive": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "汽車"
+    "Delete permanently" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "永久刪除"
           }
         }
       }
     },
-    "Back": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一張"
+    "Delete tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除標籤"
           }
         }
       }
     },
-    "Camera & Photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相機與照片"
+    "Delete this album?" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要刪除這個相簿嗎？"
           }
         }
       }
     },
-    "Cancel": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取消"
+    "Delete this block?" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要刪除這個區塊嗎？"
           }
         }
       }
     },
-    "Capture Date": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拍攝時間"
+    "Delete this folder?" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要刪除這個資料夾嗎？"
           }
         }
       }
     },
-    "Changed your mind? Swipe right to undo the last action and return to the previous photo.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "改變主意了？右滑可以復原上一個動作，回到前一張照片。"
+    "Deleting an album keeps its photos in your library." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除相簿不會刪掉照片，照片仍然留在圖庫裡。"
           }
         }
       }
     },
-    "checked": {},
-    "Choose icon": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇圖標"
+    "Deleting an album keeps its photos in your library. A folder can only be deleted after everything inside it is removed." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除相簿不會刪掉照片，照片仍然留在圖庫裡。資料夾要先把裡面的相簿全部刪除，才能刪除資料夾。"
           }
         }
       }
     },
-    "Clear": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除"
+    "Deselect All" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消全選"
           }
         }
       }
     },
-    "Close": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "關閉"
+    "Developer" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者選項"
           }
         }
       }
     },
-    "Color": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顏色"
+    "Development build: buttons unlock locally and do not charge anything." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發版本：按鈕只在本機解鎖，不會實際扣款。"
           }
         }
       }
     },
-    "Comma separated": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用逗號分隔"
+    "Development build: this button unlocks locally and does not charge anything." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發版本：此按鈕僅在本機解鎖，不會實際扣款。"
           }
         }
       }
     },
-    "Commerce": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "商業"
+    "Development sponsor" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發贊助"
           }
         }
       }
     },
-    "Communication": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通訊"
+    "Devices" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝置"
           }
         }
       }
     },
-    "Completed": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已完成"
+    "Display" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示方式"
           }
         }
       }
     },
-    "Connectivity": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連線"
+    "Done" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
           }
         }
       }
     },
-    "Couldn't add to the album": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法加到相簿"
+    "Done editing tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成編輯標籤"
           }
         }
       }
     },
-    "Couldn't change favorites": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法更改喜愛"
+    "Done selecting" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "結束選取"
           }
         }
       }
     },
-    "Couldn't create the album": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法建立相簿"
+    "Double tap to zoom in" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點兩下放大"
           }
         }
       }
     },
-    "Couldn't create the folder": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法建立資料夾"
+    "Drag to change the order, tap the pencil to set the title, tags and how the block looks. Deleting a Days or Tags block unpins its tags; the tags themselves stay." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖曳調整順序，點鉛筆設定標題、標籤與顯示方式。刪除日子或標籤區塊會取消釘選裡面的標籤，標籤本身還在。"
           }
         }
       }
     },
-    "Couldn't delete": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法刪除"
+    "Drag to change the order. Tap the eye to hide a section." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖曳調整順序，點眼睛可以隱藏區塊。"
           }
         }
       }
     },
-    "Couldn't rename": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法重新命名"
+    "Drag to change the order. Tap the eye to hide a section. Removing a Days or Tags row only unpins it; the tag itself stays." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖曳調整順序，點眼睛可以隱藏。刪除日子或標籤列只是取消釘選，標籤本身還在。"
           }
         }
       }
     },
-    "Couldn't update the album": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法更新相簿"
+    "Early bird" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "早鳥"
           }
         }
       }
     },
-    "Counting method": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "計算方式"
+    "Edit" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯"
           }
         }
       }
     },
-    "Create": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建立"
+    "Edit Folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯資料夾"
           }
         }
       }
     },
-    "Create a folder to file photos into, with tags and notes.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建立資料夾來歸檔照片，可加上標籤與筆記。"
+    "Edit tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯標籤"
           }
         }
       }
     },
-    "Create a tag in Organize and pin it to Home, or give it a start date such as a child's birthday, and it shows up here as a card.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在「整理」建立標籤並釘選在首頁，或設定日期（例如孩子的生日），就會在這裡變成卡片。"
+    "Edit tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯標籤"
           }
         }
       }
     },
-    "Create a tag in Organize, give it a start date such as a child's birthday, and it shows up here as a card.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "到「整理」建立標籤，設一個日期（例如孩子的生日），就會在這裡變成一張卡片。"
+    "Edited" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已編輯"
           }
         }
       }
     },
-    "Create album": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建立相簿"
+    "Edited %@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯於 %@"
           }
         }
       }
     },
-    "Create album or folder": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建立相簿或資料夾"
+    "Editing" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯"
           }
         }
       }
     },
-    "Create tag": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建立標籤"
+    "Emoji" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表情符號"
           }
         }
       }
     },
-    "Custom": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自訂"
+    "Entries" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日記篇數"
           }
         }
       }
     },
-    "D-day": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "D-day"
+    "Everything happens on your device. PicDeck never uploads your photos." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有處理都在你的裝置上完成，PicDeck 不會上傳任何照片。"
           }
         }
       }
     },
-    "Daily limit": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日上限"
+    "Expires on" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到期日"
           }
         }
       }
     },
-    "Daily limit reached": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日額度已用完"
+    "Favorite" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜愛"
           }
         }
       }
     },
-    "Dark": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "深色"
+    "Favorites" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜好項目"
           }
         }
       }
     },
-    "Date": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日期"
+    "Favorites, Edited, Photos, Videos and Screenshots." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜好項目、已編輯、照片、影片、截圖。"
           }
         }
       }
     },
-    "Date Added": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已加入"
+    "Favorites, Photos, Videos and Screenshots." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜好項目、照片、影片、截圖。"
           }
         }
       }
     },
-    "Day": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日"
+    "File" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歸檔"
           }
         }
       }
     },
-    "Days": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日子"
+    "File into album…" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類到相簿…"
           }
         }
       }
     },
-    "Default": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "預設"
+    "File into tag…" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類到標籤…"
           }
         }
       }
     },
-    "Delete": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除"
+    "File into…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歸檔到…"
           }
         }
       }
     },
-    "Delete %lld photos?": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確定刪除 %lld 張照片？"
+    "Filed into %@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已歸檔到 %@"
           }
         }
       }
     },
-    "Delete entry": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除這篇"
+    "Filed photos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已歸檔張數"
           }
         }
       }
     },
-    "Delete failed": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除失敗"
+    "Filing a photo into an album also marks it as organized." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類到相簿時，也會同時標記為已整理。"
           }
         }
       }
     },
-    "Delete note": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除備註"
+    "Filter" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過濾條件"
           }
         }
       }
     },
-    "Delete permanently": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "永久刪除"
+    "Filter by your tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用自訂標籤篩選"
           }
         }
       }
     },
-    "Delete tag": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除標籤"
+    "Filter by:" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過濾條件："
           }
         }
       }
     },
-    "Delete this album?": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "要刪除這個相簿嗎？"
+    "Filter…" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "篩選…"
           }
         }
       }
     },
-    "Delete this folder?": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "要刪除這個資料夾嗎？"
+    "Filtered" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已套用篩選"
           }
         }
       }
     },
-    "Deleting an album keeps its photos in your library.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除相簿不會刪掉照片，照片仍然留在圖庫裡。"
+    "Fitness" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健身"
           }
         }
       }
     },
-    "Deleting an album keeps its photos in your library. A folder can only be deleted after everything inside it is removed.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除相簿不會刪掉照片，照片仍然留在圖庫裡。資料夾要先把裡面的相簿全部刪除，才能刪除資料夾。"
+    "Flags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旗幟"
           }
         }
       }
     },
-    "Deselect All": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取消全選"
+    "Folder" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾"
           }
         }
       }
     },
-    "Developer": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開發者選項"
+    "Folder name" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾名稱"
           }
         }
       }
     },
-    "Development build: this button unlocks locally and does not charge anything.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開發版本：此按鈕僅在本機解鎖，不會實際扣款。"
+    "Folders" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾"
           }
         }
       }
     },
-    "Development sponsor": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開發贊助"
+    "Folders and albums" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾及相簿"
           }
         }
       }
     },
-    "Devices": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "裝置"
+    "Folders carry tags and notes, so you can find the photo again later." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾可加標籤與筆記，之後要找就找得回來。"
           }
         }
       }
     },
-    "Display": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示方式"
+    "Food & drink" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "食物與飲料"
           }
         }
       }
     },
-    "Done": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
+    "Food & Drink" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "食物與飲料"
           }
         }
       }
     },
-    "Done selecting": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "結束選取"
+    "For things to do later, such as a restaurant to try. Turn this on once you have been." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "給之後想做的事，例如想吃的餐廳。去過、吃過就打開。"
           }
         }
       }
     },
-    "Double tap to zoom in": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點兩下放大"
+    "Free" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費"
           }
         }
       }
     },
-    "Early bird": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "早鳥"
+    "Free during development. Pricing will be announced later." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發期間 NT$0，開始收費另行公告。"
           }
         }
       }
     },
-    "Edit": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯"
+    "Free during development. We'll announce when pricing starts." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發期間免費，開始收費會另行公告。"
           }
         }
       }
     },
-    "Edit Folder": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯資料夾"
+    "Free plan: %lld photos per day" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費版：每天 %lld 張"
           }
         }
       }
     },
-    "Edit tag": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯標籤"
+    "Free plan: 1 new journal entry per day" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費版每天可新增 1 則日記"
           }
         }
       }
     },
-    "Edited": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已編輯"
+    "Free plan: 1 tag with a date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費版可以有 1 個日子標籤"
           }
         }
       }
     },
-    "Edited %@": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯於 %@"
+    "Free trial: %lld days left" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費試用：剩 %lld 天"
           }
         }
       }
     },
-    "Editing": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯"
+    "Free: 1 new entry a day. Subscribe for unlimited." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費版每天新增 1 則，訂閱後不限則數。"
           }
         }
       }
     },
-    "Emoji": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "表情符號"
+    "Free: 1 tag with a date. Subscribe for unlimited." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費版 1 個，訂閱後不限個數。"
           }
         }
       }
     },
-    "Entries": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日記篇數"
+    "Gaming" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遊戲"
           }
         }
       }
     },
-    "Everything happens on your device. PicDeck never uploads your photos.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有處理都在你的裝置上完成，PicDeck 不會上傳任何照片。"
+    "Grid view" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "柵欄顯示"
           }
         }
       }
     },
-    "Favorite": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "喜愛"
+    "Health" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健康"
           }
         }
       }
     },
-    "Favorites": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "喜好項目"
+    "Help" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫助"
           }
         }
       }
     },
-    "Favorites, Edited, Photos, Videos and Screenshots.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "喜好項目、已編輯、照片、影片、截圖。"
+    "Hide" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏"
           }
         }
       }
     },
-    "Favorites, Photos, Videos and Screenshots.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "喜好項目、照片、影片、截圖。"
+    "Home" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首頁"
           }
         }
       }
     },
-    "File": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "歸檔"
+    "How to use" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用說明"
           }
         }
       }
     },
-    "File into album…": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "分類到相簿…"
+    "Human" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人體"
           }
         }
       }
     },
-    "File into tag…": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "分類到標籤…"
+    "Icons" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖標"
           }
         }
       }
     },
-    "File into…": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "歸檔到…"
+    "Indices" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引"
           }
         }
       }
     },
-    "Filed into %@": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已歸檔到 %@"
+    "Interface" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面設定"
           }
         }
       }
     },
-    "Filed photos": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已歸檔張數"
+    "It only marks the photo. Nothing is deleted until you confirm in Trash." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只是先標記起來，要到待刪清單確認後才會真的刪除。"
           }
         }
       }
     },
-    "Filing a photo into an album also marks it as organized.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "分類到相簿時，也會同時標記為已整理。"
+    "Journal" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日記"
           }
         }
       }
     },
-    "Filter": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "過濾條件"
+    "Journal (daily)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日記（每日）"
           }
         }
       }
     },
-    "Filter by your tags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用自訂標籤篩選"
+    "Journal entries" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日記"
           }
         }
       }
     },
-    "Filter by:": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "過濾條件："
+    "Jump to date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳到日期"
           }
         }
       }
     },
-    "Filter…": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "篩選…"
+    "Keep" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留"
           }
         }
       }
     },
-    "Fitness": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "健身"
+    "Kept" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保留"
           }
         }
       }
     },
-    "Flags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "旗幟"
+    "Keyboard" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鍵盤"
           }
         }
       }
     },
-    "Folder": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資料夾"
+    "Large" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大"
           }
         }
       }
     },
-    "Folder name": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資料夾名稱"
+    "Large text" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大字"
           }
         }
       }
     },
-    "Folders": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資料夾"
+    "Layout" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排列"
           }
         }
       }
     },
-    "Folders and albums": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資料夾及相簿"
+    "Leave it empty to use the default name." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留空就使用預設名稱。"
           }
         }
       }
     },
-    "Folders carry tags and notes, so you can find the photo again later.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資料夾可加標籤與筆記，之後要找就找得回來。"
+    "Library" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖庫"
           }
         }
       }
     },
-    "Food & drink": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "食物與飲料"
+    "Lifetime" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "買斷"
           }
         }
       }
     },
-    "Food & Drink": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "食物與飲料"
+    "Light" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色"
           }
         }
       }
     },
-    "For things to do later, such as a restaurant to try. Turn this on once you have been.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "給之後想做的事，例如想吃的餐廳。去過、吃過就打開。"
+    "Linked" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已連結"
           }
         }
       }
     },
-    "Free": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費"
+    "List" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列表"
           }
         }
       }
     },
-    "Free plan: %lld photos per day": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費版：每天 %lld 張"
+    "Location" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置"
           }
         }
       }
     },
-    "Gaming": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "遊戲"
+    "Long press a photo and choose Note. Great for restaurants and places you want to try." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長按照片選「備註」。很適合記下想去的餐廳與景點。"
           }
         }
       }
     },
-    "Grid view": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "柵欄顯示"
+    "Long press a photo to add your first tag." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長按照片就能加上第一個標籤。"
           }
         }
       }
     },
-    "Health": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "健康"
+    "Manage" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理"
           }
         }
       }
     },
-    "Help": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "幫助"
+    "Manage albums and tags" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理相簿與標籤"
           }
         }
       }
     },
-    "Home": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "首頁"
+    "Manage blocks" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "區塊管理"
           }
         }
       }
     },
-    "How to use": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用說明"
+    "Manage subscription" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理訂閱"
           }
         }
       }
     },
-    "Human": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "人體"
+    "Manage tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理標籤"
           }
         }
       }
     },
-    "Icons": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "圖標"
+    "Maps" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地圖"
           }
         }
       }
     },
-    "Indices": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "索引"
+    "Mark as done" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標記為完成"
           }
         }
       }
     },
-    "Interface": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "介面設定"
+    "Mark as not done" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標記為未完成"
           }
         }
       }
     },
-    "It only marks the photo. Nothing is deleted until you confirm in Trash.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "只是先標記起來，要到待刪清單確認後才會真的刪除。"
+    "Marked as kept" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已標記保留"
           }
         }
       }
     },
-    "Journal": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日記"
+    "Marked for deletion" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已標記待刪"
           }
         }
       }
     },
-    "Jump to date": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳到日期"
+    "Marks the photo as organized so it stops showing up in your unorganized list." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標記成已整理，之後不會再出現在未整理清單裡。"
           }
         }
       }
     },
-    "Keep": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保留"
+    "Math" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數學"
           }
         }
       }
     },
-    "Kept": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已保留"
+    "Media" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒體"
           }
         }
       }
     },
-    "Keyboard": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "鍵盤"
+    "Media Types" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒體類型"
           }
         }
       }
     },
-    "Library": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "圖庫"
+    "Medium" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中"
           }
         }
       }
     },
-    "Light": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "淺色"
+    "Middle" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中"
           }
         }
       }
     },
-    "Linked": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已連結"
+    "Month" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "月"
           }
         }
       }
     },
-    "Location": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置"
+    "Month calendar" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "月曆"
           }
         }
       }
     },
-    "Long press a photo and choose Note. Great for restaurants and places you want to try.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "長按照片選「備註」。很適合記下想去的餐廳與景點。"
+    "Monthly" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每月訂閱"
           }
         }
       }
     },
-    "Long press a photo to add your first tag.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "長按照片就能加上第一個標籤。"
+    "Monthly subscription" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱制"
           }
         }
       }
     },
-    "Manage": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理"
+    "Months" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "月數"
           }
         }
       }
     },
-    "Manage albums and tags": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理相簿與標籤"
+    "Mood" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "心情"
           }
         }
       }
     },
-    "Manage tags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理標籤"
+    "More" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多"
           }
         }
       }
     },
-    "Maps": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "地圖"
+    "More albums" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多相簿"
           }
         }
       }
     },
-    "Mark as done": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標記為完成"
+    "More tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多標籤"
           }
         }
       }
     },
-    "Mark as not done": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標記為未完成"
+    "Moved to pending deletion" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已放進待刪除"
           }
         }
       }
     },
-    "Marked as kept": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已標記保留"
+    "Name" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名稱"
           }
         }
       }
     },
-    "Marked for deletion": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已標記待刪"
+    "Nature" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自然"
           }
         }
       }
     },
-    "Marks the photo as organized so it stops showing up in your unorganized list.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標記成已整理，之後不會再出現在未整理清單裡。"
+    "Needs a date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要設日期"
           }
         }
       }
     },
-    "Math": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "數學"
+    "New" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
           }
         }
       }
     },
-    "Media": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "媒體"
+    "New album" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增相簿"
           }
         }
       }
     },
-    "Media Types": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "媒體類型"
+    "New album name" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新相簿名稱"
           }
         }
       }
     },
-    "Month": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "月"
+    "New block" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增區塊"
           }
         }
       }
     },
-    "Months": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "月數"
+    "New folder" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾"
           }
         }
       }
     },
-    "Mood": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "心情"
+    "New Folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾"
           }
         }
       }
     },
-    "More": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更多"
+    "New journal entry" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增日記"
           }
         }
       }
     },
-    "More albums": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更多相簿"
+    "New tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增標籤"
           }
         }
       }
     },
-    "More tags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更多標籤"
+    "New tag name" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新標籤名稱"
           }
         }
       }
     },
-    "Moved to pending deletion": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已放進待刪除"
+    "New tag with a date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增有日子的標籤"
           }
         }
       }
     },
-    "Name": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名稱"
+    "Next" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一張"
           }
         }
       }
     },
-    "Nature": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自然"
+    "No albums" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有相簿"
           }
         }
       }
     },
-    "New album": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增相簿"
+    "No albums yet." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有相簿。"
           }
         }
       }
     },
-    "New album name": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新相簿名稱"
+    "No daily limit" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有每日上限"
           }
         }
       }
     },
-    "New folder": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增資料夾"
+    "No folders yet" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有資料夾"
           }
         }
       }
     },
-    "New Folder": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增資料夾"
+    "No journal entries" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有日記"
           }
         }
       }
     },
-    "New journal entry": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增日記"
+    "No journal entries match this filter." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個篩選條件下沒有日記。"
           }
         }
       }
     },
-    "New tag": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增標籤"
+    "No matches." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到符合的項目。"
           }
         }
       }
     },
-    "New tag name": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新標籤名稱"
+    "No note" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有筆記"
           }
         }
       }
     },
-    "Next": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一張"
+    "No photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有照片"
           }
         }
       }
     },
-    "No albums": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有相簿"
+    "No photos on this day." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這天沒有照片，可以從整個相簿挑選。"
           }
         }
       }
     },
-    "No albums yet.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有相簿。"
+    "No tags" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有標籤"
           }
         }
       }
     },
-    "No daily limit": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有每日上限"
+    "No tags yet" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有標籤"
           }
         }
       }
     },
-    "No folders yet": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有資料夾"
+    "No tags yet." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有標籤。"
           }
         }
       }
     },
-    "No journal entries": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有日記"
+    "None" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無"
           }
         }
       }
     },
-    "No journal entries match this filter.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這個篩選條件下沒有日記。"
+    "Not in an album" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不在相簿中"
           }
         }
       }
     },
-    "No matches.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "找不到符合的項目。"
+    "Not linked" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未連結"
           }
         }
       }
     },
-    "No note": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有筆記"
+    "Not sure yet? Skip it and decide later. Skipping is free." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒想好？先跳過，之後再決定，跳過不扣額度。"
           }
         }
       }
     },
-    "No photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有照片"
+    "Note" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "備註"
           }
         }
       }
     },
-    "No photos on this day.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這天沒有照片，可以從整個相簿挑選。"
+    "Note for %lld photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 %lld 張照片寫備註"
           }
         }
       }
     },
-    "No tags": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有標籤"
+    "Notes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "備註"
           }
         }
       }
     },
-    "No tags yet": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有標籤"
+    "Nothing here yet." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這裡還沒有東西。"
           }
         }
       }
     },
-    "No tags yet.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有標籤。"
+    "Nothing left here" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這裡整理完了"
           }
         }
       }
     },
-    "None": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無"
+    "Nothing left to do." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "都完成了。"
           }
         }
       }
     },
-    "Not in an album": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不在相簿中"
+    "Nothing matches." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有符合的項目"
           }
         }
       }
     },
-    "Not linked": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未連結"
+    "Nothing pinned yet" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有內容"
           }
         }
       }
     },
-    "Not sure yet? Skip it and decide later. Skipping is free.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒想好？先跳過，之後再決定，跳過不扣額度。"
+    "Objects" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "物品"
           }
         }
       }
     },
-    "Note": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "備註"
+    "Objects & Tools" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "物品與工具"
           }
         }
       }
     },
-    "Note for %lld photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 %lld 張照片寫備註"
+    "OK" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
           }
         }
       }
     },
-    "Notes": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "備註"
+    "On this day" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "那年今天"
           }
         }
       }
     },
-    "Nothing here yet.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這裡還沒有東西。"
+    "One payment. No subscription." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一次買斷，不用訂閱。"
           }
         }
       }
     },
-    "Nothing left here": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這裡整理完了"
+    "One subscription unlocks everything." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱後全部功能都能用。"
           }
         }
       }
     },
-    "Nothing left to do.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "都完成了。"
+    "Open a tag to change its icon or give it a start date, such as a child's birthday." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點進標籤可以換圖標，或設一個日期，例如孩子的生日。"
           }
         }
       }
     },
-    "Nothing matches.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有符合的項目"
+    "Open a tag to change its icon or give it a start date. Tap Edit to drag them into the order you want." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點進標籤可以換圖標或設日期。按編輯可以拖曳調整顯示順序。"
           }
         }
       }
     },
-    "Nothing pinned yet": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有內容"
+    "Open Settings" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往設定"
           }
         }
       }
     },
-    "Objects": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "物品"
+    "Organize" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整理"
           }
         }
       }
     },
-    "Objects & Tools": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "物品與工具"
+    "Organize (daily)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整理（每日）"
           }
         }
       }
     },
-    "OK": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "好"
+    "Organize state" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整理狀態"
           }
         }
       }
     },
-    "On this day": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "那年今天"
+    "Other" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他"
           }
         }
       }
     },
-    "One payment. No subscription.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一次買斷，不用訂閱。"
+    "Paid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "付費"
           }
         }
       }
     },
-    "Open a tag to change its icon or give it a start date, such as a child's birthday.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點進標籤可以換圖標，或設一個日期，例如孩子的生日。"
+    "Pause video" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫停影片"
           }
         }
       }
     },
-    "Open a tag to change its icon or give it a start date. Tap Edit to drag them into the order you want.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點進標籤可以換圖標或設日期。按編輯可以拖曳調整顯示順序。"
+    "Pay once, keep it forever." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "買一次，永久使用。"
           }
         }
       }
     },
-    "Open Settings": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "前往設定"
+    "Pending deletion" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待刪除"
           }
         }
       }
     },
-    "Organize": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "整理"
+    "People" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人物"
           }
         }
       }
     },
-    "Organize state": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "整理狀態"
+    "People & Body" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人物與身體"
           }
         }
       }
     },
-    "Other": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "其他"
+    "Photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片"
           }
         }
       }
     },
-    "Paid": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "付費"
+    "Photos  (%lld)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片（%lld）"
           }
         }
       }
     },
-    "Pending deletion": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "待刪除"
+    "Photos taken on this day in past years." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "往年今天拍的照片。"
           }
         }
       }
     },
-    "People": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "人物"
+    "Photos that already have a note keep it; this text is added on a new line." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已經有備註的照片會保留原本的備註，這段文字接在後面另起一行。"
           }
         }
       }
     },
-    "People & Body": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "人物與身體"
+    "Photos you swipe up land here first. Nothing is deleted until you confirm." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上滑標記的照片會先進到這裡，確認前不會真的刪除。"
           }
         }
       }
     },
-    "Photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片"
+    "PicDeck needs photo access" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PicDeck 需要取用你的照片"
           }
         }
       }
     },
-    "Photos  (%lld)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片（%lld）"
+    "PicDeck works entirely on your device. Photos are never uploaded to any server." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PicDeck 完全在裝置上運作，照片不會上傳到任何伺服器。"
           }
         }
       }
     },
-    "Photos that already have a note keep it; this text is added on a new line.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已經有備註的照片會保留原本的備註，這段文字接在後面另起一行。"
+    "Pick a source" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇整理來源"
           }
         }
       }
     },
-    "Photos you swipe up land here first. Nothing is deleted until you confirm.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上滑標記的照片會先進到這裡，確認前不會真的刪除。"
+    "Pick the photos to show with this entry." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "挑選要跟這篇一起顯示的照片。"
           }
         }
       }
     },
-    "PicDeck needs photo access": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PicDeck 需要取用你的照片"
+    "Pin to Home" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "釘選在首頁"
           }
         }
       }
     },
-    "PicDeck works entirely on your device. Photos are never uploaded to any server.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PicDeck 完全在裝置上運作，照片不會上傳到任何伺服器。"
+    "Pinned collections" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "釘選的收藏"
           }
         }
       }
     },
-    "Pick a source": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇整理來源"
+    "Pinned tags" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "釘選的標籤"
           }
         }
       }
     },
-    "Pick the photos to show with this entry.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "挑選要跟這篇一起顯示的照片。"
+    "Plan" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "方案"
           }
         }
       }
     },
-    "Pin to Home": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "釘選在首頁"
+    "Plate" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底板"
           }
         }
       }
     },
-    "Pinned collections": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "釘選的收藏"
+    "Play video" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放影片"
           }
         }
       }
     },
-    "Plan": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "方案"
+    "Previous" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一張"
           }
         }
       }
     },
-    "Previous": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一張"
+    "Pricing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "價格"
           }
         }
       }
     },
-    "Pricing": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "價格"
+    "Privacy" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱私"
           }
         }
       }
     },
-    "Privacy": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱私"
+    "Privacy & Security" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱私與安全"
           }
         }
       }
     },
-    "Privacy & Security": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱私與安全"
+    "Pull down to favorite" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下拉加入喜愛"
           }
         }
       }
     },
-    "Pull down to favorite": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下拉加入喜愛"
+    "Pull down to mark as favorite" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下拉加入喜愛"
           }
         }
       }
     },
-    "Pull down to mark as favorite": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下拉加入喜愛"
+    "Random" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隨機"
           }
         }
       }
     },
-    "Random": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隨機"
+    "Range" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範圍"
           }
         }
       }
     },
-    "Recent": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最近使用"
+    "Recent" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使用"
           }
         }
       }
     },
-    "Recent notes": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最近的備註"
+    "Recent notes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近的備註"
           }
         }
       }
     },
-    "Remove": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除"
+    "Recently used" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使用"
           }
         }
       }
     },
-    "Remove from favorites": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移出喜愛"
+    "Remove" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
           }
         }
       }
     },
-    "Removed from favorites": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已移出喜愛"
+    "Remove from favorites" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移出喜愛"
           }
         }
       }
     },
-    "Rename": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重新命名"
+    "Removed from favorites" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移出喜愛"
           }
         }
       }
     },
-    "Rename album": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重新命名相簿"
+    "Rename" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新命名"
           }
         }
       }
     },
-    "Replay gesture tutorial": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重看手勢教學"
+    "Rename album" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新命名相簿"
           }
         }
       }
     },
-    "Reset journal (testing)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除日記（測試用）"
+    "Replay gesture tutorial" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重看手勢教學"
           }
         }
       }
     },
-    "Reset kept records (testing)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除保留紀錄（測試用）"
+    "Reset filters" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢復預設篩選"
           }
         }
       }
     },
-    "Reset tags (testing)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除標籤（測試用）"
+    "Reset journal (testing)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除日記（測試用）"
           }
         }
       }
     },
-    "Reset unlock (testing)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重設解鎖狀態（測試用）"
+    "Reset kept records (testing)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除保留紀錄（測試用）"
           }
         }
       }
     },
-    "Restaurant, place, opening hours, how it was…": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "哪間餐廳、地點、營業時間、評價如何…"
+    "Reset tags (testing)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除標籤（測試用）"
           }
         }
       }
     },
-    "Save": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "儲存"
+    "Reset unlock (testing)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設解鎖狀態（測試用）"
           }
         }
       }
     },
-    "Screenshots": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "截圖"
+    "Restaurant, place, opening hours, how it was…" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "哪間餐廳、地點、營業時間、評價如何…"
           }
         }
       }
     },
-    "Search notes": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋備註"
+    "Sample" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範例"
           }
         }
       }
     },
-    "Select": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選取"
+    "Save" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存"
           }
         }
       }
     },
-    "Select All": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "全選"
+    "Screenshots" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截圖"
           }
         }
       }
     },
-    "Select photos to continue.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請先選取照片。"
+    "Scroll sideways" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橫向捲動"
           }
         }
       }
     },
-    "Selected %lld": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已選 %lld 張"
+    "Search notes" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋備註"
           }
         }
       }
     },
-    "Set a start date to count from, such as a child's birthday. Browsing a day then shows how long it had been on that day.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設一個日期，例如孩子的生日。之後瀏覽某一天時，就會顯示那天過了多久。"
+    "Sections" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "區塊"
           }
         }
       }
     },
-    "Set a start date to count from, such as a child's birthday. Filtering by this tag then shows how long it had been on each day.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設一個日期，例如孩子的生日。之後篩選這個標籤時，每一天都會顯示那天過了多久。"
+    "Select" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選取"
           }
         }
       }
     },
-    "Settings": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定"
+    "Select All" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全選"
           }
         }
       }
     },
-    "Shapes": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "形狀"
+    "Select photos to continue." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選取照片。"
           }
         }
       }
     },
-    "Shopping, Travel, Ideas…": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購物、旅行、想法…"
+    "Selected %lld" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選 %lld 張"
           }
         }
       }
     },
-    "Show less": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收合"
+    "Set a start date to count from, such as a child's birthday. Browsing a day then shows how long it had been on that day." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設一個日期，例如孩子的生日。之後瀏覽某一天時，就會顯示那天過了多久。"
           }
         }
       }
     },
-    "Show more": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示更多"
+    "Set a start date to count from, such as a child's birthday. Filtering by this tag then shows how long it had been on each day." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設一個日期，例如孩子的生日。之後篩選這個標籤時，每一天都會顯示那天過了多久。"
           }
         }
       }
     },
-    "Show next to dates": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示在日期旁邊"
+    "Settings" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
           }
         }
       }
     },
-    "Show:": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示："
+    "Shapes" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "形狀"
           }
         }
       }
     },
-    "Shown for today. The start date counts as D+0 and day 1.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "以今天為例。日期當天是 D+0，也是第 1 天。"
+    "Shopping, Travel, Ideas…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購物、旅行、想法…"
           }
         }
       }
     },
-    "Single view": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "單張顯示"
+    "Show" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示"
           }
         }
       }
     },
-    "Skip": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳過"
+    "Show as" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示方式"
           }
         }
       }
     },
-    "Smileys & Emotion": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "表情與情緒"
+    "Show less" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收合"
           }
         }
       }
     },
-    "Smileys & people": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "表情與人物"
+    "Show more" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示更多"
           }
         }
       }
     },
-    "Sort": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "排序"
+    "Show next to dates" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示在日期旁邊"
           }
         }
       }
     },
-    "Sort by Date": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "按照時間排序"
+    "Show:" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示："
           }
         }
       }
     },
-    "Sponsor for NT$99": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "以 NT$99 贊助開發"
+    "Shown for today. The start date counts as D+0 and day 1." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以今天為例。日期當天是 D+0，也是第 1 天。"
           }
         }
       }
     },
-    "Start date": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日期"
+    "Shows the photos of one tag on the days of this month or this week, for example #Lunch." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把某個標籤在當月或當週拍的照片，排在對應的日子上，例如 #午餐。"
           }
         }
       }
     },
-    "Start organizing": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始整理"
+    "Single view" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單張顯示"
           }
         }
       }
     },
-    "Start tutorial": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始教學"
+    "Skip" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳過"
           }
         }
       }
     },
-    "Stats": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "統計"
+    "Small" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小"
           }
         }
       }
     },
-    "Status": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "狀態"
+    "Small and medium show two cards and a bit of the next one, large shows one card and a bit of the next." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小、中一次看到兩張多一點，大一次看到一張多一點。"
           }
         }
       }
     },
-    "Swipe left to keep": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "左滑保留"
+    "Small, medium and large match the widget sizes." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小、中、大跟桌面小工具的尺寸比例相同。"
           }
         }
       }
     },
-    "Swipe left to skip": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "左滑跳過"
+    "Small: 2 columns, half as tall as wide. Medium: 2 columns, square. Large: 1 column, half as tall as wide." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小：一排兩欄，高度是寬度的一半。中：一排兩欄，高度與寬度相同。大：一排一欄，高度是寬度的一半。"
           }
         }
       }
     },
-    "Swipe right to go back": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "右滑回上一張"
+    "Smileys & Emotion" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表情與情緒"
           }
         }
       }
     },
-    "Swipe right to go back to the previous photo": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "右滑回到上一張"
+    "Smileys & people" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表情與人物"
           }
         }
       }
     },
-    "Swipe up to delete": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上滑刪除"
+    "Sort" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序"
           }
         }
       }
     },
-    "Swipe up to trash": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上滑標記待刪"
+    "Sort by Date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按照時間排序"
           }
         }
       }
     },
-    "Switch tag": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切換標籤"
+    "Sponsor for NT$99" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以 NT$99 贊助開發"
           }
         }
       }
     },
-    "Symbols": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "符號"
+    "Start 30-day free trial" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費試用 30 天"
           }
         }
       }
     },
-    "Syncs straight to the Favorites album in iOS Photos.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "會直接同步到 iOS 照片的「喜好項目」相簿。"
+    "Start date" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
           }
         }
       }
     },
-    "System album": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統相簿"
+    "Start organizing" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始整理"
           }
         }
       }
     },
-    "Tag name": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標籤名稱"
+    "Start tutorial" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始教學"
           }
         }
       }
     },
-    "Tagging stays free; filtering by tag needs the unlock.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加標籤永遠免費，用標籤篩選需要解鎖。"
+    "Stats" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計"
           }
         }
       }
     },
-    "Tags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標籤"
+    "Status" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態"
           }
         }
       }
     },
-    "Tags are free. Filtering by tag needs the paid unlock.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加標籤免費，用標籤篩選需要付費解鎖。"
+    "Subscribe (free during development)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱（開發期間免費）"
           }
         }
       }
     },
-    "Tap a folder to file it": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點資料夾直接歸檔"
+    "Subscribe %@ / month" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱 %@ / 月"
           }
         }
       }
     },
-    "Tap an album to file it": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點相簿進行分類"
+    "Subscribe for unlimited journal entries. You can still edit existing entries." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱後不限則數。已經寫好的日記仍然可以修改。"
           }
         }
       }
     },
-    "Tap to change": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點一下更換"
+    "Subscribe to add dates to more tags." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱後，更多標籤都能設日子。"
           }
         }
       }
     },
-    "Tap to pick a mood": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點一下選心情"
+    "Swipe left to keep" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左滑保留"
           }
         }
       }
     },
-    "Text Formatting": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字格式"
+    "Swipe left to skip" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左滑跳過"
           }
         }
       }
     },
-    "The free plan handles %lld photos a day. Unlock to keep going.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費版每天可處理 %lld 張，解鎖後可繼續整理。"
+    "Swipe right to go back" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右滑回上一張"
           }
         }
       }
     },
-    "The free plan handles 30 photos a day.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費版每天只能處理 30 張。"
+    "Swipe right to go back to the previous photo" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右滑回到上一張"
           }
         }
       }
     },
-    "The photos stay in your library.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片會留在圖庫裡。"
+    "Swipe up to delete" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上滑刪除"
           }
         }
       }
     },
-    "They go to the iOS Recently Deleted album and can be recovered within 30 days.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片會進入 iOS「最近刪除」，30 天內都可以救回。"
+    "Swipe up to trash" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上滑標記待刪"
           }
         }
       }
     },
-    "This day already has an entry. Saving will replace it.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這天已經有日記，儲存會取代它。"
+    "Switch tag" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換標籤"
           }
         }
       }
     },
-    "This filter has nothing to show.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這個篩選條件沒有內容。"
+    "Symbols" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "符號"
           }
         }
       }
     },
-    "This source is all reviewed.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這個來源的照片都看過了。"
+    "Syncs straight to the Favorites album in iOS Photos." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "會直接同步到 iOS 照片的「喜好項目」相簿。"
           }
         }
       }
     },
-    "Time": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "時間"
+    "System album" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統相簿"
           }
         }
       }
     },
-    "Timeline": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "時間軸"
+    "Tag" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤"
           }
         }
       }
     },
-    "To do": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "待辦"
+    "Tag card size" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤卡片"
           }
         }
       }
     },
-    "Today": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日已處理"
+    "Tag name" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤名稱"
           }
         }
       }
     },
-    "Today (date)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今天"
+    "Tagging stays free; filtering by tag needs the unlock." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加標籤永遠免費，用標籤篩選需要解鎖。"
           }
         }
       }
     },
-    "Top level": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最上層"
+    "Tags" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤"
           }
         }
       }
     },
-    "Transportation": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "交通"
+    "Tags are free. Filtering by tag needs the paid unlock." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加標籤免費，用標籤篩選需要付費解鎖。"
           }
         }
       }
     },
-    "Trash": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "待刪"
+    "Tags with dates" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤（日子）"
           }
         }
       }
     },
-    "Trash is empty": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "待刪清單是空的"
+    "Tap a folder to file it" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點資料夾直接歸檔"
           }
         }
       }
     },
-    "Travel & places": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "旅遊與地點"
+    "Tap an album to file it" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點相簿進行分類"
           }
         }
       }
     },
-    "Travel & Places": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "旅行與地點"
+    "Tap to change" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下更換"
           }
         }
       }
     },
-    "Undo": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "復原"
+    "Tap to pick a mood" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下選心情"
           }
         }
       }
     },
-    "Undone": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已復原"
+    "Text Formatting" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字格式"
           }
         }
       }
     },
-    "Unlimited": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無限制"
+    "Text position" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字位置"
           }
         }
       }
     },
-    "Unlock": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "解鎖"
+    "Text style" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字樣式"
           }
         }
       }
     },
-    "Unlock PicDeck": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "解鎖 PicDeck"
+    "The free plan handles %lld photos a day. Unlock to keep going." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費版每天可處理 %lld 張，解鎖後可繼續整理。"
           }
         }
       }
     },
-    "Unlocked": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已解鎖"
+    "The free plan handles 30 photos a day." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費版每天只能處理 30 張。"
           }
         }
       }
     },
-    "Unorganized photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未整理照片"
+    "The photos of a tag laid out on the days of this month." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把某個標籤在當月拍的照片，排在對應的日子上。"
           }
         }
       }
     },
-    "Unorganized screenshots": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未整理截圖"
+    "The photos of a tag laid out on the days of this week." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把某個標籤在當週拍的照片，排在對應的日子上。"
           }
         }
       }
     },
-    "Unorganized videos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未整理影片"
+    "The photos of the tags you pick, laid out on the days of this month." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把你選的標籤在當月拍的照片，排在對應的日子上。"
           }
         }
       }
     },
-    "Use this color": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用這個顏色"
+    "The photos of the tags you pick, laid out on the days of this week." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把你選的標籤在當週拍的照片，排在對應的日子上。"
           }
         }
       }
     },
-    "Version": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "版本"
+    "The photos stay in your library." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片會留在圖庫裡。"
           }
         }
       }
     },
-    "Videos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "影片"
+    "The tags themselves are kept." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤本身會保留。"
           }
         }
       }
     },
-    "View Options": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示方式選項"
+    "These settings apply to every card, and the Home Screen widget uses the same text position and style. Card size is set in each block." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有卡片共用文字位置與樣式，桌面小工具也一樣。卡片大小在每個區塊裡設定。"
           }
         }
       }
     },
-    "Weather": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "天氣"
+    "These settings apply to every tag, and the Home Screen widget uses the same text position and style." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有標籤共用同一組設定，桌面小工具的文字位置與樣式也一樣。"
           }
         }
       }
     },
-    "Weeks": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "週數"
+    "They go to the iOS Recently Deleted album and can be recovered within 30 days." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片會進入 iOS「最近刪除」，30 天內都可以救回。"
           }
         }
       }
     },
-    "What happened today?": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今天發生了什麼？"
+    "This block no longer exists." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個區塊已經不存在。"
           }
         }
       }
     },
-    "What is this folder for?": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這個資料夾用來放什麼？"
+    "This day already has an entry. Saving will replace it." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這天已經有日記，儲存會取代它。"
           }
         }
       }
     },
-    "Write a mood and a note for each day.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為每一天記下心情與文字。"
+    "This filter has nothing to show." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個篩選條件沒有內容。"
           }
         }
       }
     },
-    "Write journal": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "寫日記"
+    "This month" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當月"
           }
         }
       }
     },
-    "Write note": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "寫備註"
+    "This source is all reviewed." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個來源的照片都看過了。"
           }
         }
       }
     },
-    "Year": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "年"
+    "This week" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當週"
           }
         }
       }
     },
-    "Years, months, days": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "年、月、日"
+    "Time" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間"
           }
         }
       }
     },
-    "Yesterday": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "昨天"
+    "Time to add a journal entry!" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "趕快去新增一篇日記吧！"
           }
         }
       }
     },
-    "You are in the development phase, so today's price is the sponsor price.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前是開發階段，適用的是開發贊助價。"
+    "Timeline" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間軸"
           }
         }
       }
     },
-    "You reached the end of this batch.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這一批已經看到最後了。"
+    "Title" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標題"
           }
         }
       }
     },
-    "Zoom In": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "放大"
+    "To do" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待辦"
           }
         }
       }
     },
-    "Zoom Out": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "縮小"
+    "Today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日已處理"
           }
         }
       }
     },
-    "Free trial: %lld days left": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費試用：剩 %lld 天"
+    "Today (date)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天"
           }
         }
       }
     },
-    "Try everything free for 30 days.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費試用 30 天，全部功能都能用。"
+    "Top" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上"
           }
         }
       }
     },
-    "Monthly": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每月訂閱"
+    "Top level" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最上層"
           }
         }
       }
     },
-    "Lifetime": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "買斷"
+    "Transportation" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "交通"
           }
         }
       }
     },
-    "About the price of a coffee. Cancel anytime.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "大約一杯咖啡的錢，隨時可以取消。"
+    "Trash" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待刪"
           }
         }
       }
     },
-    "Pay once, keep it forever.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "買一次，永久使用。"
+    "Trash is empty" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待刪清單是空的"
           }
         }
       }
     },
-    "/month": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": " / 月"
+    "Travel & places" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅遊與地點"
           }
         }
       }
     },
-    "Start 30-day free trial": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費試用 30 天"
+    "Travel & Places" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行與地點"
           }
         }
       }
     },
-    "Subscribe %@ / month": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訂閱 %@ / 月"
+    "Try everything free for 30 days." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免費試用 30 天，全部功能都能用。"
           }
         }
       }
     },
-    "Buy once for %@": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "買斷 %@"
+    "Type" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "種類"
           }
         }
       }
     },
-    "Development build: buttons unlock locally and do not charge anything.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開發版本：按鈕只在本機解鎖，不會實際扣款。"
+    "Undo" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "復原"
           }
         }
       }
     },
-    "Free during development. We'll announce when pricing starts.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開發期間免費，開始收費會另行公告。"
+    "Undone" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已復原"
           }
         }
       }
     },
-    "Free during development. Pricing will be announced later.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開發期間 NT$0，開始收費另行公告。"
+    "Unlimited" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無限制"
           }
         }
       }
     },
-    "One subscription unlocks everything.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訂閱後全部功能都能用。"
+    "Unlock" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解鎖"
           }
         }
       }
     },
-    "Subscribe (free during development)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訂閱（開發期間免費）"
+    "Unlock PicDeck" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解鎖 PicDeck"
           }
         }
       }
     },
-    "By month": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "年月"
+    "Unlocked" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已解鎖"
           }
         }
       }
     },
-    "Time to add a journal entry!": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "趕快去新增一篇日記吧！"
+    "Unorganized photos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未整理照片"
           }
         }
       }
     },
-    "Expires on": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "到期日"
+    "Unorganized screenshots" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未整理截圖"
           }
         }
       }
     },
-    "Daily status": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日狀態"
+    "Unorganized videos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未整理影片"
           }
         }
       }
     },
-    "Manage subscription": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理訂閱"
+    "Use this color" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用這個顏色"
           }
         }
       }
     },
-    "Monthly subscription": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訂閱制"
+    "Version" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
           }
         }
       }
     },
-    "%lld / %lld photos today": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今天已整理 %lld / %lld 張"
+    "Videos" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "影片"
           }
         }
       }
     },
-    "Current plan": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前方案"
+    "View Options" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示方式選項"
           }
         }
       }
     },
-    "Free plan: 1 new journal entry per day": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費版每天可新增 1 則日記"
+    "Weather" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "天氣"
           }
         }
       }
     },
-    "Subscribe for unlimited journal entries. You can still edit existing entries.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訂閱後不限則數。已經寫好的日記仍然可以修改。"
+    "Week calendar" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週曆"
           }
         }
       }
     },
-    "Journal entries": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日記"
+    "Weeks" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週數"
           }
         }
       }
     },
-    "Free: 1 new entry a day. Subscribe for unlimited.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費版每天新增 1 則，訂閱後不限則數。"
+    "What happened today?" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天發生了什麼？"
           }
         }
       }
     },
-    "%lld / %lld entries today": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今天已新增 %lld / %lld 則"
+    "What is this folder for?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個資料夾用來放什麼？"
           }
         }
       }
     },
-    "Collections": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選集"
+    "White" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "白字"
           }
         }
       }
     },
-    "Free plan: 1 tag with a date": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費版可以有 1 個日子標籤"
+    "Wrap" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動換行"
           }
         }
       }
     },
-    "Subscribe to add dates to more tags.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "訂閱後，更多標籤都能設日子。"
+    "Write a mood and a note for each day." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為每一天記下心情與文字。"
           }
         }
       }
     },
-    "Tags with dates": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標籤（日子）"
+    "Write journal" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寫日記"
           }
         }
       }
     },
-    "Free: 1 tag with a date. Subscribe for unlimited.": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "免費版 1 個，訂閱後不限個數。"
+    "Write note" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寫備註"
           }
         }
       }
     },
-    "Organize (daily)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "整理（每日）"
+    "Year" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年"
           }
         }
       }
     },
-    "Journal (daily)": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日記（每日）"
+    "Years, months, days" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年、月、日"
           }
         }
       }
     },
-    "%lld / %lld photos": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld / %lld 張"
+    "Yesterday" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "昨天"
           }
         }
       }
     },
-    "%lld / %lld entries": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld / %lld 則"
+    "You are in the development phase, so today's price is the sponsor price." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前是開發階段，適用的是開發贊助價。"
           }
         }
       }
     },
-    "%lld tags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 個"
+    "You reached the end of this batch." : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這一批已經看到最後了。"
           }
         }
       }
     },
-    "%lld / %lld tags": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld / %lld 個"
+    "Zoom In" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大"
           }
         }
       }
     },
-    "Choose a tag": {
-      "localizations": {
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇標籤"
+    "Zoom Out" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

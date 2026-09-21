@@ -24,9 +24,9 @@ struct PicDeckApp: App {
                 .modifier(RelativeTypeSize())
                 .onAppear { model.appearance.apply() }
                 // 桌面小工具的資料：啟動時、標籤有變動時同步一次。
-                .task(id: tagStore.assignments.count &+ tagStore.tags.count &* 1000) {
+                .task(id: "\(tagStore.assignments.count)-\(tagStore.tags.count)-\(model.cardTextPosition.rawValue)-\(model.cardTextStyle.rawValue)") {
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    await WidgetSync.sync(tagStore: tagStore, library: library)
+                    await WidgetSync.sync(tagStore: tagStore, library: library, model: model)
                 }
                 // 點小工具：切到選集並打開那個標籤。
                 .onOpenURL { url in
@@ -41,7 +41,7 @@ struct PicDeckApp: App {
         .onChange(of: scenePhase) { _, phase in
             // 進背景時把保留紀錄立刻寫入磁碟。
             if phase == .active { model.refreshEntitlement() }
-            if phase == .background { Task { await WidgetSync.sync(tagStore: tagStore, library: library) } }
+            if phase == .background { Task { await WidgetSync.sync(tagStore: tagStore, library: library, model: model) } }
             if phase != .active {
                 organized.flush()
                 tagStore.flush()

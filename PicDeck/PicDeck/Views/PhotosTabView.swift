@@ -604,8 +604,23 @@ struct PhotosTabView: View {
     // MARK: - 篩選
 
     /// 跟系統照片的篩選選單同一套：排序、過濾條件、媒體類型、顯示方式選項。
+    /// 有套用非預設的篩選（媒體類型、隱藏截圖、依加入時間排序）就有紅點。標籤選擇看標題就知道，不算在裡面。
+    private var hasActiveFilter: Bool {
+        if case .filter(let current) = selection, current != .all { return true }
+        return !model.showsScreenshots || model.sortsByAdded
+    }
+
+    /// 快速點兩下：全部恢復預設。
+    private func resetFilters() {
+        if case .filter = selection { selection = .filter(.all) }
+        model.showsScreenshots = true
+        model.sortsByAdded = false
+    }
+
     private var filterMenu: some View {
         Menu {
+            ResetFiltersButton(isActive: hasActiveFilter) { resetFilters() }
+
             // 排序：上面一排兩個「圖示加文字」，選中的有底色，跟系統一樣。
             ControlGroup {
                 Toggle(isOn: Binding(get: { model.sortsByAdded }, set: { _ in model.sortsByAdded = true })) {
@@ -652,11 +667,7 @@ struct PhotosTabView: View {
             }
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .overlay(alignment: .topTrailing) {
-                    if case .filter(let current) = selection, current != .all {
-                        Circle().fill(.red).frame(width: 7, height: 7).offset(x: 4, y: -3)
-                    }
-                }
+                .filterIndicator(isActive: hasActiveFilter) { resetFilters() }
         }
         .accessibilityLabel(Text("Filter"))
         .accessibilityIdentifier("photos.filter")

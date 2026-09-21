@@ -6,7 +6,17 @@ import Photos
 /// 下滑加入系統喜愛（再滑一次就移出喜愛）、雙擊放大。
 /// 底下的功能列是寫日記、喜愛、標籤、相簿、刪除。保留只用手勢，沒有按鈕。
 struct ReviewSessionView: View {
-    let bucket: OrganizeBucket
+    /// 目前看的來源。可以從頁首的選單切到其他未整理集合。
+    @State private var bucket: OrganizeBucket
+
+    init(bucket: OrganizeBucket) {
+        _bucket = State(initialValue: bucket)
+    }
+
+    /// 未整理的全部照片與截圖的識別碼，切換來源時不用重抓。
+    @State private var basePool: [PHAsset] = []
+    @State private var screenshotIDs: Set<String> = []
+    @State private var sourceCounts: [String: Int] = [:]
 
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var model: AppModel
@@ -109,7 +119,20 @@ struct ReviewSessionView: View {
                     Spacer()
 
                     Menu {
-                        Text(bucket.title)
+                        // 切到其他未整理集合。張數是 0 的不列出；沒解鎖的顯示鎖頭，不能選。
+                        ForEach(sourceBuckets) { option in
+                            Button {
+                                switchBucket(option)
+                            } label: {
+                                Label {
+                                    Text("\(option.title)（\(sourceCounts[option.id] ?? 0)）")
+                                } icon: {
+                                    Image(systemName: option == bucket ? "checkmark"
+                                                       : (model.canUse(option) ? sourceIcon(option) : "lock.fill"))
+                                }
+                            }
+                            .disabled(!model.canUse(option) && option != bucket)
+                        }
                     } label: {
                         HStack(spacing: 4) {
                             Text(bucket.title).font(.headline)
@@ -120,6 +143,7 @@ struct ReviewSessionView: View {
                         .frame(height: 44)
                         .floatingGlass(in: Capsule(), interactive: true)
                     }
+                    .accessibilityIdentifier("session.source")
 
                     Spacer()
 
@@ -131,6 +155,8 @@ struct ReviewSessionView: View {
                                     Text("\(model.trashedAssetIDs.count)")
                                         .font(.system(size: 11, weight: .bold))
                                         .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .fixedSize()
                                         .padding(.horizontal, 5)
                                         .frame(minWidth: 18, minHeight: 18)
                                         .background(Color.red, in: Capsule())
@@ -289,7 +315,7 @@ struct ReviewSessionView: View {
             quickPanel(title: String(localized: "File into tag…"),
                        moreTitle: String(localized: "More tags"),
                        id: "session.tagrow",
-                       items: tagStore.tags.prefix(3).map { tag in
+                       items: tagStore.tagsByRecentUse.prefix(3).map { tag in
                            QuickItem(id: tag.id.uuidString, title: tag.name, iconRaw: tag.symbol, systemImage: nil) {
                                fileCurrent(intoTag: tag)
                            }
@@ -529,8 +555,20 @@ struct ReviewSessionView: View {
 
         let all = await library.assets(matching: .all)
         await organized.refresh(allAssets: all)
-        var pool = all.filter { !organized.isOrganized($0) }
+        basePool = all.filter { !organized.isOrganized($0) }
+        screenshotIDs = Set(await library.assets(matching: .screenshots).map(\.localIdentifier))
+        sourceCounts = [
+            OrganizeBucket.allUnorganized.id: basePool.count,
+            OrganizeBucket.unorganizedPhotos.id: basePool.filter { $0.mediaType == .image }.count,
+            OrganizeBucket.unorganizedVideos.id: basePool.filter { $0.mediaType == .video }.count,
+            OrganizeBucket.unorganizedScreenshots.id: basePool.filter { screenshotIDs.contains($0.localIdentifier) }.count,
+        ]
+        applyBucket()
+    }
 
+    /// 依目前的來源挑出要整理的照片，從第一張開始。
+    private func applyBucket() {
+        var pool = basePool
         switch bucket {
         case .allUnorganized:
             break
@@ -539,9 +577,7 @@ struct ReviewSessionView: View {
         case .unorganizedVideos:
             pool = pool.filter { $0.mediaType == .video }
         case .unorganizedScreenshots:
-            let screenshots = await library.assets(matching: .screenshots)
-            let ids = Set(screenshots.map(\.localIdentifier))
-            pool = pool.filter { ids.contains($0.localIdentifier) }
+            pool = pool.filter { screenshotIDs.contains($0.localIdentifier) }
         case .month(let year, let month):
             let calendar = Calendar.current
             pool = pool.filter { asset in
@@ -550,9 +586,36 @@ struct ReviewSessionView: View {
                 return parts.year == year && parts.month == month
             }
         }
-
         assets = pool
         index = 0
+        history.removeAll()
+    }
+
+    /// 選單裡的來源：四個固定集合，張數是 0 的不列（目前這個一定列）。
+    private var sourceBuckets: [OrganizeBucket] {
+        let all: [OrganizeBucket] = [.allUnorganized, .unorganizedPhotos, .unorganizedVideos, .unorganizedScreenshots]
+        var result = all.filter { (sourceCounts[$0.id] ?? 0) > 0 || $0 == bucket }
+        if case .month = bucket { result.append(bucket) }
+        return result
+    }
+
+    private func sourceIcon(_ bucket: OrganizeBucket) -> String {
+        switch bucket {
+        case .allUnorganized: return PhotoFilter.all.systemImage
+        case .unorganizedPhotos: return PhotoFilter.photos.systemImage
+        case .unorganizedVideos: return PhotoFilter.videos.systemImage
+        case .unorganizedScreenshots: return PhotoFilter.screenshots.systemImage
+        case .month: return "calendar"
+        }
+    }
+
+    private func switchBucket(_ newBucket: OrganizeBucket) {
+        guard newBucket != bucket else { return }
+        quickMode = nil
+        withMotion {
+            bucket = newBucket
+            applyBucket()
+        }
     }
 }
 
