@@ -46,11 +46,15 @@ struct JournalEntriesView: View {
                 ContentUnavailableView {
                     Label("No journal entries", systemImage: "book.closed")
                 } description: {
-                    if allowedPhotoIDs == nil {
-                        Text("Long press a photo and choose Write journal to add one.")
-                    } else {
-                        Text("No journal entries match this filter.")
+                    // 新增在右上角的「＋」，這裡只是提醒。副標比預設小兩級。
+                    Group {
+                        if allowedPhotoIDs == nil {
+                            Text("Time to add a journal entry!")
+                        } else {
+                            Text("No journal entries match this filter.")
+                        }
                     }
+                    .font(.footnote)
                 }
             } else {
                 AnchoredScrollView(anchorID: nil, isReady: true, scrub: scrub) {

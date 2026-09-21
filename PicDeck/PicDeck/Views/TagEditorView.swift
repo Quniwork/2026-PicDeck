@@ -12,8 +12,11 @@ struct TagFormView: View {
     let mode: Mode
 
     @EnvironmentObject private var tagStore: TagStore
+    @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showAnniversaryLimit = false
+    @State private var showPaywall = false
     @State private var name = ""
     @State private var symbol = TagStore.defaultSymbol
     @State private var hasAnniversary = false
@@ -99,6 +102,20 @@ struct TagFormView: View {
                 }
             }
             .onAppear(perform: load)
+            // 免費版只能有 1 個設了日子的標籤；要開第二個就請他訂閱。編輯原本就有日子的那一個不受影響。
+            .onChange(of: hasAnniversary) { _, isOn in
+                guard isOn, !model.isUnlocked,
+                      tagStore.anniversaryCount(excluding: editingTag?.id) >= TagStore.freeAnniversaryLimit else { return }
+                hasAnniversary = false
+                showAnniversaryLimit = true
+            }
+            .alert(String(localized: "Free plan: 1 tag with a date"), isPresented: $showAnniversaryLimit) {
+                Button("Unlock PicDeck") { showPaywall = true }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Subscribe to add dates to more tags.")
+            }
+            .sheet(isPresented: $showPaywall) { PaywallView() }
         }
     }
 

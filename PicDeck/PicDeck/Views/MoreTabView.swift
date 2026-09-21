@@ -11,14 +11,28 @@ struct MoreTabView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Plan") {
-                    LabeledContent("Status",
-                                   value: model.isUnlocked ? String(localized: "Unlocked")
-                                                           : String(localized: "Free"))
+                Section("Status") {
+                    LabeledContent("Plan", value: planName)
+                    if let expiry = model.subscriptionExpiry {
+                        LabeledContent("Expires on") {
+                            Text(expiry, format: .dateTime.year().month().day())
+                        }
+                        .accessibilityIdentifier("more.expiry")
+                    }
+                    LabeledContent("Organize (daily)", value: dailyStatus)
+                        .accessibilityIdentifier("more.daily")
+                    LabeledContent("Journal (daily)", value: journalStatus)
+                        .accessibilityIdentifier("more.journalDaily")
+                    LabeledContent("Tags", value: String(localized: "Unlimited"))
+                    LabeledContent("Tags with dates", value: anniversaryStatus)
+                        .accessibilityIdentifier("more.anniversary")
                     if model.isUnlocked {
-                        LabeledContent("Daily limit", value: String(localized: "None"))
+                        Button("Manage subscription") {
+                            if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                                UIApplication.shared.open(url)
+                            }
+                        }
                     } else {
-                        LabeledContent("Today", value: "\(model.processedToday) / \(AppModel.dailyFreeLimit)")
                         Button("Unlock PicDeck") { showPaywall = true }
                     }
                 }
@@ -33,10 +47,6 @@ struct MoreTabView: View {
                     .accessibilityIdentifier("more.appearance")
                 }
 
-                Section("Journal") {
-                    LabeledContent("Entries", value: "\(journalStore.count)")
-                }
-
                 Section("Help") {
                     Button("Replay gesture tutorial") { showTutorial = true }
                 }
@@ -45,10 +55,6 @@ struct MoreTabView: View {
                     Text("PicDeck works entirely on your device. Photos are never uploaded to any server.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                }
-
-                Section("Organize state") {
-                    LabeledContent("Marked as kept", value: "\(organized.keptCount)")
                 }
 
                 Section("Developer") {
@@ -77,6 +83,38 @@ struct MoreTabView: View {
                 TutorialView { showTutorial = false }
             }
         }
+    }
+
+    private var planName: String {
+        if model.isTrialActive {
+            return String(format: String(localized: "Free trial: %lld days left"), model.trialDaysLeft)
+        }
+        switch model.purchasedPlan {
+        case .monthly: return String(localized: "Monthly subscription")
+        case .lifetime: return String(localized: "Lifetime")
+        case nil: return String(localized: "Free")
+        }
+    }
+
+    private var dailyStatus: String {
+        model.isUnlocked
+            ? String(localized: "Unlimited")
+            : String(format: String(localized: "%lld / %lld photos"),
+                     model.processedToday, AppModel.dailyFreeLimit)
+    }
+
+    private var anniversaryStatus: String {
+        let count = tagStore.anniversaryCount()
+        return model.isUnlocked
+            ? String(format: String(localized: "%lld tags"), count)
+            : String(format: String(localized: "%lld / %lld tags"), count, TagStore.freeAnniversaryLimit)
+    }
+
+    private var journalStatus: String {
+        model.isUnlocked
+            ? String(localized: "Unlimited")
+            : String(format: String(localized: "%lld / %lld entries"),
+                     model.journalCreatedToday, AppModel.dailyJournalFreeLimit)
     }
 
     private var appVersion: String {

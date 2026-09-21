@@ -46,10 +46,10 @@ struct OrganizeTabView: View {
         } else {
             List {
                 Section {
-                    bucketRow(.allUnorganized, count: summary.allCount)
-                    bucketRow(.unorganizedPhotos, count: summary.photoCount)
-                    bucketRow(.unorganizedVideos, count: summary.videoCount)
-                    bucketRow(.unorganizedScreenshots, count: summary.screenshotCount)
+                    bucketRow(.allUnorganized, count: summary.allCount, icon: PhotoFilter.all.systemImage)
+                    bucketRow(.unorganizedPhotos, count: summary.photoCount, icon: PhotoFilter.photos.systemImage)
+                    bucketRow(.unorganizedVideos, count: summary.videoCount, icon: PhotoFilter.videos.systemImage)
+                    bucketRow(.unorganizedScreenshots, count: summary.screenshotCount, icon: PhotoFilter.screenshots.systemImage)
                 }
 
                 Section {
@@ -58,6 +58,8 @@ struct OrganizeTabView: View {
                                   count: month.count,
                                   title: month.title)
                     }
+                } header: {
+                    Text("By month")
                 }
             }
             .listStyle(.insetGrouped)
@@ -94,6 +96,7 @@ struct OrganizeTabView: View {
 
     private func bucketRow(_ bucket: OrganizeBucket,
                            count: Int,
+                           icon: String? = nil,
                            title: String? = nil) -> some View {
         Button {
             if model.canUse(bucket) {
@@ -102,7 +105,14 @@ struct OrganizeTabView: View {
                 showPaywall = true
             }
         } label: {
-            HStack {
+            HStack(spacing: 12) {
+                // 四個固定入口的左邊放跟照片分頁篩選一樣的圖標，文字往右推；月份列沒有圖標。
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .frame(width: 24)
+                }
                 Text(title ?? bucket.title)
                 Spacer()
                 if !model.canUse(bucket) {

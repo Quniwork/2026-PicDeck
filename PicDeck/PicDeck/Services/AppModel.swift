@@ -16,6 +16,10 @@ final class AppModel: ObservableObject {
     @Published var selectedTab = 0
     /// 別的分頁（例如首頁的標籤卡片）要求照片分頁切到某個篩選。照片分頁套用後會清掉。
     @Published var requestedSelection: PhotoSelection?
+    /// 桌面小工具點進來時，照片分頁要切到哪個子分頁（例如時間軸）。
+    @Published var requestedScale: PhotoScale?
+    /// 選集頁要直接打開的標籤（保留給其他入口用）。
+    @Published var requestedCollectionTagID: UUID?
     /// 整理分頁裡目前在哪個子層。
     @Published var organizeSection: OrganizeSection = .photos
     @Published private(set) var processedToday: Int = 0
@@ -87,6 +91,11 @@ final class AppModel: ObservableObject {
         static let processedCount = "picdeck.processedToday.count"
         static let processedDate = "picdeck.processedToday.date"
         static let unlocked = "picdeck.unlocked"
+        static let plan = "picdeck.plan"
+        static let journalDate = "picdeck.journalCreated.date"
+        static let journalCount = "picdeck.journalCreated.count"
+        static let purchaseDate = "picdeck.purchaseDate"
+        static let trialStart = "picdeck.trialStart"
         static let tutorial = "picdeck.hasSeenTutorial"
         static let photoScale = "picdeck.lastPhotoScale"
         static let appearance = "picdeck.appearance"
@@ -96,6 +105,10 @@ final class AppModel: ObservableObject {
         load()
         // UI 測試用：帶 -startOnPhotos 啟動時直接停在照片分頁。
         if ProcessInfo.processInfo.arguments.contains("-startOnPhotos") { selectedTab = 2 }
+        // UI 測試用：帶 -resetUnlock 啟動時回到未解鎖、沒試用過的狀態。
+        if ProcessInfo.processInfo.arguments.contains("-resetUnlock") { resetUnlockForTesting() }
+        // UI 測試用：帶 -subscribeForTesting 啟動時直接變成已訂閱（測完還原使用者的狀態用）。
+        if ProcessInfo.processInfo.arguments.contains("-subscribeForTesting") { purchase(.monthly) }
         _sortsByAdded = Published(initialValue: defaults.bool(forKey: Key.sortsByAdded))
         if defaults.object(forKey: Key.journalNewestFirst) != nil {
             _journalNewestFirst = Published(initialValue: defaults.bool(forKey: Key.journalNewestFirst))
@@ -123,6 +136,29 @@ final class AppModel: ObservableObject {
         isUnlocked ? Int.max : max(0, Self.dailyFreeLimit - processedToday)
     }
 
+    // MARK: - 日記額度（免費每天新增 1 則）
+
+    static let dailyJournalFreeLimit = 1
+
+    /// 今天已經新增了幾則日記（只算新增，編輯舊的不算）。跨日自動歸零。
+    var journalCreatedToday: Int {
+        guard defaults.string(forKey: Key.journalDate) == Self.todayKey() else { return 0 }
+        return defaults.integer(forKey: Key.journalCount)
+    }
+
+    /// 免費版今天還能新增日記嗎。訂閱後沒有上限。
+    var canCreateJournal: Bool {
+        isUnlocked || journalCreatedToday < Self.dailyJournalFreeLimit
+    }
+
+    func noteJournalCreated() {
+        guard !isUnlocked else { return }
+        let count = journalCreatedToday + 1
+        defaults.set(Self.todayKey(), forKey: Key.journalDate)
+        defaults.set(count, forKey: Key.journalCount)
+        objectWillChange.send()
+    }
+
     var hasQuotaLeft: Bool {
         isUnlocked || processedToday < Self.dailyFreeLimit
     }
@@ -142,6 +178,68 @@ final class AppModel: ObservableObject {
 
     // MARK: - 解鎖（v0.1 為本機模擬，尚未接 StoreKit）
 
+    // MARK: - 方案（訂閱、買斷、試用）
+
+    enum Plan: String { case monthly, lifetime }
+    static let trialDays = 30
+
+    /// 已購買的方案。nil＝沒買。開發階段是本機模擬，尚未接 StoreKit。
+    @Published private(set) var purchasedPlan: Plan?
+    /// 開始試用的日期。nil＝還沒試用過（每個人只能試用一次）。
+    @Published private(set) var trialStart: Date?
+
+    /// 訂閱開始的日期（開發階段是本機模擬）。
+    @Published private(set) var purchaseDate: Date?
+
+    /// 目前這一期的到期日。每月訂閱從開始日起每個月往後推一個月，例如 9/21 訂閱，到期日是 10/21，過了再推到 11/21。
+    /// 沒訂閱、或是買斷，回 nil。
+    var subscriptionExpiry: Date? {
+        guard purchasedPlan == .monthly, let start = purchaseDate else { return nil }
+        let calendar = Calendar.current
+        var months = 1
+        while let next = calendar.date(byAdding: .month, value: months, to: start), next <= Date() { months += 1 }
+        return calendar.date(byAdding: .month, value: months, to: start)
+    }
+
+    var hasUsedTrial: Bool { trialStart != nil }
+
+    var trialEndDate: Date? {
+        trialStart.flatMap { Calendar.current.date(byAdding: .day, value: Self.trialDays, to: $0) }
+    }
+
+    var isTrialActive: Bool {
+        guard purchasedPlan == nil, let end = trialEndDate else { return false }
+        return Date() < end
+    }
+
+    /// 試用剩幾天，沒在試用就是 0。
+    var trialDaysLeft: Int {
+        guard isTrialActive, let end = trialEndDate else { return 0 }
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: end).day ?? 0
+        return max(1, days + 1)
+    }
+
+    /// 依購買與試用狀態重新算是否解鎖。開 App 與回到前景時呼叫，試用到期才會鎖回去。
+    func refreshEntitlement() {
+        let value = purchasedPlan != nil || isTrialActive
+        if value != isUnlocked { isUnlocked = value }
+    }
+
+    func startTrial() {
+        guard !hasUsedTrial else { return }
+        trialStart = Date()
+        defaults.set(trialStart, forKey: Key.trialStart)
+        refreshEntitlement()
+    }
+
+    func purchase(_ plan: Plan) {
+        purchasedPlan = plan
+        purchaseDate = Date()
+        defaults.set(plan.rawValue, forKey: Key.plan)
+        defaults.set(purchaseDate, forKey: Key.purchaseDate)
+        unlock()
+    }
+
     func unlock() {
         isUnlocked = true
         defaults.set(true, forKey: Key.unlocked)
@@ -149,7 +247,15 @@ final class AppModel: ObservableObject {
 
     func resetUnlockForTesting() {
         isUnlocked = false
+        purchasedPlan = nil
+        purchaseDate = nil
+        trialStart = nil
         defaults.set(false, forKey: Key.unlocked)
+        defaults.removeObject(forKey: Key.plan)
+        defaults.removeObject(forKey: Key.journalDate)
+        defaults.removeObject(forKey: Key.journalCount)
+        defaults.removeObject(forKey: Key.purchaseDate)
+        defaults.removeObject(forKey: Key.trialStart)
     }
 
     /// 照片分頁的篩選：免費版只有「全部」。
@@ -199,7 +305,15 @@ final class AppModel: ObservableObject {
 
     private func load() {
         trashedAssetIDs = defaults.stringArray(forKey: Key.trashed) ?? []
-        isUnlocked = defaults.bool(forKey: Key.unlocked)
+        trialStart = defaults.object(forKey: Key.trialStart) as? Date
+        purchaseDate = defaults.object(forKey: Key.purchaseDate) as? Date
+        if let raw = defaults.string(forKey: Key.plan), let plan = Plan(rawValue: raw) {
+            purchasedPlan = plan
+        } else if defaults.bool(forKey: Key.unlocked) {
+            // 舊版本只有「已解鎖」一個旗標，當成買斷。
+            purchasedPlan = .lifetime
+        }
+        isUnlocked = purchasedPlan != nil || isTrialActive
         hasSeenTutorial = defaults.bool(forKey: Key.tutorial)
 
         if let raw = defaults.string(forKey: Key.photoScale),

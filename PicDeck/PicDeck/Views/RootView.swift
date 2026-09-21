@@ -23,21 +23,15 @@ struct RootView: View {
 struct MainTabView: View {
     @EnvironmentObject private var model: AppModel
 
-    /// 分頁列裡的房子比其他圖標看起來大，用小一點的字重畫成圖片。
-    private static let smallHouse: UIImage = {
-        let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)
-        return (UIImage(systemName: "house.fill", withConfiguration: config) ?? UIImage())
-            .withRenderingMode(.alwaysTemplate)
-    }()
-
     var body: some View {
+        // 順序：日記、選集、照片、整理、更多。預設開在日記。
         TabView(selection: $model.selectedTab) {
-            HomeView()
-                .tabItem { Label { Text("Home") } icon: { Image(uiImage: Self.smallHouse) } }
-                .tag(0)
-
             JournalTabView()
                 .tabItem { Label("Journal", systemImage: "book") }
+                .tag(0)
+
+            HomeView()
+                .tabItem { Label("Collections", systemImage: "photo.stack") }
                 .tag(1)
 
             PhotosTabView()
@@ -45,7 +39,7 @@ struct MainTabView: View {
                 .tag(2)
 
             OrganizeTabView()
-                .tabItem { Label("Organize", systemImage: "tray.full") }
+                .tabItem { Label("Organize", systemImage: "tray.fill") }
                 .tag(3)
 
             MoreTabView()

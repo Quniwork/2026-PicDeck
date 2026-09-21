@@ -50,31 +50,19 @@ struct JournalTabView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if model.isUnlocked {
-                    JournalEntriesView(onEdit: { year, month, day in
-                        activeSheet = .editor(JournalDate(year: year, month: month, day: day))
-                    },
-                                       anniversaryTag: selectedTag?.hasAnniversary == true ? selectedTag : nil,
-                                       allowedPhotoIDs: allowedPhotoIDs,
-                                       newestFirst: model.journalNewestFirst,
-                                       columnCount: model.gridColumns(for: .journal),
-                                       fitsAspect: model.gridFitsAspect(for: .journal))
-                        .pinchToZoomGrid { model.zoom(.journal, in: $0) }
-                        // 換標籤篩選、排序時，日記卡片淡入淡出並重新排列。
-                        .motionAnimation(value: tagID)
-                        .motionAnimation(value: model.journalNewestFirst)
-                        .motionAnimation(value: model.gridColumns(for: .journal))
-                } else {
-                    ContentUnavailableView {
-                        Label("Journal", systemImage: "book.closed")
-                    } description: {
-                        Text("Journal is part of the paid unlock.")
-                    } actions: {
-                        Button("Unlock") { activeSheet = .paywall }
-                            .buttonStyle(.borderedProminent)
-                            .accessibilityIdentifier("journal.unlock")
-                    }
-                }
+                JournalEntriesView(onEdit: { year, month, day in
+                    activeSheet = .editor(JournalDate(year: year, month: month, day: day))
+                },
+                                   anniversaryTag: selectedTag?.hasAnniversary == true ? selectedTag : nil,
+                                   allowedPhotoIDs: allowedPhotoIDs,
+                                   newestFirst: model.journalNewestFirst,
+                                   columnCount: model.gridColumns(for: .journal),
+                                   fitsAspect: model.gridFitsAspect(for: .journal))
+                    .pinchToZoomGrid { model.zoom(.journal, in: $0) }
+                    // 換標籤篩選、排序時，日記卡片淡入淡出並重新排列。
+                    .motionAnimation(value: tagID)
+                    .motionAnimation(value: model.journalNewestFirst)
+                    .motionAnimation(value: model.gridColumns(for: .journal))
             }
             .navigationTitle(String(localized: "Journal"))
             .navigationBarTitleDisplayMode(.inline)
@@ -110,7 +98,8 @@ struct JournalTabView: View {
 
     /// 新增今天的日記；已經有的話編輯畫面會載入原本的內容。
     private func addEntry() {
-        guard model.isUnlocked else {
+        // 免費版每天新增 1 則；已經新增過就直接請他訂閱。
+        guard model.canCreateJournal else {
             activeSheet = .paywall
             return
         }

@@ -49,7 +49,7 @@ final class PicDeckSmokeTests: XCTestCase {
         firstYear.tap()
         sleep(4)
         XCTAssertTrue(app.buttons["scale.day"].exists, "切換後子分頁列不見了")
-        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).exists, "切換後底部分頁列不見了")
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).exists, "切換後底部分頁列不見了")
         attachScreenshot(app, name: "03-year-to-month")
 
         // 月 → 點月份 → 自動切到日並捲到該月，格式與日子分頁相同。
@@ -131,14 +131,14 @@ final class PicDeckSmokeTests: XCTestCase {
             sleep(2)
 
             // 日記是付費功能，先解鎖再看。
-            app.tabBars.buttons.element(boundBy: 1).tap()
+            app.tabBars.buttons.element(boundBy: 0).tap()
             sleep(3)
-            let sponsor = firstButton(in: app, labels: ["以 NT$99 贊助開發", "Sponsor for NT$99"])
+            let sponsor = firstButton(in: app, labels: ["訂閱（開發期間免費）", "Subscribe (free during development)"])
             if sponsor.waitForExistence(timeout: 6) {
                 attachScreenshot(app, name: "07f1-journal-paywall")
                 tapByCoordinate(sponsor)
                 sleep(2)
-                app.tabBars.buttons.element(boundBy: 1).tap()
+                app.tabBars.buttons.element(boundBy: 0).tap()
                 sleep(3)
             }
 
@@ -260,7 +260,7 @@ final class PicDeckSmokeTests: XCTestCase {
         sleep(2)
 
         // 首頁。
-        app.tabBars.buttons.element(boundBy: 0).tap()
+        app.tabBars.buttons.element(boundBy: 1).tap()
         sleep(2)
         attachScreenshot(app, name: "08-home")
 
@@ -396,7 +396,7 @@ final class PicDeckSmokeTests: XCTestCase {
 
         // 依標籤篩選是付費功能，先解鎖。
         openTagFilter(in: app, named: "堯")
-        let sponsor = firstButton(in: app, labels: ["以 NT$99 贊助開發", "Sponsor for NT$99"])
+        let sponsor = firstButton(in: app, labels: ["訂閱（開發期間免費）", "Subscribe (free during development)"])
         if sponsor.waitForExistence(timeout: 4) {
             tapByCoordinate(sponsor)
             sleep(3)
@@ -411,7 +411,7 @@ final class PicDeckSmokeTests: XCTestCase {
         attachScreenshot(app, name: "19-timeline-anniversary")
 
         // 日記分頁（獨立的分頁）：卡片版面，右上角用標籤篩選。
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.tabBars.buttons.element(boundBy: 0).tap()
         sleep(3)
         let cards = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "journal.entry."))
@@ -864,7 +864,7 @@ final class PicDeckSmokeTests: XCTestCase {
         // 選堯。標籤篩選是付費功能，先解鎖。
         tapByCoordinate(tagItem)
         sleep(2)
-        let sponsor = firstButton(in: app, labels: ["以 NT$99 贊助開發", "Sponsor for NT$99"])
+        let sponsor = firstButton(in: app, labels: ["訂閱（開發期間免費）", "Subscribe (free during development)"])
         if sponsor.waitForExistence(timeout: 4) {
             tapByCoordinate(sponsor)
             sleep(3)
@@ -1215,9 +1215,9 @@ final class PicDeckSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "首頁沒有載入")
 
         // 解鎖，好讓付費的畫面也拍得到。
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.tabBars.buttons.element(boundBy: 0).tap()
         sleep(2)
-        let sponsor = firstButton(in: app, labels: ["以 NT$99 贊助開發", "Sponsor for NT$99"])
+        let sponsor = firstButton(in: app, labels: ["訂閱（開發期間免費）", "Subscribe (free during development)"])
         if sponsor.waitForExistence(timeout: 4) {
             tapByCoordinate(sponsor)
             sleep(3)
@@ -1256,7 +1256,7 @@ final class PicDeckSmokeTests: XCTestCase {
             sleep(1)
 
             // 首頁
-            app.tabBars.buttons.element(boundBy: 0).tap()
+            app.tabBars.buttons.element(boundBy: 1).tap()
             sleep(3)
             attachScreenshot(app, name: "A-\(mode)-home")
 
@@ -1339,7 +1339,7 @@ final class PicDeckSmokeTests: XCTestCase {
             tapByCoordinate(app.buttons["photos.select"])
             sleep(1)
 
-            app.tabBars.buttons.element(boundBy: 0).tap()
+            app.tabBars.buttons.element(boundBy: 1).tap()
             sleep(3)
             attachScreenshot(app, name: "Q-\(mode)-home")
 
@@ -1397,9 +1397,11 @@ final class PicDeckSmokeTests: XCTestCase {
 
         grantPhotoAccessIfNeeded(app)
 
-        // 預設就是首頁，底下五個分頁：首頁、日記、照片、整理、更多。
+        // 預設開在日記；底下五個分頁：日記、選集、照片、整理、更多。
         XCTAssertEqual(app.tabBars.buttons.count, 5, "底部分頁不是五個")
-        XCTAssertTrue(app.tabBars.buttons["首頁"].exists || app.tabBars.buttons["Home"].exists, "沒有首頁分頁")
+        XCTAssertTrue(app.buttons["journal.add"].waitForExistence(timeout: 20), "預設沒有開在日記")
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        XCTAssertTrue(app.tabBars.buttons["選集"].exists || app.tabBars.buttons["Collections"].exists, "沒有選集分頁")
         XCTAssertFalse(app.tabBars.buttons["資料夾"].exists, "資料夾分頁應該拿掉了")
 
         // 日子卡片：設了日期的標籤，卡片上有名字與過了多久。
@@ -1417,11 +1419,11 @@ final class PicDeckSmokeTests: XCTestCase {
         for _ in 0..<3 where !card.isHittable { app.swipeDown() }
         tapByCoordinate(card)
         sleep(2)
-        let sponsor = firstButton(in: app, labels: ["以 NT$99 贊助開發", "Sponsor for NT$99"])
+        let sponsor = firstButton(in: app, labels: ["訂閱（開發期間免費）", "Subscribe (free during development)"])
         if sponsor.waitForExistence(timeout: 4) {
             tapByCoordinate(sponsor)
             sleep(3)
-            app.tabBars.buttons.element(boundBy: 0).tap()
+            app.tabBars.buttons.element(boundBy: 1).tap()
             sleep(2)
             attachScreenshot(app, name: "56b-home-after-unlock")
             tapByCoordinate(card)
@@ -1442,7 +1444,7 @@ final class PicDeckSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "一開始就沒有照片分頁")
         attachScreenshot(app, name: "T1-photos-first")
 
-        app.tabBars.buttons.element(boundBy: 0).tap()
+        app.tabBars.buttons.element(boundBy: 1).tap()
         sleep(3)
         attachScreenshot(app, name: "T2-home")
 
@@ -1458,11 +1460,11 @@ final class PicDeckSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         grantPhotoAccessIfNeeded(app)
-        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).waitForExistence(timeout: 30), "沒有分頁列")
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30), "沒有分頁列")
         sleep(3)
         try? FileManager.default.createDirectory(atPath: "/tmp/picdeck-shots", withIntermediateDirectories: true)
 
-        for (index, name) in [(4, "more"), (3, "organize"), (2, "photos"), (1, "journal")] {
+        for (index, name) in [(4, "more"), (3, "organize"), (2, "photos"), (0, "journal")] {
             app.tabBars.buttons.element(boundBy: index).tap()
             sleep(6)
             let count = app.descendants(matching: .any).allElementsBoundByIndex.count
@@ -1563,7 +1565,7 @@ final class PicDeckSmokeTests: XCTestCase {
         attachScreenshot(app, name: "61a-after-save")
 
         // 首頁多了「釘選的收藏」，只有美食在，燒肉沒有釘。
-        app.tabBars.buttons.element(boundBy: 0).tap()
+        app.tabBars.buttons.element(boundBy: 1).tap()
         // 使用者的模擬器裡可能本來就有釘選的標籤，只認這次建的「測試美食」。
         let collection = app.descendants(matching: .any).matching(identifier: "home.collection")
             .matching(NSPredicate(format: "label CONTAINS %@", "測試美食"))
@@ -1687,11 +1689,11 @@ final class PicDeckSmokeTests: XCTestCase {
         app.launch()
         grantPhotoAccessIfNeeded(app)
         XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.tabBars.buttons.element(boundBy: 0).tap()
         sleep(2)
         if app.buttons["journal.unlock"].waitForExistence(timeout: 3) {
             tapByCoordinate(app.buttons["journal.unlock"])
-            let sponsor = firstButton(in: app, labels: ["以 NT$99 贊助開發", "Sponsor for NT$99"])
+            let sponsor = firstButton(in: app, labels: ["訂閱（開發期間免費）", "Subscribe (free during development)"])
             if sponsor.waitForExistence(timeout: 4) {
                 tapByCoordinate(sponsor)
                 sleep(3)
@@ -1869,7 +1871,7 @@ final class PicDeckSmokeTests: XCTestCase {
         app.launch()
         grantPhotoAccessIfNeeded(app)
         XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.tabBars.buttons.element(boundBy: 0).tap()
         sleep(3)
         let cards = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "journal.entry."))
@@ -1962,7 +1964,7 @@ final class PicDeckSmokeTests: XCTestCase {
         app.launch()
         grantPhotoAccessIfNeeded(app)
         XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.tabBars.buttons.element(boundBy: 0).tap()
         sleep(3)
         let photo = app.descendants(matching: .any).matching(identifier: "journal.photo.0").firstMatch
         XCTAssertTrue(photo.waitForExistence(timeout: 10), "日記裡沒有照片")
@@ -2040,7 +2042,7 @@ final class PicDeckSmokeTests: XCTestCase {
         app.launch()
         grantPhotoAccessIfNeeded(app)
         XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.tabBars.buttons.element(boundBy: 0).tap()
         sleep(3)
         let photo = { app.descendants(matching: .any).matching(identifier: "journal.photo.0").firstMatch }
         XCTAssertTrue(photo().waitForExistence(timeout: 10), "日記裡沒有照片")
@@ -2126,6 +2128,168 @@ final class PicDeckSmokeTests: XCTestCase {
             sleep(1)
         }
         attachScreenshot(app, name: "95-home-screen")
+    }
+
+    /// 付費頁：開發期間只有每月訂閱（NT$0），買斷與試用先隱藏；訂閱後解鎖。
+    func testPaywallMonthlyOnly() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos", "-resetUnlock"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        tapByCoordinate(app.buttons["photos.title"])
+        sleep(1)
+        let tagItem = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "堯")).firstMatch
+        if tagItem.waitForExistence(timeout: 4) { tapByCoordinate(tagItem) }
+        let buy = app.descendants(matching: .any)["paywall.buy"]
+        XCTAssertTrue(buy.waitForExistence(timeout: 8), "沒有出現付費頁")
+        XCTAssertTrue(app.descendants(matching: .any)["paywall.plan.monthly"].exists, "沒有每月訂閱")
+        XCTAssertFalse(app.descendants(matching: .any)["paywall.plan.lifetime"].exists, "買斷應該先隱藏")
+        XCTAssertFalse(app.descendants(matching: .any)["paywall.trial"].exists, "免費試用應該先隱藏")
+        attachScreenshot(app, name: "96-paywall")
+        tapByCoordinate(buy)
+        sleep(2)
+        app.tabBars.buttons.element(boundBy: 4).tap()
+        sleep(2)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR label CONTAINS %@", "訂閱制", "Monthly subscription")).firstMatch.exists, "訂閱後沒有解鎖")
+    }
+
+    /// 把 App 設成已訂閱。改過付費狀態的測試之後跑一次，還原使用者的模擬器。
+    func testRestoreSubscribedState() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-subscribeForTesting"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 1).waitForExistence(timeout: 30), "沒有分頁列")
+        app.tabBars.buttons.element(boundBy: 4).tap()
+        sleep(2)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR label CONTAINS %@", "訂閱制", "Monthly subscription")).firstMatch.exists, "沒有變成已訂閱")
+    }
+
+    /// 日記空狀態：提示文字，新增在右上角的＋。沒有日記時才看得到，有的話略過。
+    func testJournalEmptyState() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        app.tabBars.buttons.element(boundBy: 0).tap()
+        sleep(3)
+        XCTAssertTrue(app.buttons["journal.add"].waitForExistence(timeout: 8), "右上角沒有＋")
+        // 篩選到沒有日記的標籤才會出現空狀態。
+        tapByCoordinate(app.buttons["journal.filter"])
+        sleep(1)
+        let tag = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "想去")).firstMatch
+        guard tag.waitForExistence(timeout: 3) else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.6)).tap(); return }
+        tapByCoordinate(tag)
+        sleep(2)
+        attachScreenshot(app, name: "98-journal-empty")
+    }
+
+    /// 免費版日記每天新增 1 則：第一則可以存，第二次按＋跳出付費頁。測完刪掉自己寫的那則。
+    func testFreeJournalOnePerDay() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos", "-resetUnlock"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        app.tabBars.buttons.element(boundBy: 0).tap()
+        sleep(3)
+        let any = { (id: String) in app.descendants(matching: .any)[id] }
+        XCTAssertFalse(any("journal.unlock").exists, "免費版日記不該整頁被鎖")
+
+        tapByCoordinate(any("journal.add"))
+        let text = app.textViews["journal.text"].exists ? app.textViews["journal.text"] : app.textFields["journal.text"]
+        XCTAssertTrue(text.waitForExistence(timeout: 8), "沒有開日記編輯")
+        text.tap()
+        text.typeText("免費日記測試")
+        tapByCoordinate(any("journal.save"))
+        sleep(2)
+
+        // 第二次新增：免費額度用完，直接跳出付費頁。
+        tapByCoordinate(any("journal.add"))
+        XCTAssertTrue(any("paywall.buy").waitForExistence(timeout: 8), "第二則沒有被擋下並顯示付費頁")
+        attachScreenshot(app, name: "99-journal-limit")
+        tapByCoordinate(firstButton(in: app, labels: ["關閉", "Close"]))
+        sleep(1)
+
+        // 刪掉剛寫的那則。
+        let edit = any("journal.edit").firstMatch
+        if edit.waitForExistence(timeout: 3) {
+            tapByCoordinate(edit)
+            tapByCoordinate(firstButton(in: app, labels: ["刪除", "Delete"]))
+            sleep(1)
+            let confirm = app.buttons["刪除日記"]
+            if confirm.waitForExistence(timeout: 3) { tapByCoordinate(confirm) }
+        }
+    }
+
+    /// 免費版只能有 1 個日子標籤：已經有一個時，新標籤打開「日子」會被擋下並提示訂閱。
+    func testFreeOneAnniversaryTag() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos", "-resetUnlock", "-seedAnniversaryTag"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        openOrganize("tags", in: app)
+        tapByCoordinate(app.buttons["manage.tag.create"])
+        let toggle = app.switches["tag.anniversary.toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 8), "新標籤沒有日子開關")
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        sleep(1)
+        attachScreenshot(app, name: "100-anniversary-limit")
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 5), "已經有日子標籤，第二個沒有被擋下")
+        XCTAssertTrue(alert.buttons["解鎖 PicDeck"].exists || alert.buttons["Unlock PicDeck"].exists, "提示沒有解鎖鈕")
+        alert.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "取消", "Cancel")).firstMatch.tap()
+        XCTAssertEqual(app.switches["tag.anniversary.toggle"].value as? String, "0", "被擋下後日子開關應該保持關閉")
+        tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
+    }
+
+    /// 桌面小工具的連結（picdeck://tag/…）：訂閱者直接到「照片 → 時間軸」並套用標籤；
+    /// 免費版只跳付費頁，關掉之後看不到那個標籤的內容。
+    func testWidgetLink() throws {
+        for subscribed in [true, false] {
+            let app = XCUIApplication()
+            app.launchArguments += [subscribed ? "-subscribeForTesting" : "-resetUnlock", "-seedAnniversaryTag"]
+            app.launch()
+            grantPhotoAccessIfNeeded(app)
+            XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).waitForExistence(timeout: 30))
+            // 從標籤管理抓「堯」的 id 太麻煩，直接用標題選單確認結果；連結用假 id 會沒反應，所以先取得真的 id。
+            guard let id = tagID(named: "堯") else { XCTFail("找不到堯的 id"); return }
+            let link = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            app.terminate()
+            XCUIDevice.shared.system.open(URL(string: "picdeck://tag/\(id)")!)
+            let open = link.buttons["打開"]
+            if open.waitForExistence(timeout: 6) { open.tap() }
+            sleep(4)
+            attachScreenshot(app, name: subscribed ? "110-widget-link-subscribed" : "110-widget-link-free")
+            if subscribed {
+                XCTAssertTrue(app.buttons["scale.timeline"].waitForExistence(timeout: 10), "沒有到照片分頁")
+                XCTAssertTrue(app.buttons["photos.title"].label.contains("堯"), "標題沒有套用標籤：\(app.buttons["photos.title"].label)")
+            } else {
+                XCTAssertTrue(app.descendants(matching: .any)["paywall.buy"].waitForExistence(timeout: 8), "免費版沒有跳付費頁")
+                tapByCoordinate(firstButton(in: app, labels: ["關閉", "Close"]))
+                sleep(2)
+                XCTAssertFalse(app.buttons["photos.title"].label.contains("堯"), "關掉付費頁之後不該看到標籤的內容")
+            }
+            app.terminate()
+        }
+    }
+
+    private func tagID(named name: String) -> String? {
+        let fm = FileManager.default
+        // UI 測試跑在另一個程序，讀不到 App 的資料夾；這裡靠模擬器共用路徑找 tags.json。
+        let root = NSHomeDirectory().components(separatedBy: "/Containers/").first.map { $0 + "/Containers/Data/Application" }
+        guard let root, let dirs = try? fm.contentsOfDirectory(atPath: root) else { return nil }
+        for dir in dirs {
+            let path = "\(root)/\(dir)/Documents/tags.json"
+            guard let data = fm.contents(atPath: path),
+                  let json = try? JSONSerialization.jsonObject(with: data) else { continue }
+            let tags = (json as? [String: Any])?["tags"] as? [[String: Any]] ?? (json as? [[String: Any]]) ?? []
+            if let match = tags.first(where: { ($0["name"] as? String) == name }) { return match["id"] as? String }
+        }
+        return nil
     }
 
     // MARK: - 工具

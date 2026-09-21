@@ -28,6 +28,7 @@ struct JournalEditorView: View {
 
     @EnvironmentObject private var journalStore: JournalStore
     @EnvironmentObject private var library: PhotoLibraryService
+    @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var date = Date()
@@ -37,7 +38,13 @@ struct JournalEditorView: View {
     @State private var dayAssets: [PHAsset] = []
     /// 已選、但不是當天拍的照片（從「加入照片」挑的）。
     @State private var otherAssets: [PHAsset] = []
-    @State private var showPicker = false
+    @State private var editorSheet: EditorSheet?
+    @State private var showLimitAlert = false
+
+    private enum EditorSheet: Identifiable {
+        case picker, paywall
+        var id: Int { hashValue }
+    }
     @State private var isLoading = true
 
     private let photoColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 4)
@@ -104,7 +111,7 @@ struct JournalEditorView: View {
                             .padding(.vertical, 4)
                         }
                         Button {
-                            showPicker = true
+                            editorSheet = .picker
                         } label: {
                             Label(dayAssets.isEmpty ? String(localized: "Add photos")
                                                     : String(localized: "Add more photos"),
@@ -138,16 +145,32 @@ struct JournalEditorView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        let isNew = journalStore.entry(forKey: dateKey) == nil
+                        // 免費版每天只能新增 1 則；編輯已有的日記不受限。
+                        if isNew && !model.canCreateJournal {
+                            showLimitAlert = true
+                            return
+                        }
                         journalStore.save(mood: mood, text: text,
                                           photoIDs: selectedIDs, forKey: dateKey)
+                        if isNew { model.noteJournalCreated() }
                         dismiss()
                     }
                     .accessibilityIdentifier("journal.save")
                 }
             }
             .task { await load() }
-            .sheet(isPresented: $showPicker) {
-                JournalPhotoPicker(selectedIDs: $selectedIDs)
+            .sheet(item: $editorSheet) { which in
+                switch which {
+                case .picker: JournalPhotoPicker(selectedIDs: $selectedIDs)
+                case .paywall: PaywallView()
+                }
+            }
+            .alert(String(localized: "Free plan: 1 new journal entry per day"), isPresented: $showLimitAlert) {
+                Button("Unlock PicDeck") { editorSheet = .paywall }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Subscribe for unlimited journal entries. You can still edit existing entries.")
             }
             .onChange(of: selectedIDs) { _ in refreshOthers() }
             .onChange(of: date) { _ in

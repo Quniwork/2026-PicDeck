@@ -695,19 +695,32 @@ struct PhotosTabView: View {
     private func applyRequestedSelection() {
         guard let requested = model.requestedSelection else { return }
         model.requestedSelection = nil
-        choose(requested)
+        let scale = model.requestedScale
+        model.requestedScale = nil
+
+        // 從別的分頁或小工具跳進來：畫面同時在換分頁，內容不要再做淡入淡出，才不會一頓一頓。
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            // 沒解鎖不能用的篩選：只跳付費頁，其他一律不動，關掉付費頁之後也看不到那個標籤的內容。
+            guard choose(requested) else { return }
+            // 有指定子分頁（小工具指定時間軸）就切過去，蓋過標籤預設的子分頁。
+            if let scale, model.canUse(scale) { switchScale(to: scale, keepAnchors: false) }
+        }
     }
 
-    private func choose(_ newSelection: PhotoSelection) {
-        if model.canUse(newSelection) {
-            selection = newSelection
-            // 有日子的標籤看時間軸（每天顯示過了多久），沒有的看全部。
-            if case .tag(let id) = newSelection, let tag = tagStore.tag(withID: id) {
-                switchScale(to: tag.hasAnniversary ? .timeline : .all, keepAnchors: false)
-            }
-        } else {
+    @discardableResult
+    private func choose(_ newSelection: PhotoSelection) -> Bool {
+        guard model.canUse(newSelection) else {
             showPaywall = true
+            return false
         }
+        selection = newSelection
+        // 有日子的標籤看時間軸（每天顯示過了多久），沒有的看全部。
+        if case .tag(let id) = newSelection, let tag = tagStore.tag(withID: id) {
+            switchScale(to: tag.hasAnniversary ? .timeline : .all, keepAnchors: false)
+        }
+        return true
     }
 
     // MARK: - 子分頁

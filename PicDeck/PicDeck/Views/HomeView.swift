@@ -12,6 +12,7 @@ struct HomeView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var tagStore: TagStore
 
+    @State private var openedCollection: PhotoTag?
     @State private var covers: [UUID: PHAsset] = [:]
     @State private var counts: [UUID: Int] = [:]
     @State private var onThisDay: [OnThisDayItem] = []
@@ -39,9 +40,14 @@ struct HomeView: View {
                 .padding(.bottom, 12)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Home")
+            .navigationDestination(item: $openedCollection) { tag in
+                TagCollectionView(tag: tag)
+            }
+            .onAppear(perform: openRequestedCollection)
+            .onChange(of: model.requestedCollectionTagID) { _, _ in openRequestedCollection() }
+            .navigationTitle("Collections")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { LeadingTitleToolbar(title: String(localized: "Home"), ) }
+            .toolbar { LeadingTitleToolbar(title: String(localized: "Collections")) }
             .task(id: tagStore.assignments.count + tagStore.tags.count) { loadCoversAndCounts() }
             .task { await loadOnThisDay() }
         }
@@ -210,6 +216,13 @@ struct HomeView: View {
                 IconLabel(raw: tag.symbol, size: 26)
             }
         }
+    }
+
+    /// 小工具點進來：直接打開那個標籤的選集頁。
+    private func openRequestedCollection() {
+        guard let id = model.requestedCollectionTagID else { return }
+        model.requestedCollectionTagID = nil
+        if let tag = tagStore.tag(withID: id) { openedCollection = tag }
     }
 
     /// 點卡片：切到照片分頁，並套用那個標籤。

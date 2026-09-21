@@ -226,6 +226,14 @@ final class TagStore: ObservableObject {
         return true
     }
 
+    /// 免費版可以有幾個設了日子的標籤。
+    static let freeAnniversaryLimit = 1
+
+    /// 目前有日子的標籤數，可以排除正在編輯的那一個。
+    func anniversaryCount(excluding id: UUID? = nil) -> Int {
+        tags.filter { $0.hasAnniversary && $0.id != id }.count
+    }
+
     /// 釘在首頁的標籤（不含紀念日標籤，那些本來就有自己的卡片）。
     var homePinnedTags: [PhotoTag] { tags.filter { $0.pinnedOnHome && !$0.hasAnniversary } }
 
