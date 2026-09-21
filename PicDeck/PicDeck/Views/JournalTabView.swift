@@ -59,6 +59,11 @@ struct JournalTabView: View {
                                        newestFirst: model.journalNewestFirst,
                                        columnCount: model.gridColumns(for: .journal),
                                        fitsAspect: model.gridFitsAspect(for: .journal))
+                        .pinchToZoomGrid { model.zoom(.journal, in: $0) }
+                        // 換標籤篩選、排序時，日記卡片淡入淡出並重新排列。
+                        .motionAnimation(value: tagID)
+                        .motionAnimation(value: model.journalNewestFirst)
+                        .motionAnimation(value: model.gridColumns(for: .journal))
                 } else {
                     ContentUnavailableView {
                         Label("Journal", systemImage: "book.closed")

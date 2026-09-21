@@ -143,9 +143,13 @@ struct AlbumManagerList: View {
         guard !name.isEmpty, name != node.title else { return }
         Task {
             if node.isFolder {
-                try? await library.renameFolder(id: node.id, to: name)
+                await library.attempt(String(localized: "Couldn't rename")) {
+                    try await library.renameFolder(id: node.id, to: name)
+                }
             } else {
-                try? await library.renameAlbum(id: node.id, to: name)
+                await library.attempt(String(localized: "Couldn't rename")) {
+                    try await library.renameAlbum(id: node.id, to: name)
+                }
             }
             await reload()
         }
@@ -164,9 +168,13 @@ struct AlbumManagerList: View {
         deleting = nil
         Task {
             if node.isFolder {
-                try? await library.deleteFolder(id: node.id)
+                await library.attempt(String(localized: "Couldn't delete")) {
+                    try await library.deleteFolder(id: node.id)
+                }
             } else {
-                try? await library.deleteAlbum(id: node.id)
+                await library.attempt(String(localized: "Couldn't delete")) {
+                    try await library.deleteAlbum(id: node.id)
+                }
             }
             await reload()
         }

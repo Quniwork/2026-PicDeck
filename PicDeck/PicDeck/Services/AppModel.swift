@@ -100,7 +100,7 @@ final class AppModel: ObservableObject {
         if defaults.object(forKey: Key.journalNewestFirst) != nil {
             _journalNewestFirst = Published(initialValue: defaults.bool(forKey: Key.journalNewestFirst))
         }
-        for scale in [GridContext.all, .timeline, .journal] {
+        for scale in [GridContext.all, .timeline, .journal, .collection] {
             let columns = defaults.integer(forKey: Key.gridColumns + "." + scale.rawValue)
             if Self.gridColumnRange.contains(columns) { gridColumnsByScale[scale.rawValue] = columns }
             if defaults.object(forKey: Key.gridFitsAspect + "." + scale.rawValue) != nil {

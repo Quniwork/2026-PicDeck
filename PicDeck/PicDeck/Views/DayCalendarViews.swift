@@ -45,12 +45,12 @@ struct DayCalendarGridView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, PageMetrics.contentInset)
                     } header: {
                         Text(month.title)
                             .font(.title3.weight(.bold))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 14)
+                            .padding(.horizontal, PageMetrics.contentInset)
                             .padding(.vertical, 8)
                     }
                     .id(month.id)
@@ -128,13 +128,13 @@ struct DayCalendarCell: View {
             .overlay {
                 if isToday {
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.red, lineWidth: 2)
+                        .stroke(Color.accentColor, lineWidth: 2)
                 }
             }
 
             Text("\(day)")
                 .font(.caption2)
-                .foregroundStyle(isToday ? .red : (cell == nil ? .secondary : .primary))
+                .foregroundStyle(isToday ? Color.accentColor : (cell == nil ? .secondary : .primary))
         }
     }
 }

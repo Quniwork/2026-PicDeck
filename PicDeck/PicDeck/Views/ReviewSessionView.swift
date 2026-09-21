@@ -57,6 +57,7 @@ struct ReviewSessionView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .failureToast()
         .toolbar(.hidden, for: .tabBar)
         .task { await load() }
         .sheet(isPresented: $showTagPicker) {
@@ -422,7 +423,11 @@ struct ReviewSessionView: View {
             showBanner(String(localized: "Undone"), icon: "arrow.uturn.backward", tint: .secondary)
         case .favorite(let previous):
             if let asset = library.asset(withID: last.assetID) {
-                Task { try? await library.setFavorite(asset, to: previous) }
+                Task {
+                    await library.attempt(String(localized: "Couldn't change favorites")) {
+                        try await library.setFavorite(asset, to: previous)
+                    }
+                }
             }
             showBanner(String(localized: "Undone"), icon: "arrow.uturn.backward", tint: .secondary)
         case .skip:
@@ -463,7 +468,11 @@ struct ReviewSessionView: View {
         guard let asset = currentAsset else { return }
         let now = !isFavorite(asset)
         favoriteState[asset.localIdentifier] = now
-        Task { try? await library.setFavorite(asset, to: now) }
+        Task {
+            await library.attempt(String(localized: "Couldn't change favorites")) {
+                try await library.setFavorite(asset, to: now)
+            }
+        }
         showBanner(now ? String(localized: "Added to favorites")
                        : String(localized: "Removed from favorites"),
                    icon: now ? "heart.fill" : "heart.slash.fill",
@@ -485,7 +494,11 @@ struct ReviewSessionView: View {
     /// 歸檔到本機相簿，同時視為已整理。
     private func fileCurrent(into album: AlbumSummary) {
         guard let asset = currentAsset, model.hasQuotaLeft else { return }
-        Task { try? await library.addAsset(asset, toAlbumWithID: album.id) }
+        Task {
+            await library.attempt(String(localized: "Couldn't add to the album")) {
+                try await library.addAsset(asset, toAlbumWithID: album.id)
+            }
+        }
         organized.markOrganized(asset)
         model.consumeQuota()
         history.append(SessionAction(assetID: asset.localIdentifier, kind: .keep))

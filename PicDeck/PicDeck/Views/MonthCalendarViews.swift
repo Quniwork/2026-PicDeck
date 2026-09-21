@@ -27,13 +27,13 @@ struct MonthCalendarGridView: View {
                                 .accessibilityIdentifier("bucket.m\(month.year)-\(month.month)")
                             }
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, PageMetrics.contentInset)
                         .padding(.bottom, 8)
                     } header: {
                         Text(String(group.year))
                             .font(.title2.weight(.bold))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 14)
+                            .padding(.horizontal, PageMetrics.contentInset)
                             .padding(.vertical, 8)
                     }
                     .id(group.id)
@@ -132,7 +132,7 @@ struct MiniMonthCalendar: View {
     }
 
     private func color(for day: Int) -> Color {
-        if isToday(day) { return .red }
+        if isToday(day) { return Color.accentColor }
         // 沒有照片的日子要淡，但不能淡到看不見，深色模式下尤其容易消失。
         return hasPhotos(day) ? .primary : .secondary.opacity(0.75)
     }

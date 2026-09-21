@@ -48,6 +48,7 @@ struct AlbumPickerView: View {
                 }
             }
             .navigationTitle("Add to album")
+            .failureToast()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -118,9 +119,13 @@ struct AlbumPickerView: View {
 
         Task {
             if isMember {
-                try? await library.removeAssets(assets, fromAlbumWithID: album.id)
+                await library.attempt(String(localized: "Couldn't update the album")) {
+                    try await library.removeAssets(assets, fromAlbumWithID: album.id)
+                }
             } else {
-                try? await library.addAssets(assets, toAlbumWithID: album.id)
+                await library.attempt(String(localized: "Couldn't add to the album")) {
+                    try await library.addAssets(assets, toAlbumWithID: album.id)
+                }
             }
             await reload()
         }
@@ -244,6 +249,7 @@ struct AlbumCreateForm: View {
                 }
             }
             .navigationTitle(kind == .album ? "New album" : "New folder")
+            .failureToast()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -268,12 +274,19 @@ struct AlbumCreateForm: View {
         Task {
             switch kind {
             case .album:
-                if let id = try? await library.createAlbum(named: title, inFolderID: parent),
-                   !assets.isEmpty {
-                    try? await library.addAssets(assets, toAlbumWithID: id)
+                var newID: String?
+                let created = await library.attempt(String(localized: "Couldn't create the album")) {
+                    newID = try await library.createAlbum(named: title, inFolderID: parent)
+                }
+                if created, let id = newID, !assets.isEmpty {
+                    await library.attempt(String(localized: "Couldn't add to the album")) {
+                        try await library.addAssets(assets, toAlbumWithID: id)
+                    }
                 }
             case .folder:
-                _ = try? await library.createFolder(named: title, inFolderID: parent)
+                await library.attempt(String(localized: "Couldn't create the folder")) {
+                    _ = try await library.createFolder(named: title, inFolderID: parent)
+                }
             }
             onCreated()
             dismiss()

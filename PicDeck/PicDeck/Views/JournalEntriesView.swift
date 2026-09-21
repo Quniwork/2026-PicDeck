@@ -54,7 +54,7 @@ struct JournalEntriesView: View {
                 }
             } else {
                 AnchoredScrollView(anchorID: nil, isReady: true, scrub: scrub) {
-                    LazyVStack(spacing: 14) {
+                    LazyVStack(spacing: 8) {
                         ForEach(visibleEntries) { entry in
                             JournalEntryRow(entry: entry, anniversaryTag: anniversaryTag,
                                             columnCount: columnCount, fitsAspect: fitsAspect) {
@@ -62,6 +62,7 @@ struct JournalEntriesView: View {
                                 onEdit(parts.year, parts.month, parts.day)
                             }
                             .id(entry.id)
+                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
                             .accessibilityIdentifier("journal.entry.\(entry.id)")
                         }
                     }

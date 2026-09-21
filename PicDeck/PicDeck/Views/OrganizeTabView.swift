@@ -22,6 +22,7 @@ struct OrganizeTabView: View {
                 }
             }
             .navigationTitle("Organize")
+            .failureToast()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { LeadingTitleToolbar(title: String(localized: "Organize"), ) }
             // 只有照片子層需要載入，而且不能掛在會消失又出現的清單上，不然會一直重載。

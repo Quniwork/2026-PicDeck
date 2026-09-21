@@ -20,7 +20,8 @@ struct PicDeckApp: App {
                 .environmentObject(tagStore)
                 .environmentObject(journalStore)
                 .environmentObject(noteStore)
-                .environment(\.dynamicTypeSize, .small)
+                // 字比系統設定小兩級，並且跟著系統的文字大小走。
+                .modifier(RelativeTypeSize())
                 .onAppear { model.appearance.apply() }
         }
         .onChange(of: scenePhase) { _, phase in

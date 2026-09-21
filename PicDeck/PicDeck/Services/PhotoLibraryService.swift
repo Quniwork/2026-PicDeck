@@ -7,6 +7,8 @@ import UIKit
 final class PhotoLibraryService: ObservableObject {
 
     @Published var authorizationStatus: PHAuthorizationStatus = .notDetermined
+    /// 最近一次操作失敗的提示。畫面上的 `failureToast()` 會顯示它，幾秒後自動消失。
+    @Published var failure: FailureNotice?
     @Published private(set) var isLoading = false
     /// 系統相簿有任何變動（在別的 App 改了喜愛、刪了照片、加了相簿）就加一。
     /// 畫面看到它變了，就重新取最新的照片狀態。
@@ -23,6 +25,27 @@ final class PhotoLibraryService: ObservableObject {
 
     deinit {
         PHPhotoLibrary.shared().unregisterChangeObserver(changeObserver)
+    }
+
+    struct FailureNotice: Equatable, Identifiable {
+        let id = UUID()
+        let text: String
+    }
+
+    /// 執行一個會動到系統照片的操作。失敗就記下提示，不再默默吞掉。
+    @discardableResult
+    func attempt(_ failureText: String, _ operation: () async throws -> Void) async -> Bool {
+        do {
+            try await operation()
+            return true
+        } catch {
+            // 使用者自己按了取消（例如系統的刪除確認），不算失敗，也不用提示。
+            let nsError = error as NSError
+            let cancelled = (nsError.domain == PHPhotosErrorDomain && nsError.code == PHPhotosError.userCancelled.rawValue)
+                || (nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError)
+            if !cancelled { failure = FailureNotice(text: failureText) }
+            return false
+        }
     }
 
     // MARK: - 權限

@@ -111,6 +111,16 @@ struct PhotosTabView: View {
             content
                 // 每個分頁的背景統一用系統的分組灰底（首頁、日記、整理、更多也是）。
                 .background(Color(.systemGroupedBackground))
+                // 換篩選、排序、縮放時內容淡入淡出，不是一下子跳掉。
+                .motionAnimation(.easeInOut(duration: 0.22), value: isLoading)
+                .motionAnimation(value: selection)
+                .motionAnimation(value: model.gridColumns(for: .all))
+                .motionAnimation(value: model.gridColumns(for: .timeline))
+                .failureToast()
+                // 全部與時間軸：兩指放大縮小。
+                .pinchToZoomGrid { zoomIn in
+                    if let context = GridContext(scale) { withMotion { model.zoom(context, in: zoomIn) } }
+                }
             // 子分類與選取列都是浮在內容上面的玻璃膠囊，內容會捲到它們後面，跟頂部一樣看得穿。
             // 選取中不需要切換年月日，所以換成選取列。
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -376,7 +386,9 @@ struct PhotosTabView: View {
         guard !targets.isEmpty else { return }
         Task {
             for asset in targets {
-                try? await library.setFavorite(asset, to: !removing)
+                await library.attempt(String(localized: "Couldn't change favorites")) {
+                    try await library.setFavorite(asset, to: !removing)
+                }
             }
         }
     }
@@ -417,7 +429,11 @@ struct PhotosTabView: View {
 
     private func toggleFavorite(_ asset: PHAsset) {
         let current = library.asset(withID: asset.localIdentifier) ?? asset
-        Task { try? await library.setFavorite(current, to: !current.isFavorite) }
+        Task {
+            await library.attempt(String(localized: "Couldn't change favorites")) {
+                try await library.setFavorite(current, to: !current.isFavorite)
+            }
+        }
     }
 
     private func openJournal(for asset: PHAsset) {

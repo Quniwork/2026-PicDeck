@@ -27,7 +27,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 18) {
                     if anniversaryTags.isEmpty && tagStore.homePinnedTags.isEmpty && onThisDay.isEmpty {
                         emptyState
                     }
@@ -50,7 +50,7 @@ struct HomeView: View {
     // MARK: - 日子
 
     private var anniversarySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             sectionTitle("Days")
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -102,11 +102,11 @@ struct HomeView: View {
     // MARK: - 釘選在首頁的標籤
 
     private var collectionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             sectionTitle("Tags")
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-                      spacing: 12) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
+                      spacing: 8) {
                 ForEach(tagStore.homePinnedTags) { tag in
                     NavigationLink {
                         TagCollectionView(tag: tag)
@@ -139,7 +139,7 @@ struct HomeView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(10)
+        .padding(8)
         .background(Color(.secondarySystemGroupedBackground),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         // 淺色底上卡片邊界不明顯，加一圈很淡的線。
@@ -151,7 +151,7 @@ struct HomeView: View {
     // MARK: - 那年今天
 
     private var onThisDaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             sectionTitle("On this day")
 
             ScrollView(.horizontal, showsIndicators: false) {

@@ -22,6 +22,9 @@ struct TagCollectionView: View {
     @State private var search = ""
     @State private var editingAsset: PHAsset?
     @State private var pager: PagerTarget?
+    @State private var filter: PhotoFilter = .all
+    /// 過濾條件選中的照片識別碼；「所有項目」時是 nil。
+    @State private var filterIDs: Set<String>?
 
     private struct PagerTarget: Identifiable {
         let startID: String
@@ -30,7 +33,10 @@ struct TagCollectionView: View {
 
     private var mode: DisplayMode { DisplayMode(rawValue: modeRaw) ?? .single }
     private var subTags: [PhotoTag] { tagStore.coTags(of: tag.id) }
-    private let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
+    @EnvironmentObject private var model: AppModel
+    private var gridColumns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 2), count: model.gridColumns(for: .collection))
+    }
 
     /// 選了幾個二次標籤就要同時符合（交集），再套搜尋字。
     private var visible: [PHAsset] {
@@ -38,6 +44,7 @@ struct TagCollectionView: View {
         return assets.filter { asset in
             let ids = Set(tagStore.tags(for: asset).map(\.id))
             guard selectedSubTags.isSubset(of: ids) else { return false }
+            if let filterIDs, !filterIDs.contains(asset.localIdentifier) { return false }
             guard !query.isEmpty else { return true }
             return noteStore.note(for: asset)?.text.localizedCaseInsensitiveContains(query) == true
         }
@@ -57,11 +64,12 @@ struct TagCollectionView: View {
                 } else if mode == .single {
                     LazyVStack(spacing: 14) {
                         ForEach(visible, id: \.localIdentifier) { asset in
-                            CollectionCard(asset: asset)
+                            CollectionCard(asset: asset, hiddenTagID: tag.id)
                                 .onTapGesture { editingAsset = asset }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityAddTraits(.isButton)
                                 .accessibilityIdentifier("collection.item")
+                                .transition(.opacity.combined(with: .scale(scale: 0.96)))
                         }
                     }
                     .padding(.horizontal, 16)
@@ -71,6 +79,7 @@ struct TagCollectionView: View {
                             AssetThumbnail(asset: asset, size: 200, showsDuration: false, showsFavorite: true)
                                 .onTapGesture { pager = PagerTarget(startID: asset.localIdentifier) }
                                 .accessibilityIdentifier("collection.cell")
+                                .transition(.opacity.combined(with: .scale(scale: 0.9)))
                         }
                     }
                     .padding(.horizontal, 2)
@@ -79,27 +88,68 @@ struct TagCollectionView: View {
             .padding(.vertical, 8)
         }
         .background(Color(.systemGroupedBackground))
+        // 篩選、二次篩選、搜尋、切換顯示方式、縮放：內容淡入淡出、重新排列。
+        .motionAnimation(value: visible.map(\.localIdentifier))
+        .motionAnimation(value: modeRaw)
+        .motionAnimation(value: model.gridColumns(for: .collection))
+        .pinchToZoomGrid { zoomIn in
+            if mode == .grid { withMotion { model.zoom(.collection, in: zoomIn) } }
+        }
         .navigationTitle(tag.name)
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search, prompt: Text("Search notes"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    modeRaw = (mode == .single ? DisplayMode.grid : DisplayMode.single).rawValue
-                } label: {
-                    Image(systemName: mode == .single ? "square.grid.2x2" : "rectangle.grid.1x2")
-                }
-                .accessibilityLabel(Text(mode == .single ? "Grid view" : "Single view"))
-                .accessibilityIdentifier("collection.mode")
-            }
+            ToolbarItem(placement: .topBarTrailing) { optionsMenu }
+        }
+        .task(id: filter) {
+            filterIDs = filter == .all ? nil : Set(await library.assets(matching: filter).map(\.localIdentifier))
         }
         .task(id: tagStore.assignments.count) { reload() }
         .sheet(item: $editingAsset) { asset in
             NoteEditorView(asset: asset)
         }
         .sheet(item: $pager) { target in
-            CollectionPager(assets: visible, startID: target.startID)
+            CollectionPager(assets: visible, startID: target.startID, hiddenTagID: tag.id)
         }
+    }
+
+    /// 右上角：顯示方式（單張／柵欄）、放大縮小（柵欄）、過濾條件。跟照片分頁的篩選選單同一款。
+    private var optionsMenu: some View {
+        Menu {
+            Section(String(localized: "Display")) {
+                Toggle(isOn: Binding(get: { mode == .single }, set: { _ in modeRaw = DisplayMode.single.rawValue })) {
+                    Label(String(localized: "Single view"), systemImage: "rectangle.grid.1x2")
+                }
+                Toggle(isOn: Binding(get: { mode == .grid }, set: { _ in modeRaw = DisplayMode.grid.rawValue })) {
+                    Label(String(localized: "Grid view"), systemImage: "square.grid.2x2")
+                }
+            }
+
+            PhotoFilterMenuSection(isSelected: { filter == $0 }, onSelect: { filter = $0 })
+
+            // 顯示方式選項永遠排在最下面。
+            if mode == .grid {
+                Menu(String(localized: "View Options")) {
+                    Button { model.zoom(.collection, in: true) } label: {
+                        Label(String(localized: "Zoom In"), systemImage: "plus.magnifyingglass")
+                    }
+                    .disabled(model.gridColumns(for: .collection) <= AppModel.gridColumnRange.lowerBound)
+                    Button { model.zoom(.collection, in: false) } label: {
+                        Label(String(localized: "Zoom Out"), systemImage: "minus.magnifyingglass")
+                    }
+                    .disabled(model.gridColumns(for: .collection) >= AppModel.gridColumnRange.upperBound)
+                }
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease")
+                .overlay(alignment: .topTrailing) {
+                    if filter != .all {
+                        Circle().fill(.red).frame(width: 7, height: 7).offset(x: 4, y: -3)
+                    }
+                }
+        }
+        .accessibilityLabel(Text("Filter"))
+        .accessibilityIdentifier("collection.options")
     }
 
     private var filterChips: some View {
@@ -146,6 +196,8 @@ struct TagCollectionView: View {
 /// 一則收藏：大圖、備註、標籤。單張顯示與柵欄彈窗共用。
 struct CollectionCard: View {
     let asset: PHAsset
+    /// 從這個標籤進來的，不需要在每一則重複顯示。
+    var hiddenTagID: UUID? = nil
 
     @EnvironmentObject private var tagStore: TagStore
     @EnvironmentObject private var noteStore: NoteStore
@@ -167,16 +219,13 @@ struct CollectionCard: View {
             .frame(maxHeight: 440)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            TagChipsRow(tags: tagStore.tags(for: asset))
+            TagChipsRow(tags: tagStore.tags(for: asset).filter { $0.id != hiddenTagID })
 
+            // 沒寫備註就不顯示任何提示。
             if let note = noteStore.note(for: asset), !note.text.isEmpty {
                 Text(note.text)
                     .font(.subheadline)
                     .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Text("Add a short note")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
             }
         }
         .padding(12)
@@ -192,13 +241,15 @@ struct CollectionCard: View {
 /// 柵欄點開的彈窗：一則一則的收藏，可以左右滑看上一則、下一則。點備註區可以編輯。
 struct CollectionPager: View {
     let assets: [PHAsset]
+    var hiddenTagID: UUID? = nil
     @State var currentID: String
 
     @Environment(\.dismiss) private var dismiss
     @State private var editingAsset: PHAsset?
 
-    init(assets: [PHAsset], startID: String) {
+    init(assets: [PHAsset], startID: String, hiddenTagID: UUID? = nil) {
         self.assets = assets
+        self.hiddenTagID = hiddenTagID
         _currentID = State(initialValue: startID)
     }
 
@@ -207,7 +258,7 @@ struct CollectionPager: View {
             TabView(selection: $currentID) {
                 ForEach(assets, id: \.localIdentifier) { asset in
                     ScrollView {
-                        CollectionCard(asset: asset)
+                        CollectionCard(asset: asset, hiddenTagID: hiddenTagID)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
                             .onTapGesture { editingAsset = asset }

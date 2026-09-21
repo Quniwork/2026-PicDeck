@@ -52,6 +52,7 @@ struct TagPickerView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .accessibilityIdentifier("tagpicker.done")
                 }
             }
         }

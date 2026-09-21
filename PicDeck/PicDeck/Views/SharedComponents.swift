@@ -6,6 +6,8 @@ enum PageMetrics {
     static let contentTopGap: CGFloat = 0
     /// 頁面左右的邊距。
     static let sideMargin: CGFloat = 16
+    /// 年、月、日這幾種「一塊一塊」的畫面，內容左右邊距。跟左上角標題文字的左邊對齊。
+    static let contentInset: CGFloat = 26
 }
 
 /// 字級規則。標題分兩組：旁邊有按鈕與副標的（照片、日記），跟單純的功能頁（首頁、整理、更多）。
@@ -123,5 +125,76 @@ struct ActionBarButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(id)
+    }
+}
+
+extension View {
+    /// 兩指張開放大（每列張數變少）、捏合縮小（變多）。所有格狀畫面共用。
+    /// 用 simultaneousGesture，不會擋住捲動與點照片。
+    func pinchToZoomGrid(_ zoom: @escaping (_ zoomIn: Bool) -> Void) -> some View {
+        simultaneousGesture(
+            MagnifyGesture().onEnded { value in
+                if value.magnification > 1.15 { zoom(true) }
+                else if value.magnification < 0.87 { zoom(false) }
+            }
+        )
+    }
+}
+
+// MARK: - 失敗提示
+
+private struct FailureToastModifier: ViewModifier {
+    @EnvironmentObject private var library: PhotoLibraryService
+    @State private var hideTask: Task<Void, Never>?
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .bottom) {
+                if let failure = library.failure {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                        Text(failure.text).font(.footnote.weight(.medium)).lineLimit(2)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .floatingGlass(in: Capsule())
+                    .padding(.bottom, 110)
+                    .padding(.horizontal, 20)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .accessibilityAddTraits(.updatesFrequently)
+                    .accessibilityIdentifier("failure.toast")
+                }
+            }
+            .sensoryFeedback(.error, trigger: library.failure?.id)
+            .onChange(of: library.failure) { _, new in
+                hideTask?.cancel()
+                guard new != nil else { return }
+                hideTask = Task {
+                    try? await Task.sleep(nanoseconds: 3_500_000_000)
+                    guard !Task.isCancelled else { return }
+                    withMotion { library.failure = nil }
+                }
+            }
+            .motionAnimation(value: library.failure)
+    }
+}
+
+extension View {
+    /// 操作失敗（例如加到相簿失敗）時，在畫面底部顯示提示。
+    func failureToast() -> some View { modifier(FailureToastModifier()) }
+}
+
+// MARK: - 字級
+
+/// 整個 App 的字比系統設定小兩級（預設「大」就變成「小」，跟分頁列的字差不多）。
+/// 使用者在系統調大文字，App 也會跟著調大，只是永遠維持小兩級。
+struct RelativeTypeSize: ViewModifier {
+    @Environment(\.dynamicTypeSize) private var system
+    var steps = 2
+
+    func body(content: Content) -> some View {
+        let all = DynamicTypeSize.allCases
+        let index = all.firstIndex(of: system) ?? 0
+        return content.dynamicTypeSize(all[max(0, index - steps)])
     }
 }

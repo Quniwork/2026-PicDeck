@@ -213,6 +213,7 @@ struct PendingTrashView: View {
                 }
             }
             .navigationTitle("Trash")
+            .failureToast()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -244,9 +245,14 @@ struct PendingTrashView: View {
         isDeleting = true
         let ids = model.trashedAssetIDs
         Task {
-            try? await library.delete(assetIDs: ids)
-            model.clearTrash()
-            assets = []
+            let deleted = await library.attempt(String(localized: "Couldn't delete")) {
+                try await library.delete(assetIDs: ids)
+            }
+            // 沒刪成（取消或失敗）就保留待刪清單，不要當成已經刪掉。
+            if deleted {
+                model.clearTrash()
+                assets = []
+            }
             isDeleting = false
         }
     }

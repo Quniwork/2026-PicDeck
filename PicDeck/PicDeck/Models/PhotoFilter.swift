@@ -177,7 +177,7 @@ enum DateTitle {
 }
 
 enum GridContext: String {
-    case all, timeline, journal
+    case all, timeline, journal, collection
 
     init?(_ scale: PhotoScale) {
         switch scale {

@@ -197,7 +197,7 @@ final class PicDeckSmokeTests: XCTestCase {
                 }
                 sleep(2)
                 attachScreenshot(app, name: "07b-tag-created")
-                tapByCoordinate(firstButton(in: app, labels: ["完成", "Done"]))
+                tapByCoordinate(app.buttons["tagpicker.done"])
                 sleep(2)
             }
         }
@@ -372,7 +372,7 @@ final class PicDeckSmokeTests: XCTestCase {
 
         tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
         sleep(2)
-        tapByCoordinate(firstButton(in: app, labels: ["完成", "Done"]))
+        tapByCoordinate(app.buttons["tagpicker.done"])
         sleep(1)
     }
 
@@ -825,7 +825,7 @@ final class PicDeckSmokeTests: XCTestCase {
         XCTAssertNotEqual(firstAfter, firstBefore, "順序沒有改變")
         attachScreenshot(app, name: "34-tag-reordered")
 
-        tapByCoordinate(firstButton(in: app, labels: ["完成", "Done"]))
+        tapByCoordinate(app.buttons["tagpicker.done"])
         sleep(2)
     }
 
@@ -1555,7 +1555,7 @@ final class PicDeckSmokeTests: XCTestCase {
             }
             XCTAssertFalse(app.textFields["tag.name"].exists, "標籤表單沒有關閉：\(name)")
         }
-        tapByCoordinate(firstButton(in: app, labels: ["完成", "Done"]))
+        tapByCoordinate(app.buttons["tagpicker.done"])
         sleep(1)
         attachScreenshot(app, name: "61-note-with-tags")
         tapByCoordinate(app.buttons["note.save"])
@@ -1579,6 +1579,13 @@ final class PicDeckSmokeTests: XCTestCase {
 
         // 點進去：有備註的項目，上面有二次篩選的 #燒肉。
         tapByCoordinate(collection.firstMatch)
+        // 顯示方式會記住，上次測試若停在柵欄，先切回單張。
+        let optionsFirst = app.descendants(matching: .any)["collection.options"]
+        XCTAssertTrue(optionsFirst.waitForExistence(timeout: 10), "收藏沒有右上角選單")
+        tapByCoordinate(optionsFirst)
+        sleep(1)
+        tapByCoordinate(app.buttons["單張顯示"])
+        sleep(2)
         let item = app.descendants(matching: .any).matching(identifier: "collection.item").firstMatch
         sleep(2)
         attachScreenshot(app, name: "62b-collection")
@@ -1592,9 +1599,12 @@ final class PicDeckSmokeTests: XCTestCase {
         attachScreenshot(app, name: "63-collection-filtered")
 
         // 切到柵欄：縮圖格狀，點一張彈出窗口，可以左右滑；再切回單張。
-        let modeButton = app.descendants(matching: .any)["collection.mode"]
-        XCTAssertTrue(modeButton.waitForExistence(timeout: 5), "收藏沒有顯示模式切換")
-        tapByCoordinate(modeButton)
+        let optionsButton = app.descendants(matching: .any)["collection.options"]
+        XCTAssertTrue(optionsButton.waitForExistence(timeout: 5), "收藏沒有右上角選單")
+        tapByCoordinate(optionsButton)
+        sleep(1)
+        attachScreenshot(app, name: "64c-collection-menu")
+        tapByCoordinate(app.buttons["柵欄顯示"])
         sleep(2)
         let cell = app.descendants(matching: .any).matching(identifier: "collection.cell").firstMatch
         XCTAssertTrue(cell.waitForExistence(timeout: 8), "柵欄模式沒有縮圖")
@@ -1605,7 +1615,9 @@ final class PicDeckSmokeTests: XCTestCase {
         attachScreenshot(app, name: "64b-collection-pager")
         tapByCoordinate(app.descendants(matching: .any)["collection.pager.close"])
         sleep(1)
-        tapByCoordinate(modeButton)
+        tapByCoordinate(optionsButton)
+        sleep(1)
+        tapByCoordinate(app.buttons["單張顯示"])
         sleep(2)
 
         // 清掉測試資料：備註（點項目進編輯刪除）與兩個標籤。
@@ -1987,6 +1999,133 @@ final class PicDeckSmokeTests: XCTestCase {
         tapByCoordinate(thumbs.element(boundBy: 1))
         sleep(2)
         attachScreenshot(app, name: "91-en-detail")
+    }
+
+    /// 兩指張開放大、捏合縮小：全部與時間軸的格狀畫面。
+    func testPinchZoomGrid() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        let thumbs = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'"))
+
+        for scale in ["scale.all", "scale.timeline"] {
+            if !app.buttons[scale].waitForExistence(timeout: 15) { attachScreenshot(app, name: "86-pinch-missing-\(scale)") }
+            XCTAssertTrue(app.buttons[scale].exists, "找不到 \(scale)")
+            tapByCoordinate(app.buttons[scale])
+            sleep(3)
+            guard let first = waitFirst(thumbs, timeout: 10) else { XCTFail("沒有照片"); return }
+            // 設定會記住，先縮小幾次回到中間，才不會一開始就在最大或最小。
+            waitFirst(thumbs, timeout: 5)?.pinch(withScale: 0.4, velocity: -3)
+            sleep(2)
+            attachScreenshot(app, name: "86-after-pinch-out-\(scale)")
+            let before = waitFirst(thumbs, timeout: 5)?.frame.width ?? 0
+            waitFirst(thumbs, timeout: 5)?.pinch(withScale: 2.5, velocity: 3)
+            sleep(2)
+            attachScreenshot(app, name: "87-after-pinch-in-\(scale)")
+            let bigger = waitFirst(thumbs, timeout: 5)?.frame.width ?? 0
+            XCTAssertGreaterThan(bigger, before + 5, "\(scale) 兩指張開後照片沒有變大")
+            waitFirst(thumbs, timeout: 5)?.pinch(withScale: 0.4, velocity: -3)
+            sleep(2)
+            let restored = waitFirst(thumbs, timeout: 5)?.frame.width ?? 0
+            XCTAssertLessThan(restored, bigger - 5, "\(scale) 捏合後照片沒有變小")
+        }
+    }
+
+    /// 日記裡照片的兩指縮放：張開後每張變大，捏合後變小。
+    func testPinchZoomJournal() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        sleep(3)
+        let photo = { app.descendants(matching: .any).matching(identifier: "journal.photo.0").firstMatch }
+        XCTAssertTrue(photo().waitForExistence(timeout: 10), "日記裡沒有照片")
+
+        // 設定會記住，先捏合縮小，才不會一開始就在最大或最小。
+        photo().pinch(withScale: 0.4, velocity: -3)
+        sleep(2)
+        let before = photo().frame.width
+        photo().pinch(withScale: 2.5, velocity: 3)
+        sleep(2)
+        attachScreenshot(app, name: "88-journal-pinch-in")
+        let bigger = photo().frame.width
+        XCTAssertGreaterThan(bigger, before + 5, "日記兩指張開後照片沒有變大")
+        photo().pinch(withScale: 0.4, velocity: -3)
+        sleep(2)
+        XCTAssertLessThan(photo().frame.width, bigger - 5, "日記捏合後照片沒有變小")
+    }
+
+    /// 單張檢視刪除後出現「復原」，按了照片回來、待刪除數字跟著回去。
+    func testDetailDeleteUndo() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        tapByCoordinate(app.buttons["scale.all"])
+        sleep(3)
+        let thumbs = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'"))
+        guard let first = waitFirst(thumbs, timeout: 10) else { XCTFail("沒有照片"); return }
+        tapByCoordinate(first)
+        let any = { (id: String) in app.descendants(matching: .any)[id] }
+        XCTAssertTrue(any("detail.delete").waitForExistence(timeout: 8), "沒有檢視")
+        let titleBefore = any("detail.title").label
+        tapByCoordinate(any("detail.delete"))
+        XCTAssertTrue(any("detail.undo").waitForExistence(timeout: 5), "刪除後沒有復原")
+        attachScreenshot(app, name: "89-detail-undo")
+        XCTAssertNotEqual(any("detail.title").label, titleBefore, "刪除後沒有換到下一張")
+        tapByCoordinate(any("detail.undo"))
+        sleep(2)
+        XCTAssertFalse(any("detail.undo").exists, "復原後提示還在")
+        XCTAssertEqual(any("detail.title").label, titleBefore, "復原後沒有回到原本那張")
+        tapByCoordinate(any("detail.close"))
+    }
+
+    /// 系統把文字調很大時，App 也跟著變大（永遠比系統小兩級），畫面沒有爆掉。
+    func testLargeSystemText() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        attachScreenshot(app, name: "92-large-text-photos")
+        app.tabBars.buttons.element(boundBy: 3).tap()
+        sleep(3)
+        attachScreenshot(app, name: "93-large-text-organize")
+    }
+
+    /// 年、月、日三個子分頁的版面截圖（檢查左右邊距與標題對齊）。
+    func testYearMonthDayLayoutShots() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        for scale in ["year", "month", "day"] {
+            tapByCoordinate(app.buttons["scale.\(scale)"])
+            sleep(3)
+            attachScreenshot(app, name: "94-\(scale)")
+        }
+    }
+
+    /// 回到主畫面截圖，看 App 圖示實際的樣子（淺色／深色各跑一次）。
+    func testHomeScreenIconShot() throws {
+        let app = XCUIApplication()
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCUIDevice.shared.press(.home)
+        sleep(2)
+        // 圖示可能在主畫面的後面幾頁，往左滑到看得到 PicDeck 為止。
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for _ in 0..<4 where !springboard.icons["PicDeck"].exists {
+            springboard.swipeLeft()
+            sleep(1)
+        }
+        attachScreenshot(app, name: "95-home-screen")
     }
 
     // MARK: - 工具

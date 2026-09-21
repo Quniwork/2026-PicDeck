@@ -22,6 +22,17 @@ struct PhotoDetailView: View {
     @State private var showTrash = false
     /// 這次自己改過的喜愛狀態，系統照片庫通知回來之前先用它顯示。
     @State private var favoriteState: [String: Bool] = [:]
+    /// 觸覺回饋：每做一次動作加一，換成對應的震動。
+    @State private var favoriteTick = 0
+    @State private var deleteTick = 0
+    /// 剛刪掉的一張，顯示「復原」用。
+    @State private var undoItem: UndoItem?
+    @State private var undoHideTask: Task<Void, Never>?
+
+    private struct UndoItem: Equatable {
+        let assetID: String
+        let index: Int
+    }
 
     private enum DetailSheet: Identifiable {
         case journal, note, tags, album
@@ -55,6 +66,8 @@ struct PhotoDetailView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .overlay(alignment: .bottom) { undoBanner }
+        .failureToast()
         .sheet(item: $sheet) { which in
             if let asset = current {
                 switch which {
@@ -73,6 +86,9 @@ struct PhotoDetailView: View {
             }
         }
         .sheet(isPresented: $showTrash) { PendingTrashView() }
+        .sensoryFeedback(.success, trigger: favoriteTick)
+        .sensoryFeedback(.warning, trigger: deleteTick)
+        .sensoryFeedback(.selection, trigger: currentID)
     }
 
     // MARK: - 頁首
@@ -166,6 +182,40 @@ struct PhotoDetailView: View {
                         tint: .white, action: action)
     }
 
+    /// 刪除之後浮在功能列上面：「已放進待刪除　復原」。
+    @ViewBuilder
+    private var undoBanner: some View {
+        if let undoItem {
+            HStack(spacing: 14) {
+                Label(String(localized: "Moved to pending deletion"), systemImage: "trash.fill")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.white)
+                Button(String(localized: "Undo")) { undoDelete(undoItem) }
+                    .font(.footnote.weight(.bold))
+                    .accessibilityIdentifier("detail.undo")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .floatingGlass(in: Capsule(), interactive: true)
+            .padding(.bottom, 96)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    private func undoDelete(_ item: UndoItem) {
+        undoHideTask?.cancel()
+        model.unmarkTrashed(item.assetID)
+        if let asset = library.asset(withID: item.assetID) {
+            withMotion {
+                assets.insert(asset, at: min(item.index, assets.count))
+                currentID = asset.localIdentifier
+                undoItem = nil
+            }
+        } else {
+            withMotion { undoItem = nil }
+        }
+    }
+
     // MARK: - 動作
 
     private func dayParts(_ asset: PHAsset) -> (Int, Int, Int) {
@@ -183,17 +233,33 @@ struct PhotoDetailView: View {
         guard let asset = current else { return }
         let now = !isFavorite(asset)
         favoriteState[asset.localIdentifier] = now
+        favoriteTick += 1
         let target = library.asset(withID: asset.localIdentifier) ?? asset
-        Task { try? await library.setFavorite(target, to: now) }
+        Task {
+            let ok = await library.attempt(String(localized: "Couldn't change favorites")) {
+                try await library.setFavorite(target, to: now)
+            }
+            // 沒成功就把畫面上的狀態還原。
+            if !ok { favoriteState[asset.localIdentifier] = !now }
+        }
     }
 
     /// 刪除：跟整理一樣先放進待刪清單，不會直接刪掉。這張從檢視裡拿掉，換到相鄰的一張；沒有了就關閉。
     private func deleteCurrent() {
         guard let asset = current, let index = assets.firstIndex(where: { $0.localIdentifier == currentID }) else { return }
         model.markTrashed(asset.localIdentifier)
+        deleteTick += 1
         var remaining = assets
         remaining.remove(at: index)
+        // 最後一張刪掉就直接關閉；否則留在檢視裡，顯示可以復原的提示。
         guard !remaining.isEmpty else { dismiss(); return }
+        withMotion { undoItem = UndoItem(assetID: asset.localIdentifier, index: index) }
+        undoHideTask?.cancel()
+        undoHideTask = Task {
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled else { return }
+            withMotion { undoItem = nil }
+        }
         let next = remaining[min(index, remaining.count - 1)]
         withMotion {
             assets = remaining

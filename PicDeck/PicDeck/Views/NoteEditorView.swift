@@ -80,11 +80,15 @@ struct NoteEditorView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        noteStore.save(text: text, isDone: existing?.isDone ?? false, for: asset)
+                    // 標籤一加就存了，所以只加標籤、不寫備註也要能按完成離開。
+                    // 沒寫備註且原本也沒有，就不建立備註。
+                    Button("Done") {
+                        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty || existing != nil {
+                            noteStore.save(text: text, isDone: existing?.isDone ?? false, for: asset)
+                        }
                         dismiss()
                     }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && existing == nil)
                     .accessibilityIdentifier("note.save")
                 }
             }

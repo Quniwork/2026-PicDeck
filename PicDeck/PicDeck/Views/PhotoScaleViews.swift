@@ -75,7 +75,8 @@ struct BucketGridView: View {
                     .accessibilityIdentifier("bucket.\(bucket.id)")
                 }
             }
-            .padding(compact ? 12 : 16)
+            .padding(.horizontal, PageMetrics.contentInset)
+            .padding(.top, compact ? 12 : 16)
             .padding(.bottom, 28)
         }
     }

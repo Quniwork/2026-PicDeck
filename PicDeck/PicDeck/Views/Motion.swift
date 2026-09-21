@@ -8,3 +8,10 @@ func withMotion<Result>(_ animation: Animation? = .default,
                         _ body: () throws -> Result) rethrows -> Result {
     try withAnimation(UIAccessibility.isReduceMotionEnabled ? nil : animation, body)
 }
+
+extension View {
+    /// 值一變就用動畫過渡；使用者開了「減少動態效果」就不做。篩選、排序、切換清單都用這個。
+    func motionAnimation<V: Equatable>(_ animation: Animation = .snappy(duration: 0.28), value: V) -> some View {
+        self.animation(UIAccessibility.isReduceMotionEnabled ? nil : animation, value: value)
+    }
+}
