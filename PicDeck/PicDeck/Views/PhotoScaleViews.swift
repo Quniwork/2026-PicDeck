@@ -86,6 +86,7 @@ struct CompactGridView: View {
     let assets: [PHAsset]
     var columns: Int = 4
     var fitsAspect: Bool = false
+    var onOpen: ((PHAsset) -> Void)? = nil
     /// 長按照片時要顯示的操作選單。
     var actions: ((PHAsset) -> AnyView?)? = nil
     /// 多選模式。
@@ -105,7 +106,8 @@ struct CompactGridView: View {
                                         isSelected: selectedIDs?.wrappedValue.contains(asset.localIdentifier) ?? false,
                                         onToggle: { toggle(asset) },
                                         menu: { actions?(asset) },
-                                        fitsAspect: fitsAspect)
+                                        fitsAspect: fitsAspect,
+                                        onOpen: { onOpen?(asset) })
                         .id(asset.localIdentifier)
                 }
             }
@@ -153,6 +155,7 @@ struct TimelineView: View {
     /// 每列幾張、是否依原比例顯示。
     var columnCount: Int = 4
     var fitsAspect: Bool = false
+    var onOpen: ((PHAsset) -> Void)? = nil
 
     private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 2), count: columnCount) }
 
@@ -186,7 +189,8 @@ struct TimelineView: View {
                                         isSelected: selectedIDs?.wrappedValue.contains(asset.localIdentifier) ?? false,
                                         onToggle: { toggle(asset) },
                                         menu: { actions?(asset) },
-                                        fitsAspect: fitsAspect)
+                                        fitsAspect: fitsAspect,
+                                        onOpen: { onOpen?(asset) })
                 }
             }
             .padding(.trailing, 2)

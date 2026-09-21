@@ -44,7 +44,7 @@ struct JournalEntriesView: View {
         Group {
             if visibleEntries.isEmpty {
                 ContentUnavailableView {
-                    Label("No journal entries", systemImage: "square.and.pencil")
+                    Label("No journal entries", systemImage: "book.closed")
                 } description: {
                     if allowedPhotoIDs == nil {
                         Text("Long press a photo and choose Write journal to add one.")
@@ -66,7 +66,7 @@ struct JournalEntriesView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 10)
+                    .padding(.top, PageMetrics.contentTopGap)
                     .padding(.bottom, 16)
                 }
                 .background(Color(.systemGroupedBackground))
@@ -163,8 +163,9 @@ struct JournalEntryRow: View {
                 journalStore.delete(forKey: entry.id)
             }
         }
+        // 點日記裡的照片：跟照片分頁點一張一樣的全螢幕檢視，只是沒有「日記」。
         .fullScreenCover(item: $zoomAsset) { asset in
-            ZoomedPhotoView(asset: asset)
+            PhotoDetailView(assets: assets, startID: asset.localIdentifier, showsJournal: false)
         }
     }
 

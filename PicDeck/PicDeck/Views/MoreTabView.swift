@@ -67,10 +67,11 @@ struct MoreTabView: View {
                     LabeledContent("Version", value: appVersion)
                 }
             }
-            .contentMargins(.top, 0, for: .scrollContent)
+            // 第一個小標題本身有留白，往上補回來，跟其他分頁的第一個內容同高。
+            .contentMargins(.top, -12, for: .scrollContent)
             .navigationTitle("More")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { LeadingTitleToolbar(title: String(localized: "More"), font: .title) }
+            .toolbar { LeadingTitleToolbar(title: String(localized: "More"), ) }
             .sheet(isPresented: $showPaywall) { PaywallView() }
             .fullScreenCover(isPresented: $showTutorial) {
                 TutorialView { showTutorial = false }

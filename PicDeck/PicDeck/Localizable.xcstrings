@@ -3483,6 +3483,76 @@
           }
         }
       }
+    },
+    "Write note": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寫備註"
+          }
+        }
+      }
+    },
+    "Add tag": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入標籤"
+          }
+        }
+      }
+    },
+    "Add to favorites": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入喜愛"
+          }
+        }
+      }
+    },
+    "Note for %lld photos": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為 %lld 張照片寫備註"
+          }
+        }
+      }
+    },
+    "Photos that already have a note keep it; this text is added on a new line.": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已經有備註的照片會保留原本的備註，這段文字接在後面另起一行。"
+          }
+        }
+      }
+    },
+    "Grid view": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "柵欄顯示"
+          }
+        }
+      }
+    },
+    "Single view": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "單張顯示"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -23,7 +23,7 @@ struct OrganizeTabView: View {
             }
             .navigationTitle("Organize")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { LeadingTitleToolbar(title: String(localized: "Organize"), font: .title) }
+            .toolbar { LeadingTitleToolbar(title: String(localized: "Organize"), ) }
             // 只有照片子層需要載入，而且不能掛在會消失又出現的清單上，不然會一直重載。
             .task(id: model.organizeSection) {
                 if model.organizeSection == .photos { await reload() }

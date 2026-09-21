@@ -92,7 +92,7 @@ struct DestructiveRowButton: View {
 struct LeadingTitleToolbar: ToolbarContent {
     let title: String
     /// 首頁、整理、更多用大一點的；日記旁邊有兩顆按鈕，維持較小。
-    var font: Font = .title3
+    var font: Font = TypeScale.titlePlain
 
     /// 標題下面的小字，例如「2 則日記」。
     var subtitle: String? = nil
@@ -105,7 +105,7 @@ struct LeadingTitleToolbar: ToolbarContent {
                 .fixedSize()
             if let subtitle {
                 Text(subtitle)
-                    .font(.caption)
+                    .font(TypeScale.subtitle)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .fixedSize()

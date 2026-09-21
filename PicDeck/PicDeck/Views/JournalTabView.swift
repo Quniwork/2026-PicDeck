@@ -61,7 +61,7 @@ struct JournalTabView: View {
                                        fitsAspect: model.gridFitsAspect(for: .journal))
                 } else {
                     ContentUnavailableView {
-                        Label("Journal", systemImage: "book")
+                        Label("Journal", systemImage: "book.closed")
                     } description: {
                         Text("Journal is part of the paid unlock.")
                     } actions: {
@@ -75,7 +75,7 @@ struct JournalTabView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 // 主標題與副標題的字級跟照片分頁的「所有項目／607 個項目」一樣。
-                LeadingTitleToolbar(title: String(localized: "Journal"), font: .title2, subtitle: entryCountText)
+                LeadingTitleToolbar(title: String(localized: "Journal"), font: TypeScale.titleWithActions, subtitle: entryCountText)
                 ToolbarItem(placement: .topBarTrailing) { filterMenu }
                 if #available(iOS 26.0, *) {
                     ToolbarSpacer(.fixed, placement: .topBarTrailing)
@@ -134,7 +134,7 @@ struct JournalTabView: View {
                         Label {
                             Text(tag.name)
                         } icon: {
-                            tagIcon(tag)
+                            TagMenuIcon(tag: tag)
                         }
                     }
                 }
@@ -179,19 +179,6 @@ struct JournalTabView: View {
             tagID = tag.id
         } else {
             activeSheet = .paywall
-        }
-    }
-
-    /// 選單只吃圖片，所以把標籤的表情或圖標先畫成圖片。
-    @ViewBuilder
-    private func tagIcon(_ tag: PhotoTag) -> some View {
-        let renderer = ImageRenderer(content: IconLabel(raw: tag.symbol, size: 18)
-            .frame(width: 22, height: 22))
-        let _ = renderer.scale = 3
-        if let image = renderer.uiImage {
-            Image(uiImage: image).renderingMode(.original)
-        } else {
-            Image(systemName: "tag")
         }
     }
 }

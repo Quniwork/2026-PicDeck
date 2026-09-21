@@ -11,6 +11,8 @@ struct SelectableThumbnail: View {
     /// 非多選模式時的長按選單。
     var menu: (() -> AnyView?)? = nil
     var fitsAspect: Bool = false
+    /// 不在多選模式時點一下要做什麼（打開檢視）。
+    var onOpen: (() -> Void)? = nil
 
     var body: some View {
         AssetThumbnail(asset: asset, size: size, fitsAspect: fitsAspect, showsFavorite: true)
@@ -31,7 +33,7 @@ struct SelectableThumbnail: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                if isSelecting { onToggle() }
+                if isSelecting { onToggle() } else { onOpen?() }
             }
             .photoActions { isSelecting ? nil : menu?() }
     }

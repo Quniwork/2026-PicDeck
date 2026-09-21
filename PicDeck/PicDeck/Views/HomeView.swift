@@ -35,13 +35,13 @@ struct HomeView: View {
                     if !tagStore.homePinnedTags.isEmpty { collectionsSection }
                     if !onThisDay.isEmpty { onThisDaySection }
                 }
-                .padding(.top, 10)
+                .padding(.top, PageMetrics.contentTopGap)
                 .padding(.bottom, 12)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { LeadingTitleToolbar(title: String(localized: "Home"), font: .title) }
+            .toolbar { LeadingTitleToolbar(title: String(localized: "Home"), ) }
             .task(id: tagStore.assignments.count + tagStore.tags.count) { loadCoversAndCounts() }
             .task { await loadOnThisDay() }
         }
@@ -131,7 +131,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     IconLabel(raw: tag.symbol, size: 13)
-                    Text(tag.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    Text(tag.name).font(.subheadline.weight(.semibold)).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 }
                 Text("\(counts[tag.id] ?? 0) photos")
                     .font(.caption)
@@ -142,6 +142,9 @@ struct HomeView: View {
         .padding(10)
         .background(Color(.secondarySystemGroupedBackground),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        // 淺色底上卡片邊界不明顯，加一圈很淡的線。
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
         .contentShape(Rectangle())
     }
 
@@ -176,6 +179,14 @@ struct HomeView: View {
             Label("Nothing pinned yet", systemImage: "house")
         } description: {
             Text("Create a tag in Organize and pin it to Home, or give it a start date such as a child's birthday, and it shows up here as a card.")
+        } actions: {
+            // 直接帶到管理標籤，不用自己找。
+            Button("Manage tags") {
+                model.organizeSection = .tags
+                model.selectedTab = 3
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("home.manageTags")
         }
         .padding(.top, 40)
     }

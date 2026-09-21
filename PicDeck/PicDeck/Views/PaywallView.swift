@@ -27,7 +27,7 @@ struct PaywallView: View {
                         benefitRow(systemImage: "tag",
                                    title: "Filter by your tags",
                                    detail: "Tagging stays free; filtering by tag needs the unlock.")
-                        benefitRow(systemImage: "square.and.pencil",
+                        benefitRow(systemImage: "book.closed",
                                    title: "Journal",
                                    detail: "Write a mood and a note for each day.")
                     }

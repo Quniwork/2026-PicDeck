@@ -162,15 +162,16 @@ enum IconCatalog {
         let supported = EmojiSupport.maxVersion
 
         for line in EmojiData.raw.split(separator: "\n") {
-            let parts = line.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
-            guard parts.count == 4, let version = Double(parts[2]) else { continue }
+            let parts = line.split(separator: "|", maxSplits: 4, omittingEmptySubsequences: false)
+            guard parts.count >= 4, let version = Double(parts[2]) else { continue }
             let emoji = String(parts[1])
             // 太新的表情，這個系統版本畫不出來（會變成方框），不列出。
             guard version <= supported || EmojiSupport.canRender(emoji) else { continue }
             let group = String(parts[0])
             if buckets[group] == nil { order.append(group) }
             buckets[group, default: []].append(emoji)
-            names[emoji] = String(parts[3]).lowercased()
+            // 英文名稱加中文關鍵字（CLDR），搜尋兩種語言都找得到。
+            names[emoji] = (String(parts[3]) + " " + (parts.count > 4 ? String(parts[4]) : "")).lowercased()
         }
         emojiNameIndex = names
         return order.map { Group(id: "emoji." + $0, title: emojiGroupTitle($0), items: buckets[$0] ?? []) }
@@ -257,10 +258,11 @@ enum IconCatalog {
         var order: [String] = []
         var buckets: [String: [String]] = [:]
         for line in SymbolData.raw.split(separator: "\n") {
-            let parts = line.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
-            guard parts.count == 2 else { continue }
+            let parts = line.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false)
+            guard parts.count >= 2 else { continue }
             let name = String(parts[1])
             guard UIImage(systemName: name) != nil else { continue }
+            if parts.count > 2, !parts[2].isEmpty { symbolZhIndex[name] = String(parts[2]) }
             let category = String(parts[0])
             if buckets[category] == nil { order.append(category) }
             buckets[category, default: []].append(name)
@@ -269,6 +271,15 @@ enum IconCatalog {
         let sorted = order.filter { $0 != "other" } + order.filter { $0 == "other" }
         return sorted.map { Group(id: "symbol." + $0, title: symbolGroupTitle($0), items: buckets[$0] ?? []) }
     }()
+
+    /// 圖標的中文關鍵字（由英文名稱的字對照出來），給中文搜尋用。
+    nonisolated(unsafe) static var symbolZhIndex: [String: String] = [:]
+
+    /// 圖標的搜尋文字：英文名稱加中文關鍵字。
+    static func searchText(forSymbol name: String) -> String {
+        _ = symbolGroups
+        return name.lowercased() + " " + (symbolZhIndex[name] ?? "")
+    }
 
     private static func symbolGroupTitle(_ id: String) -> String {
         switch id {

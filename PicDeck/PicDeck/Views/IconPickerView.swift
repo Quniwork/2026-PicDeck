@@ -286,7 +286,7 @@ struct IconPickerView: View {
 
     private func matches(_ item: String, needle: String) -> Bool {
         if tab == .symbol {
-            return item.lowercased().contains(needle)
+            return IconCatalog.searchText(forSymbol: item).contains(needle)
         }
         // 表情符號沒有中文名稱，用系統的 Unicode 英文名稱來找。
         return IconCatalog.searchName(forEmoji: item).contains(needle)

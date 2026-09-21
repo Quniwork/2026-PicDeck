@@ -128,3 +128,60 @@ struct TagChipsRow: View {
         }
     }
 }
+
+/// 多選之後一次寫備註：同一段文字加到每一張照片。已經有備註的照片不覆蓋，接在原本備註後面另起一行。
+struct BatchNoteView: View {
+    let assets: [PHAsset]
+    var onDone: () -> Void = {}
+
+    @EnvironmentObject private var noteStore: NoteStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @FocusState private var isEditing: Bool
+
+    private var existingCount: Int { assets.filter { noteStore.note(for: $0) != nil }.count }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(String(localized: "Restaurant, place, opening hours, how it was…"),
+                              text: $text, axis: .vertical)
+                        .lineLimit(5...14)
+                        .focused($isEditing)
+                        .accessibilityIdentifier("batchnote.text")
+                } header: {
+                    Text("Note")
+                } footer: {
+                    if existingCount > 0 {
+                        Text("Photos that already have a note keep it; this text is added on a new line.")
+                    }
+                }
+            }
+            .navigationTitle(String(format: String(localized: "Note for %lld photos"), assets.count))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityIdentifier("batchnote.save")
+                }
+            }
+            .onAppear { isEditing = true }
+        }
+    }
+
+    private func save() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        for asset in assets {
+            if let old = noteStore.note(for: asset) {
+                noteStore.save(text: old.text + "\n" + trimmed, isDone: old.isDone, for: asset)
+            } else {
+                noteStore.save(text: trimmed, isDone: false, for: asset)
+            }
+        }
+        dismiss()
+        onDone()
+    }
+}

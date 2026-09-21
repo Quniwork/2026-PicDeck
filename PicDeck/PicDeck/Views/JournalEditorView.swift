@@ -271,26 +271,26 @@ struct PhotoActionsMenu: View {
             Button {
                 onJournal(asset)
             } label: {
-                Label("Write journal", systemImage: "square.and.pencil")
+                Label("Write journal", systemImage: "book.closed")
             }
         }
 
         Button {
             onNote(asset)
         } label: {
-            Label("Note", systemImage: "note.text")
+            Label("Write note", systemImage: "note.text")
         }
 
         Button {
             onTag(asset)
         } label: {
-            Label("Tags", systemImage: "tag")
+            Label("Add tag", systemImage: "tag")
         }
 
         Button {
             onFavorite(asset)
         } label: {
-            Label(asset.isFavorite ? "Remove from favorites" : "Favorite",
+            Label(asset.isFavorite ? "Remove from favorites" : "Add to favorites",
                   systemImage: asset.isFavorite ? "heart.slash" : "heart")
         }
 
@@ -430,18 +430,7 @@ struct JournalPhotoPicker: View {
     /// 跟照片分頁右上角同一組過濾條件。
     private var filterMenu: some View {
         Menu {
-            Section(String(localized: "Filter by:")) {
-                ForEach([PhotoFilter.all, .favorites, .edited, .notInAlbum]) { option in
-                    filterToggle(option)
-                }
-                Menu {
-                    ForEach([PhotoFilter.photos, .videos, .screenshots]) { option in
-                        filterToggle(option)
-                    }
-                } label: {
-                    Label(String(localized: "Media Types"), systemImage: "photo.on.rectangle.angled")
-                }
-            }
+            PhotoFilterMenuSection(isSelected: { filter == $0 }, onSelect: { filter = $0 })
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
                 .overlay(alignment: .topTrailing) {
@@ -452,12 +441,6 @@ struct JournalPhotoPicker: View {
         }
         .accessibilityLabel(Text("Filter"))
         .accessibilityIdentifier("journal.picker.filter")
-    }
-
-    private func filterToggle(_ option: PhotoFilter) -> some View {
-        Toggle(isOn: Binding(get: { filter == option }, set: { _ in filter = option })) {
-            Label(option.title, systemImage: option.systemImage)
-        }
     }
 
     private func load() async {

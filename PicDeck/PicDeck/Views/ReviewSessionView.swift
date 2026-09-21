@@ -30,7 +30,6 @@ struct ReviewSessionView: View {
     @State private var showMoreAlbums = false
     @State private var isZoomed = false
     @State private var showTagPicker = false
-    @State private var showJournal = false
 
     private enum QuickMode { case tags, albums }
 
@@ -63,17 +62,6 @@ struct ReviewSessionView: View {
         .sheet(isPresented: $showTagPicker) {
             if let asset = currentAsset {
                 TagPickerView(assets: [asset])
-            }
-        }
-        .sheet(isPresented: $showJournal) {
-            if let asset = currentAsset,
-               let date = asset.creationDate {
-                let parts = PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: date)
-                // 目前這張照片預設就勾選，跟長按與多選寫日記一樣。
-                JournalEditorView(year: parts.year ?? 0,
-                                  month: parts.month ?? 0,
-                                  day: parts.day ?? 0,
-                                  preselectedIDs: [asset.localIdentifier])
             }
         }
         .sheet(isPresented: $showTrash) { PendingTrashView() }
@@ -250,22 +238,8 @@ struct ReviewSessionView: View {
     private var actionBar: some View {
         let favorite = currentAsset.map(isFavorite) ?? false
 
-        // 已經放進日記的照片就不再出現寫日記。
-        let inJournal = currentAsset.map(journalStore.isInJournal) ?? false
-
-        return HStack(spacing: 0) {
-            if !inJournal {
-                barButton("Write journal", icon: "square.and.pencil", id: "session.journal") {
-                    showJournal = true
-                }
-                Spacer(minLength: 4)
-            }
-            barButton(favorite ? "Remove from favorites" : "Favorite",
-                      icon: favorite ? "heart.slash" : "heart",
-                      id: "session.favorite") {
-                toggleFavoriteCurrent()
-            }
-            Spacer(minLength: 4)
+        // 整理畫面不寫日記。順序：標籤、相簿、喜愛（移出喜愛）、保留、刪除。
+        return ActionBarRow {
             barButton("Tags", icon: "tag", id: "session.tags", isActive: quickMode == .tags) {
                 quickMode = (quickMode == .tags) ? nil : .tags
             }
@@ -273,6 +247,16 @@ struct ReviewSessionView: View {
             barButton("Album", icon: "rectangle.stack.badge.plus", id: "session.albums",
                       isActive: quickMode == .albums) {
                 quickMode = (quickMode == .albums) ? nil : .albums
+            }
+            Spacer(minLength: 4)
+            barButton(favorite ? "Remove from favorites" : "Favorite",
+                      icon: favorite ? "heart.slash" : "heart",
+                      id: "session.favorite") {
+                toggleFavoriteCurrent()
+            }
+            Spacer(minLength: 4)
+            barButton("Keep", icon: "checkmark", id: "session.keep") {
+                keepCurrent()
             }
             Spacer(minLength: 4)
             barButton("Delete", icon: "xmark", id: "session.delete", isDestructive: true) {
@@ -287,26 +271,11 @@ struct ReviewSessionView: View {
         .disabled(currentAsset == nil)
     }
 
-    private func barButton(_ key: LocalizedStringKey,
-                           icon: String,
-                           id: String,
-                           isActive: Bool = false,
-                           isDestructive: Bool = false,
+    private func barButton(_ key: LocalizedStringKey, icon: String, id: String,
+                           isActive: Bool = false, isDestructive: Bool = false,
                            action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(key, systemImage: icon)
-                .font(.caption)
-                .labelStyle(.titleAndIcon)
-                .lineLimit(1)
-                .fixedSize()
-                .foregroundStyle(isDestructive ? Color.red : (isActive ? Color.accentColor : Color.primary))
-                .padding(.vertical, 6)
-                .padding(.horizontal, 6)
-                .background(isActive ? Color.accentColor.opacity(0.14) : Color.clear, in: Capsule())
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(id)
+        ActionBarButton(key: key, icon: icon, id: id, isActive: isActive,
+                        isDestructive: isDestructive, action: action)
     }
 
     // MARK: - 快速分類列

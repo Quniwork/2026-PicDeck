@@ -175,9 +175,9 @@ final class PicDeckSmokeTests: XCTestCase {
             sleep(3)
 
             // 再長按一次去加標籤。
-            XCTAssertTrue(longPressForMenu(firstPhoto, expecting: ["標籤", "Tags"], in: app),
+            XCTAssertTrue(longPressForMenu(firstPhoto, expecting: ["加入標籤", "Add tag"], in: app),
                           "長按選單沒有標籤")
-            let addTags = firstButton(in: app, labels: ["標籤", "Tags"])
+            let addTags = firstButton(in: app, labels: ["加入標籤", "Add tag"])
             if true {
                 tapByCoordinate(addTags)
                 sleep(2)
@@ -318,9 +318,9 @@ final class PicDeckSmokeTests: XCTestCase {
             XCTFail("格狀畫面沒有照片")
             return
         }
-        XCTAssertTrue(longPressForMenu(firstPhoto, expecting: ["標籤", "Tags"], in: app),
+        XCTAssertTrue(longPressForMenu(firstPhoto, expecting: ["加入標籤", "Add tag"], in: app),
                       "長按選單沒有標籤")
-        tapByCoordinate(firstButton(in: app, labels: ["標籤", "Tags"]))
+        tapByCoordinate(firstButton(in: app, labels: ["加入標籤", "Add tag"]))
         sleep(2)
 
         // 建立標籤是一顆按鈕，點開才是圖示、名稱與紀念日的表單。
@@ -988,10 +988,16 @@ final class PicDeckSmokeTests: XCTestCase {
         tapByCoordinate(firstThumb)
         sleep(1)
         attachScreenshot(app, name: "42a-after-first-tap")
-        for id in ["batch.journal", "batch.tags", "batch.favorite", "batch.album", "batch.delete"] {
+        for id in ["batch.journal", "batch.note", "batch.tags", "batch.album", "batch.favorite", "batch.delete"] {
             XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5), "選取列少了 \(id)")
         }
         attachScreenshot(app, name: "42-selection-bar")
+        // 備註：開啟多選寫備註，取消不留資料。
+        tapByCoordinate(app.buttons["batch.note"])
+        XCTAssertTrue(app.textViews["batchnote.text"].waitForExistence(timeout: 8)
+                      || app.textFields["batchnote.text"].waitForExistence(timeout: 2), "多選備註沒有輸入欄")
+        tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
+        sleep(1)
         // 小圖示加文字：文字要跟圖示在同一顆按鈕裡。
         XCTAssertTrue(app.buttons["batch.delete"].label.contains("刪除")
                       || app.buttons["batch.delete"].label.lowercased().contains("delete"),
@@ -1008,7 +1014,7 @@ final class PicDeckSmokeTests: XCTestCase {
         attachScreenshot(app, name: "43-photo-menu")
 
         // 喜愛：點一下，再叫出選單，字要變成相反的。
-        let addFavorite = ["喜愛", "Favorite"]
+        let addFavorite = ["加入喜愛", "Add to favorites"]
         let removeFavorite = ["移出喜愛", "Remove from favorites"]
         let wasFavorite = firstButton(in: app, labels: removeFavorite).exists
         tapByCoordinate(firstButton(in: app, labels: wasFavorite ? removeFavorite : addFavorite))
@@ -1130,12 +1136,11 @@ final class PicDeckSmokeTests: XCTestCase {
         monthRow.tap()
         sleep(4)
 
-        // 功能列：寫日記、喜愛、標籤、相簿、刪除。沒有保留、也沒有幫助。
-        // 寫日記只有這張還沒放進日記時才有，所以不列為必要。
-        for id in ["session.favorite", "session.tags", "session.albums", "session.delete"] {
+        // 功能列：標籤、相簿、喜愛、保留、刪除。沒有寫日記、也沒有幫助。
+        for id in ["session.tags", "session.albums", "session.favorite", "session.keep", "session.delete"] {
             XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 15), "功能列少了 \(id)")
         }
-        XCTAssertFalse(app.buttons["session.keep"].exists, "保留只用手勢，不該有按鈕")
+        XCTAssertFalse(app.buttons["session.journal"].exists, "整理畫面不該有寫日記")
         XCTAssertFalse(app.buttons["session.help"].exists, "幫助應該拿掉")
         attachScreenshot(app, name: "50-review-bar")
 
@@ -1172,30 +1177,10 @@ final class PicDeckSmokeTests: XCTestCase {
         sleep(2)
         XCTAssertEqual(countBadge.exists ? countBadge.label : "", before, "撤銷後待刪數字沒有還原")
 
-        // 已經放進日記的照片不會有寫日記。往後翻到一張還沒進日記的，
-        // 才能驗證「寫日記時目前這張預設勾選」。翻過去的保留動作最後都撤回。
-        var advanced = 0
-        while !app.buttons["session.journal"].exists && advanced < 6 {
-            swipeReviewCard(app, from: (0.85, 0.42), to: (0.12, 0.42))
-            advanced += 1
-            sleep(1)
-        }
-        if advanced > 0 {
-            XCTAssertTrue(app.buttons["session.journal"].exists || advanced == 6,
-                          "找不到可以寫日記的照片")
-        }
-        if app.buttons["session.journal"].exists {
-            tapByCoordinate(app.buttons["session.journal"])
-            sleep(2)
-            XCTAssertTrue(app.buttons["journal.save"].waitForExistence(timeout: 10), "沒有開啟日記編輯")
-            sleep(2)
-            attachScreenshot(app, name: "55-review-journal-preselected")
-            let photosHeader = app.descendants(matching: .any)
-                .matching(NSPredicate(format: "label CONTAINS %@ OR label CONTAINS %@", "(1)", "（1）")).firstMatch
-            XCTAssertTrue(photosHeader.exists, "寫日記沒有預設勾選目前這張照片")
-            tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
-            sleep(2)
-        }
+        // 整理畫面不寫日記，但有保留鈕。
+        XCTAssertFalse(app.buttons["session.journal"].exists, "整理畫面不該有寫日記")
+        XCTAssertTrue(app.buttons["session.keep"].exists, "整理畫面沒有保留鈕")
+        let advanced = 0
         for _ in 0..<advanced {
             swipeReviewCard(app, from: (0.45, 0.42), to: (0.92, 0.42))
             sleep(1)
@@ -1535,9 +1520,9 @@ final class PicDeckSmokeTests: XCTestCase {
         sleep(3)
         let thumbs = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'"))
         guard let first = waitFirst(thumbs, timeout: 10) else { XCTFail("格狀畫面沒有照片"); return }
-        XCTAssertTrue(longPressForMenu(first, expecting: ["備註", "Note"], in: app), "長按選單沒有備註")
+        XCTAssertTrue(longPressForMenu(first, expecting: ["寫備註", "Write note"], in: app), "長按選單沒有備註")
         attachScreenshot(app, name: "64-photo-menu")
-        tapByCoordinate(firstButton(in: app, labels: ["備註", "Note"]))
+        tapByCoordinate(firstButton(in: app, labels: ["寫備註", "Write note"]))
         sleep(2)
 
         let noteField = app.textViews["note.text"].exists ? app.textViews["note.text"] : app.textFields["note.text"]
@@ -1579,13 +1564,17 @@ final class PicDeckSmokeTests: XCTestCase {
 
         // 首頁多了「釘選的收藏」，只有美食在，燒肉沒有釘。
         app.tabBars.buttons.element(boundBy: 0).tap()
+        // 使用者的模擬器裡可能本來就有釘選的標籤，只認這次建的「測試美食」。
         let collection = app.descendants(matching: .any).matching(identifier: "home.collection")
+            .matching(NSPredicate(format: "label CONTAINS %@", "測試美食"))
         sleep(2)
         attachScreenshot(app, name: "62a-home-before-scroll")
         for _ in 0..<4 where !collection.firstMatch.waitForExistence(timeout: 3) { app.swipeUp() }
         attachScreenshot(app, name: "62-home-collection")
         XCTAssertTrue(collection.firstMatch.exists, "首頁沒有釘選的收藏")
-        XCTAssertEqual(collection.count, 1, "只有釘選的標籤才該出現在收藏")
+        XCTAssertEqual(collection.count, 1, "測試美食應該只出現一次")
+        XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "home.collection")
+            .matching(NSPredicate(format: "label CONTAINS %@", "測試燒肉")).count, 0, "沒釘選的標籤不該出現在首頁")
         attachScreenshot(app, name: "62-home-collection")
 
         // 點進去：有備註的項目，上面有二次篩選的 #燒肉。
@@ -1601,6 +1590,23 @@ final class PicDeckSmokeTests: XCTestCase {
         sleep(1)
         XCTAssertTrue(item.exists, "用 #燒肉 篩選後這張應該還在")
         attachScreenshot(app, name: "63-collection-filtered")
+
+        // 切到柵欄：縮圖格狀，點一張彈出窗口，可以左右滑；再切回單張。
+        let modeButton = app.descendants(matching: .any)["collection.mode"]
+        XCTAssertTrue(modeButton.waitForExistence(timeout: 5), "收藏沒有顯示模式切換")
+        tapByCoordinate(modeButton)
+        sleep(2)
+        let cell = app.descendants(matching: .any).matching(identifier: "collection.cell").firstMatch
+        XCTAssertTrue(cell.waitForExistence(timeout: 8), "柵欄模式沒有縮圖")
+        attachScreenshot(app, name: "64a-collection-grid")
+        tapByCoordinate(cell)
+        XCTAssertTrue(app.descendants(matching: .any)["collection.pager.close"].waitForExistence(timeout: 8), "點縮圖沒有彈出視窗")
+        sleep(2)
+        attachScreenshot(app, name: "64b-collection-pager")
+        tapByCoordinate(app.descendants(matching: .any)["collection.pager.close"])
+        sleep(1)
+        tapByCoordinate(modeButton)
+        sleep(2)
 
         // 清掉測試資料：備註（點項目進編輯刪除）與兩個標籤。
         tapByCoordinate(item)
@@ -1819,8 +1825,8 @@ final class PicDeckSmokeTests: XCTestCase {
         sleep(3)
         let thumbs = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'"))
         guard let first = waitFirst(thumbs, timeout: 10) else { XCTFail("沒有照片"); return }
-        XCTAssertTrue(longPressForMenu(first, expecting: ["備註", "Note"], in: app), "長按沒有備註")
-        tapByCoordinate(firstButton(in: app, labels: ["備註", "Note"]))
+        XCTAssertTrue(longPressForMenu(first, expecting: ["寫備註", "Write note"], in: app), "長按沒有備註")
+        tapByCoordinate(firstButton(in: app, labels: ["寫備註", "Write note"]))
         sleep(2)
         let field = app.textViews["note.text"].exists ? app.textViews["note.text"] : app.textFields["note.text"]
         XCTAssertTrue(field.waitForExistence(timeout: 8), "備註沒有輸入欄")
@@ -1871,6 +1877,116 @@ final class PicDeckSmokeTests: XCTestCase {
         tapByCoordinate(app.buttons["按照時間排序"])
         sleep(3)
         XCTAssertEqual(cards.firstMatch.identifier, firstBefore, "再點一次後，第一篇沒有變回來")
+    }
+
+    /// 圖標選擇器可以用中文搜尋：表情符號與圖標兩頁都試。
+    func testIconPickerChineseSearch() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        openOrganize("tags", in: app)
+        tapByCoordinate(app.buttons["manage.tag.create"])
+        sleep(2)
+        tapByCoordinate(app.buttons["tag.icon"])
+        sleep(2)
+        let search = app.textFields["icon.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 8), "沒有搜尋欄")
+        search.tap()
+        search.typeText("飛機")
+        sleep(2)
+        attachScreenshot(app, name: "82-emoji-zh-search")
+        let items = app.buttons.matching(identifier: "icon.item")
+        XCTAssertGreaterThan(items.count, 0, "表情符號用中文搜尋「飛機」沒有結果")
+        tapByCoordinate(firstButton(in: app, labels: ["圖標", "Icons"]))
+        sleep(2)
+        XCTAssertGreaterThan(items.count, 0, "圖標用中文搜尋「飛機」沒有結果")
+        attachScreenshot(app, name: "83-symbol-zh-search")
+    }
+
+    /// 點時間軸／全部的照片會彈出全螢幕檢視：日期時間標題、關閉、待刪除、六個功能。
+    func testPhotoDetail() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        let thumbs = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'"))
+
+        for scale in ["scale.all", "scale.timeline"] {
+            tapByCoordinate(app.buttons[scale])
+            sleep(3)
+            guard let first = waitFirst(thumbs, timeout: 10) else { XCTFail("沒有照片"); return }
+            tapByCoordinate(first)
+            if !app.descendants(matching: .any)["detail.close"].waitForExistence(timeout: 8) { attachScreenshot(app, name: "84z-no-detail-\(scale)") }
+            XCTAssertTrue(app.descendants(matching: .any)["detail.close"].exists, "\(scale) 點照片沒有彈出檢視")
+            sleep(2)
+            attachScreenshot(app, name: "84-detail-\(scale)")
+            for id in ["detail.trash", "detail.journal", "detail.note", "detail.tags", "detail.album", "detail.favorite", "detail.delete"] {
+                XCTAssertTrue(app.descendants(matching: .any)[id].exists, "檢視少了 \(id)")
+            }
+            XCTAssertTrue(app.staticTexts["detail.title"].exists, "檢視沒有日期時間標題")
+            if scale == "scale.all" {
+                // 日記與備註都是開編輯畫面。
+                tapByCoordinate(app.descendants(matching: .any)["detail.note"])
+                XCTAssertTrue(app.buttons["note.save"].waitForExistence(timeout: 8), "備註沒有打開")
+                tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
+                sleep(1)
+                tapByCoordinate(app.descendants(matching: .any)["detail.journal"])
+                XCTAssertTrue(app.buttons["journal.save"].waitForExistence(timeout: 8), "日記沒有打開")
+                tapByCoordinate(firstButton(in: app, labels: ["取消", "Cancel"]))
+                sleep(1)
+            }
+            tapByCoordinate(app.descendants(matching: .any)["detail.close"])
+            sleep(2)
+        }
+    }
+
+    /// 日記裡點一張照片：同樣的全螢幕檢視，功能列沒有日記。
+    func testJournalPhotoOpensDetail() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        sleep(3)
+        let photo = app.descendants(matching: .any).matching(identifier: "journal.photo.0").firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 10), "日記裡沒有照片")
+        tapByCoordinate(photo)
+        XCTAssertTrue(app.descendants(matching: .any)["detail.close"].waitForExistence(timeout: 8), "點日記照片沒有彈出檢視")
+        sleep(2)
+        attachScreenshot(app, name: "85-journal-photo-detail")
+        XCTAssertFalse(app.descendants(matching: .any)["detail.journal"].exists, "從日記進來不該有日記")
+        for id in ["detail.note", "detail.tags", "detail.album", "detail.favorite", "detail.delete"] {
+            XCTAssertTrue(app.descendants(matching: .any)[id].exists, "檢視少了 \(id)")
+        }
+        tapByCoordinate(app.descendants(matching: .any)["detail.close"])
+    }
+
+    /// 英文介面下的功能列（文字比中文長很多），給小螢幕確認會不會擠爆。
+    func testEnglishBars() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 30), "照片分頁沒有載入")
+        let thumbs = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'"))
+        tapByCoordinate(app.buttons["scale.all"])
+        sleep(3)
+        // 多選底列
+        tapByCoordinate(app.buttons["photos.select"])
+        sleep(1)
+        tapByCoordinate(thumbs.element(boundBy: 1))
+        sleep(1)
+        attachScreenshot(app, name: "90-en-selection")
+        tapByCoordinate(app.buttons["photos.select"])
+        sleep(1)
+        // 單張檢視
+        tapByCoordinate(thumbs.element(boundBy: 1))
+        sleep(2)
+        attachScreenshot(app, name: "91-en-detail")
     }
 
     // MARK: - 工具
