@@ -16,6 +16,10 @@ struct PhotoTag: Identifiable, Codable, Hashable {
     var isPinned: Bool = false
     /// 釘在首頁。首頁會把它當成一個收藏，點進去可以再用其他標籤篩選。
     var pinnedOnHome: Bool = false
+    /// 自己選的封面照片（PhotoKit 識別碼）。沒選就用這個標籤裡最新的一張。
+    var coverAssetID: String?
+    /// 封面的位置與放大倍數。
+    var coverFraming: CoverFraming = .standard
 
     /// 有日期才算紀念日標籤。
     var hasAnniversary: Bool { anniversary != nil }
@@ -54,6 +58,8 @@ struct PhotoTag: Identifiable, Codable, Hashable {
                                                          forKey: .anniversaryStyle) ?? .yearMonthDay
         isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
         pinnedOnHome = try container.decodeIfPresent(Bool.self, forKey: .pinnedOnHome) ?? false
+        coverAssetID = try container.decodeIfPresent(String.self, forKey: .coverAssetID)
+        coverFraming = try container.decodeIfPresent(CoverFraming.self, forKey: .coverFraming) ?? .standard
     }
 }
 
@@ -224,6 +230,14 @@ final class TagStore: ObservableObject {
         if let pinnedOnHome { tags[index].pinnedOnHome = pinnedOnHome }
         scheduleSave()
         return true
+    }
+
+    /// 設定卡片封面：選哪一張照片，以及位置與放大。assetID 傳 nil 就回到自動（最新一張）。
+    func setCover(_ id: UUID, assetID: String?, framing: CoverFraming) {
+        guard let index = tags.firstIndex(where: { $0.id == id }) else { return }
+        tags[index].coverAssetID = assetID
+        tags[index].coverFraming = assetID == nil ? .standard : framing.clamped()
+        scheduleSave()
     }
 
     /// 釘在首頁與否。取消釘選時標籤本身（含日子）都保留，只是不再出現在選集。

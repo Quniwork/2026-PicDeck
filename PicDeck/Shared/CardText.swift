@@ -103,3 +103,55 @@ struct CardTextOverlay<Icon: View>: View {
         }
     }
 }
+
+// MARK: - 封面的定位
+
+/// 封面照片的顯示位置：放大倍數與往哪邊移。App 的卡片、編輯畫面與桌面小工具用同一套算法，看起來一致。
+/// x、y 是 -1 到 1 的比例：0 是置中，1 是照片放大後多出來的那一邊移到最靠邊。
+struct CoverFraming: Codable, Hashable {
+    var zoom: Double = 1
+    var x: Double = 0
+    var y: Double = 0
+
+    static let standard = CoverFraming()
+    static let zoomRange: ClosedRange<Double> = 1...3
+
+    var isDefault: Bool { self == .standard }
+
+    /// 在給定的框裡，照片填滿後的大小。
+    func filledSize(image: CGSize, frame: CGSize) -> CGSize {
+        guard image.width > 0, image.height > 0 else { return frame }
+        let scale = max(frame.width / image.width, frame.height / image.height) * zoom
+        return CGSize(width: image.width * scale, height: image.height * scale)
+    }
+
+    /// 照片中心相對框中心的位移。
+    func offset(image: CGSize, frame: CGSize) -> CGSize {
+        let size = filledSize(image: image, frame: frame)
+        return CGSize(width: -(size.width - frame.width) / 2 * x,
+                      height: -(size.height - frame.height) / 2 * y)
+    }
+
+    func clamped() -> CoverFraming {
+        CoverFraming(zoom: min(max(zoom, Self.zoomRange.lowerBound), Self.zoomRange.upperBound),
+                     x: min(max(x, -1), 1), y: min(max(y, -1), 1))
+    }
+}
+
+/// 依定位顯示的封面，填滿框並裁掉多的部分。
+struct PositionedImage: View {
+    let image: UIImage
+    var framing: CoverFraming = .standard
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = framing.filledSize(image: image.size, frame: geo.size)
+            let move = framing.offset(image: image.size, frame: geo.size)
+            Image(uiImage: image)
+                .resizable()
+                .frame(width: size.width, height: size.height)
+                .position(x: geo.size.width / 2 + move.width, y: geo.size.height / 2 + move.height)
+        }
+        .clipped()
+    }
+}

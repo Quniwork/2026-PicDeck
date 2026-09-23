@@ -24,6 +24,7 @@ struct AlbumManagerList: View {
                 AlbumCreateButton(assets: [], tree: tree, identifier: "album.create") {
                     Task { await reload() }
                 }
+                .pageRowInsets(vertical: 6)
             }
 
             Section {
@@ -54,6 +55,7 @@ struct AlbumManagerList: View {
                                 }
                                 .tint(.blue)
                             }
+                            .pageRowInsets(vertical: 6)
                     }
                     .onDelete { offsets in
                         let rows = tree.flattened(collapsed: collapsed)
@@ -76,6 +78,7 @@ struct AlbumManagerList: View {
                 Text("Deleting an album keeps its photos in your library. A folder can only be deleted after everything inside it is removed.")
             }
         }
+        .pageList()
         .scrollDismissesKeyboard(.immediately)
         .task { await reload() }
         .refreshable { await reload() }
@@ -199,6 +202,7 @@ struct TagManagerList: View {
         List {
             Section {
                 CreateTagButton(assets: [], identifier: "manage.tag.create")
+                    .pageRowInsets(vertical: 6)
             }
 
             Section {
@@ -214,8 +218,7 @@ struct TagManagerList: View {
                             .accessibilityElement(children: .combine)
                             .accessibilityAddTraits(.isButton)
                             .accessibilityIdentifier("manage.tag.row")
-                            // 上下留白縮小，列不要太高。
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .pageRowInsets(vertical: 6)
                     }
                     .onDelete { offsets in
                         for index in offsets {
@@ -241,6 +244,7 @@ struct TagManagerList: View {
                 Text("Open a tag to change its icon or give it a start date. Tap Edit to drag them into the order you want.")
             }
         }
+        .pageList()
         .scrollDismissesKeyboard(.immediately)
         .sheet(item: $editingTag) { tag in
             TagFormView(mode: .edit(tag))

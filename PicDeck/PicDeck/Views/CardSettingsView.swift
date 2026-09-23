@@ -42,6 +42,7 @@ struct CardSettingsView: View {
                     Text("These settings apply to every card, and the Home Screen widget uses the same text position and style. Card size is set in each block.")
                 }
             }
+            .appCanvas()
             .navigationTitle("Card style")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

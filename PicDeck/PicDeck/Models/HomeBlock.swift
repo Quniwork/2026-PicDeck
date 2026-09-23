@@ -16,7 +16,7 @@ enum CardSize: String, Codable, CaseIterable, Identifiable {
 
     /// `contentWidth` 是整個畫面的內容寬度（含左右邊距）。
     func dimensions(contentWidth: CGFloat, wraps: Bool, spacing: CGFloat = 12) -> CGSize {
-        let sideMargin: CGFloat = 16
+        let sideMargin = PageMetrics.edge
         if wraps {
             let available = contentWidth - sideMargin * 2
             let half = (available - spacing) / 2

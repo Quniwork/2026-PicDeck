@@ -14,48 +14,56 @@ struct DayCalendarGridView: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
     /// 右側拖拉軸。
     var scrub: ScrubIndex? = nil
+    var onScrollOffsetChange: ((CGFloat) -> Void)? = nil
 
     var body: some View {
-        AnchoredScrollView(anchorID: focusMonthID, isReady: !months.isEmpty, scrub: scrub) {
-            LazyVStack(alignment: .leading, spacing: 26) {
+        AnchoredScrollView(anchorID: focusMonthID, isReady: !months.isEmpty, scrub: scrub,
+                           onScrollOffsetChange: { offset, _ in onScrollOffsetChange?(offset) }) {
+            LazyVStack(alignment: .leading, spacing: PageMetrics.photoSectionSpacing) {
                 ForEach(months) { month in
-                    Section {
+                    VStack(alignment: .leading, spacing: PageMetrics.photoSectionGap) {
+                        Text(month.title)
+                            .font(TypeScale.photoSectionTitle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
                         VStack(spacing: 10) {
                             weekdayHeader
 
                             LazyVGrid(columns: columns, spacing: 12) {
                                 ForEach(cells(for: month), id: \.id) { entry in
                                     if let day = entry.day {
-                                        DayCalendarCell(day: day,
-                                                        cell: month.cells[day],
-                                                        mood: journalStore.mood(year: month.year,
-                                                                                month: month.month,
-                                                                                day: day),
-                                                        isToday: isToday(year: month.year,
-                                                                         month: month.month,
-                                                                         day: day))
-                                            .onTapGesture {
-                                                guard month.cells[day] != nil else { return }
-                                                onSelect(month.year, month.month, day)
-                                            }
-                                            .accessibilityIdentifier("daycell.\(month.year)-\(month.month)-\(day)")
+                                        Button {
+                                            guard month.cells[day] != nil else { return }
+                                            onSelect(month.year, month.month, day)
+                                        } label: {
+                                            DayCalendarCell(day: day,
+                                                            cell: month.cells[day],
+                                                            mood: journalStore.mood(year: month.year,
+                                                                                    month: month.month,
+                                                                                    day: day),
+                                                            isToday: isToday(year: month.year,
+                                                                             month: month.month,
+                                                                             day: day))
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(month.cells[day] == nil)
+                                        .accessibilityLabel(dayAccessibilityLabel(year: month.year,
+                                                                                 month: month.month,
+                                                                                 day: day))
+                                        .accessibilityValue(dayAccessibilityValue(month.cells[day]))
+                                        .accessibilityIdentifier("daycell.\(month.year)-\(month.month)-\(day)")
                                     } else {
                                         Color.clear.frame(height: 1)
                                     }
                                 }
                             }
                         }
-                        .padding(.horizontal, PageMetrics.contentInset)
-                    } header: {
-                        Text(month.title)
-                            .font(.title3.weight(.bold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, PageMetrics.contentInset)
-                            .padding(.vertical, 8)
                     }
+                    .padding(.horizontal, PageMetrics.edge)
                     .id(month.id)
                 }
             }
+            .padding(.top, PageMetrics.contentTopGap)
             .padding(.bottom, 24)
         }
     }
@@ -64,7 +72,7 @@ struct DayCalendarGridView: View {
         HStack(spacing: 6) {
             ForEach(PhotoGrouping.weekdaySymbols, id: \.self) { symbol in
                 Text(symbol)
-                    .font(.caption2)
+                    .font(TypeScale.subtitle)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -84,6 +92,20 @@ struct DayCalendarGridView: View {
     private func isToday(year: Int, month: Int, day: Int) -> Bool {
         let today = PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: Date())
         return today.year == year && today.month == month && today.day == day
+    }
+
+    private func dayAccessibilityLabel(year: Int, month: Int, day: Int) -> Text {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        let date = PhotoGrouping.calendar.date(from: components) ?? Date()
+        return Text(date.formatted(date: .complete, time: .omitted))
+    }
+
+    private func dayAccessibilityValue(_ cell: PhotoGrouping.DayCell?) -> Text {
+        guard let count = cell?.count else { return Text("No photos") }
+        return Text("\(count) photos")
     }
 }
 
@@ -111,9 +133,12 @@ struct DayCalendarCell: View {
             .overlay(alignment: .bottomTrailing) {
                 if let count = cell?.count {
                     Text("\(count)")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(.caption2, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
                         .shadow(color: .black.opacity(0.7), radius: 1.5)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(.black.opacity(0.55), in: Capsule())
                         .padding(3)
                 }
             }

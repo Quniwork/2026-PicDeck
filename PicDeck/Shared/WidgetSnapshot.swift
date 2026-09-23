@@ -15,6 +15,8 @@ struct WidgetTag: Codable, Identifiable, Hashable {
     var dayTexts: [String]
     /// 封面縮圖檔名（在 covers 資料夾），最多三張，最新的在前。
     var coverFiles: [String]
+    /// 第一張封面的位置與放大（跟 App 的卡片一樣）。舊資料沒有就置中。
+    var coverFraming: CoverFraming?
     var hasDays: Bool { !dayTexts.isEmpty }
 }
 

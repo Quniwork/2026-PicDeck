@@ -31,7 +31,7 @@ struct PaywallView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color(.systemBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -149,7 +149,7 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 14) { content() }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemGroupedBackground),
+            .background(Color(.secondarySystemBackground),
                         in: RoundedRectangle(cornerRadius: 14))
     }
 
@@ -187,7 +187,7 @@ struct PaywallView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity)
-            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(isOn ? Color.accentColor : Color.clear, lineWidth: 2))
         }

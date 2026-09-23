@@ -21,9 +21,31 @@ struct RootView: View {
 
 /// 底部四個分頁：首頁、照片、整理、更多。地圖之後再加。
 struct MainTabView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var model: AppModel
 
+    @ViewBuilder
     var body: some View {
+        if #available(iOS 26.1, *) {
+            tabs
+                .tabBarMinimizeBehavior(.onScrollDown)
+                .tabViewBottomAccessory(isEnabled: model.selectedTab == 2 && !model.isSelectingPhotos) {
+                    PhotosTabAccessory(appColorScheme: colorScheme)
+                }
+        } else if #available(iOS 26.0, *) {
+            tabs
+                .tabBarMinimizeBehavior(.onScrollDown)
+                .tabViewBottomAccessory {
+                    if model.selectedTab == 2 && !model.isSelectingPhotos {
+                        PhotosTabAccessory(appColorScheme: colorScheme)
+                    }
+                }
+        } else {
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         // 順序：日記、選集、照片、整理、更多。預設開在日記。
         TabView(selection: $model.selectedTab) {
             JournalTabView()
@@ -34,7 +56,7 @@ struct MainTabView: View {
                 .tabItem { Label("Collections", systemImage: "photo.stack") }
                 .tag(1)
 
-            PhotosTabView()
+            PhotosTabView(appColorScheme: colorScheme)
                 .tabItem { Label("Photos", systemImage: "photo.on.rectangle") }
                 .tag(2)
 

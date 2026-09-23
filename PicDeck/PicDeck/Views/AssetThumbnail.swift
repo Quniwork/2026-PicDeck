@@ -13,9 +13,14 @@ struct AssetThumbnail: View {
 
     @State private var image: UIImage?
 
+    private var aspectRatio: CGFloat {
+        guard fitsAspect, asset.pixelWidth > 0, asset.pixelHeight > 0 else { return 1 }
+        return CGFloat(asset.pixelWidth) / CGFloat(asset.pixelHeight)
+    }
+
     var body: some View {
         Color.clear
-            .aspectRatio(1, contentMode: .fit)
+            .aspectRatio(aspectRatio, contentMode: .fit)
             .overlay {
                 if let image {
                     if fitsAspect {
@@ -50,15 +55,30 @@ struct AssetThumbnail: View {
             .contentShape(Rectangle())
             .accessibilityElement()
             .accessibilityAddTraits(.isImage)
+            .accessibilityLabel(asset.accessibilitySummary)
+            .accessibilityValue(asset.mediaType == .video ? durationText :
+                                    (asset.isFavorite ? String(localized: "Favorite") : ""))
             .accessibilityIdentifier("thumb.\(asset.localIdentifier)")
-            .task(id: asset.localIdentifier) {
-            image = await ThumbnailLoader.shared.image(for: asset, size: size)
+            .task(id: "\(asset.localIdentifier)-\(fitsAspect)-\(Int(size.rounded()))") {
+                image = await ThumbnailLoader.shared.image(for: asset, size: size, fitsAspect: fitsAspect)
         }
     }
 
     private var durationText: String {
         let total = Int(asset.duration.rounded())
         return String(format: "%d:%02d", total / 60, total % 60)
+    }
+}
+
+extension PHAsset {
+    var accessibilitySummary: String {
+        let kind = mediaType == .video ? String(localized: "Videos") : String(localized: "Photos")
+        guard let creationDate else { return kind }
+        return String.localizedStringWithFormat(
+            String(localized: "%@, %@"),
+            kind,
+            creationDate.formatted(date: .abbreviated, time: .shortened)
+        )
     }
 }
 
@@ -79,15 +99,18 @@ final class ThumbnailLoader {
         manager.allowsCachingHighQualityImages = false
     }
 
-    func image(for asset: PHAsset, size: CGFloat) async -> UIImage? {
+    func image(for asset: PHAsset, size: CGFloat, fitsAspect: Bool = false) async -> UIImage? {
         let scale = await UIScreen.main.scale
-        let target = CGSize(width: size * scale, height: size * scale)
+        let aspectHeight = fitsAspect && asset.pixelWidth > 0 && asset.pixelHeight > 0
+            ? size * CGFloat(asset.pixelHeight) / CGFloat(asset.pixelWidth)
+            : size
+        let target = CGSize(width: size * scale, height: aspectHeight * scale)
 
         return await withCheckedContinuation { continuation in
             let box = ThumbnailResumeBox()
             manager.requestImage(for: asset,
                                  targetSize: target,
-                                 contentMode: .aspectFill,
+                                 contentMode: fitsAspect ? .aspectFit : .aspectFill,
                                  options: options) { image, info in
                 // opportunistic 會先回低解析度再回高解析度，只接受最終那次。
                 let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false

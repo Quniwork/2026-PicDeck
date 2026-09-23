@@ -32,8 +32,13 @@ enum WidgetSync {
         var keepFiles = Set<String>()
         for tag in ordered {
             let ids = tagStore.assetIDs(withTag: tag.id)
-            let assets = library.assets(withIDs: ids)
+            var assets = library.assets(withIDs: ids)
                 .sorted { ($0.creationDate ?? .distantPast) > ($1.creationDate ?? .distantPast) }
+            // 自己選的封面排第一張。
+            if let custom = tag.coverAssetID, let asset = library.asset(withID: custom) {
+                assets.removeAll { $0.localIdentifier == custom }
+                assets.insert(asset, at: 0)
+            }
             var files: [String] = []
             for (index, asset) in assets.prefix(3).enumerated() {
                 guard let image = await ThumbnailLoader.shared.image(for: asset, size: 640),
@@ -67,7 +72,8 @@ enum WidgetSync {
                                     symbolName: symbolName,
                                     countText: String(format: String(localized: "%lld photos"), ids.count),
                                     dayTexts: dayTexts,
-                                    coverFiles: files))
+                                    coverFiles: files,
+                                    coverFraming: tag.coverAssetID == nil ? nil : tag.coverFraming))
         }
 
         // 刪掉已經不用的封面。

@@ -34,7 +34,7 @@ struct IconPickerView: View {
         }
     }
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 8)
+    private let columns = [GridItem(.adaptive(minimum: 44), spacing: 6)]
     private let maxRecents = 16
 
     var body: some View {
@@ -50,23 +50,32 @@ struct IconPickerView: View {
 
                 controls
 
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
-                        if query.isEmpty, !recents.isEmpty {
-                            section(title: String(localized: "Recent"), items: recents, isRaw: true)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
+                            if query.isEmpty, !recents.isEmpty {
+                                section(title: String(localized: "Recent"), items: recents, isRaw: true)
+                                    .id("recent")
+                            }
+                            ForEach(visibleGroups) { group in
+                                section(title: group.title, items: group.items, isRaw: false)
+                                    .id(group.id)
+                            }
+                            if isSearching && visibleGroups.isEmpty {
+                                Text("No matches.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 20)
+                                    .frame(maxWidth: .infinity)
+                            }
                         }
-                        ForEach(visibleGroups) { group in
-                            section(title: group.title, items: group.items, isRaw: false)
-                        }
-                        if isSearching && visibleGroups.isEmpty {
-                            Text("No matches.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 20)
-                                .frame(maxWidth: .infinity)
-                        }
+                        .padding(.bottom, 20)
                     }
-                    .padding(.bottom, 20)
+                    // 底下一排分類快速鍵，點一下跳過去，不用慢慢滑——跟系統表情符號鍵盤那排一樣。
+                    // 搜尋中看到的是篩選過的結果，跳分類沒有意義，這時候不顯示。
+                    if !isSearching {
+                        quickJumpBar(proxy: proxy)
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -76,6 +85,7 @@ struct IconPickerView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("icon.cancel")
                 }
                 if allowsRemove {
                     ToolbarItem(placement: .confirmationAction) {
@@ -120,7 +130,7 @@ struct IconPickerView: View {
 
             Button(action: pickRandom) {
                 Image(systemName: "shuffle")
-                    .frame(width: 34, height: 34)
+                    .frame(width: 44, height: 44)
                     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
@@ -135,7 +145,7 @@ struct IconPickerView: View {
                         .fill(IconPalette.color(for: tint) ?? Color(.systemGray3))
                         .frame(width: 20, height: 20)
                         .overlay(Circle().stroke(Color.primary.opacity(0.15)))
-                        .frame(width: 34, height: 34)
+                        .frame(width: 44, height: 44)
                         .background(Color(.secondarySystemBackground),
                                     in: RoundedRectangle(cornerRadius: 9))
                 }
@@ -150,9 +160,50 @@ struct IconPickerView: View {
         }
     }
 
+    // MARK: - 底部分類快速鍵
+
+    /// 一排小圖示，一個分類一顆，點下去滑到那一段。用分類裡的第一個項目當代表圖示，
+    /// 不用另外對每個分類手動配一個 SF Symbol，分類增減也不用跟著改。
+    private func quickJumpBar(proxy: ScrollViewProxy) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 4) {
+                if query.isEmpty, !recents.isEmpty {
+                    quickJumpButton(targetID: "recent", proxy: proxy) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 17))
+                    }
+                }
+                ForEach(groups) { group in
+                    if let first = group.items.first {
+                        quickJumpButton(targetID: group.id, proxy: proxy) {
+                            IconLabel(raw: tab == .emoji ? first : AppIcon.symbol(name: first, tint: nil).encoded,
+                                      size: 17)
+                        }
+                        .accessibilityLabel(Text(group.title))
+                    }
+                }
+            }
+            .padding(.horizontal, 2)
+            .padding(.vertical, 4)
+        }
+        .frame(height: 48)
+    }
+
+    private func quickJumpButton<Content: View>(targetID: String, proxy: ScrollViewProxy,
+                                                 @ViewBuilder content: () -> Content) -> some View {
+        Button {
+            proxy.scrollTo(targetID, anchor: .top)
+        } label: {
+            content()
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("icon.quickJump")
+    }
+
     /// 配色盤。直接顯示顏色，最後一格可以自己挑。
     private var colorPalette: some View {
-        let columns = Array(repeating: GridItem(.fixed(34), spacing: 10), count: 5)
+        let columns = Array(repeating: GridItem(.fixed(44), spacing: 8), count: 4)
 
         return VStack(spacing: 12) {
             LazyVGrid(columns: columns, spacing: 10) {
@@ -204,6 +255,8 @@ struct IconPickerView: View {
                     }
                 }
                 .overlay(Circle().stroke(Color.primary.opacity(0.12)))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(token ?? "default"))
@@ -225,7 +278,7 @@ struct IconPickerView: View {
                         }
                     } label: {
                         IconLabel(raw: value, size: 24)
-                            .frame(width: 38, height: 38)
+                            .frame(width: 44, height: 44)
                             .background(raw == value ? Color.accentColor.opacity(0.18) : Color.clear,
                                         in: RoundedRectangle(cornerRadius: 8))
                     }
@@ -320,8 +373,8 @@ struct IconPickerView: View {
                             choose(variant)
                         } label: {
                             Text(variant)
-                                .font(.system(size: 26))
-                                .frame(width: 38, height: 38)
+                                .font(.title2)
+                                .frame(width: 44, height: 44)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(variant)
@@ -331,6 +384,7 @@ struct IconPickerView: View {
             }
         }
         .padding(12)
+        .frame(width: 320)
     }
 
     // MARK: - 動作
@@ -385,10 +439,12 @@ struct IconPickerButton: View {
         } label: {
             IconLabel(raw: raw, size: size * 0.6, placeholder: "face.smiling")
                 .frame(width: size + 10, height: size)
+                .frame(minWidth: 44, minHeight: 44)
                 .background(Color(.secondarySystemBackground),
                             in: RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text("Choose icon"))
         .accessibilityIdentifier(identifier)
         .sheet(isPresented: $isPresented) {
             IconPickerView(raw: $raw, allowsRemove: allowsRemove, removedValue: removedValue)

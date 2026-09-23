@@ -20,8 +20,6 @@ struct PicDeckApp: App {
                 .environmentObject(tagStore)
                 .environmentObject(journalStore)
                 .environmentObject(noteStore)
-                // 字比系統設定小兩級，並且跟著系統的文字大小走。
-                .modifier(RelativeTypeSize())
                 .onAppear { model.appearance.apply() }
                 // 桌面小工具的資料：啟動時、標籤有變動時同步一次。
                 .task(id: "\(tagStore.assignments.count)-\(tagStore.tags.count)-\(model.cardTextPosition.rawValue)-\(model.cardTextStyle.rawValue)") {

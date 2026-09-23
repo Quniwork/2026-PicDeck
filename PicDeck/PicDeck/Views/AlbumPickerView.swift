@@ -35,6 +35,7 @@ struct AlbumPickerView: View {
                     AlbumCreateButton(assets: assets, tree: tree) {
                         Task { await reload() }
                     }
+                    .pageRowInsets(vertical: 6)
                 }
 
                 // 最近用過的相簿放最上面，不用在階層裡找。
@@ -42,6 +43,7 @@ struct AlbumPickerView: View {
                     Section(String(localized: "Recently used")) {
                         ForEach(recentAlbums, id: \.id) { node in
                             rowView(node, depth: 0)
+                                .pageRowInsets(vertical: 6)
                         }
                     }
                 }
@@ -53,9 +55,11 @@ struct AlbumPickerView: View {
                         Text("No albums yet.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                            .pageRowInsets(vertical: 6)
                     } else {
                         ForEach(rows, id: \.node.id) { row in
                             rowView(row.node, depth: row.depth)
+                                .pageRowInsets(vertical: 6)
                         }
                     }
                 } header: {
@@ -63,6 +67,7 @@ struct AlbumPickerView: View {
                                            : String(localized: "Apply to \(assets.count) photos"))
                 }
             }
+            .pageList()
             .navigationTitle("Add to album")
             .failureToast()
             .navigationBarTitleDisplayMode(.inline)
@@ -95,6 +100,7 @@ struct AlbumPickerView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .pageRowInsets(vertical: 6)
             .accessibilityLabel(Text(node.title))
             .accessibilityIdentifier("albumpicker.folder")
         } else {
@@ -115,6 +121,7 @@ struct AlbumPickerView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .pageRowInsets(vertical: 6)
             .accessibilityLabel(Text(node.title))
             .accessibilityValue(memberIDs.contains(node.id) ? "checked" : "")
             .accessibilityIdentifier("albumpicker.row")
@@ -264,6 +271,7 @@ struct AlbumCreateForm: View {
                     Text("Albums and folders are created in your Photos library.")
                 }
             }
+            .appCanvas()
             .navigationTitle(kind == .album ? "New album" : "New folder")
             .failureToast()
             .navigationBarTitleDisplayMode(.inline)

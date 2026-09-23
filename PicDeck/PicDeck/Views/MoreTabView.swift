@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MoreTabView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var organized: OrganizedStore
     @EnvironmentObject private var tagStore: TagStore
@@ -13,18 +14,24 @@ struct MoreTabView: View {
             List {
                 Section("Status") {
                     LabeledContent("Plan", value: planName)
+                        .pageRowInsets()
                     if let expiry = model.subscriptionExpiry {
                         LabeledContent("Expires on") {
                             Text(expiry, format: .dateTime.year().month().day())
                         }
+                        .pageRowInsets()
                         .accessibilityIdentifier("more.expiry")
                     }
                     LabeledContent("Organize (daily)", value: dailyStatus)
+                        .pageRowInsets()
                         .accessibilityIdentifier("more.daily")
                     LabeledContent("Journal (daily)", value: journalStatus)
+                        .pageRowInsets()
                         .accessibilityIdentifier("more.journalDaily")
                     LabeledContent("Tags", value: String(localized: "Unlimited"))
+                        .pageRowInsets()
                     LabeledContent("Tags with dates", value: anniversaryStatus)
+                        .pageRowInsets()
                         .accessibilityIdentifier("more.anniversary")
                     if model.isUnlocked {
                         Button("Manage subscription") {
@@ -32,8 +39,10 @@ struct MoreTabView: View {
                                 UIApplication.shared.open(url)
                             }
                         }
+                        .pageRowInsets()
                     } else {
                         Button("Unlock PicDeck") { showPaywall = true }
+                            .pageRowInsets()
                     }
                 }
 
@@ -44,40 +53,55 @@ struct MoreTabView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .pageRowInsets()
                     .accessibilityIdentifier("more.appearance")
                 }
 
                 Section("Help") {
                     Button("Replay gesture tutorial") { showTutorial = true }
+                        .pageRowInsets()
                 }
 
                 Section("Privacy") {
                     Text("PicDeck works entirely on your device. Photos are never uploaded to any server.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .pageRowInsets()
                 }
 
                 Section("Developer") {
                     Button("Reset unlock (testing)", role: .destructive) {
                         model.resetUnlockForTesting()
                     }
+                    .pageRowInsets()
                     Button("Reset kept records (testing)", role: .destructive) {
                         organized.resetKeptForTesting()
                     }
+                    .pageRowInsets()
                     Button("Reset tags (testing)", role: .destructive) {
                         tagStore.resetForTesting()
                     }
+                    .pageRowInsets()
                     Button("Reset journal (testing)", role: .destructive) {
                         journalStore.resetForTesting()
                     }
+                    .pageRowInsets()
                     LabeledContent("Version", value: appVersion)
+                        .pageRowInsets()
                 }
             }
-            // 第一個小標題本身有留白，往上補回來，跟其他分頁的第一個內容同高。
-            .contentMargins(.top, -12, for: .scrollContent)
+            .pageList(firstSectionHasHeader: true)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
+                    .accessibilityHidden(true)
+            }
             .navigationTitle("More")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { LeadingTitleToolbar(title: String(localized: "More"), ) }
+            .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
+            .toolbar {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    LeadingTitleToolbar(title: String(localized: "More"), font: .largeTitle)
+                }
+            }
             .sheet(isPresented: $showPaywall) { PaywallView() }
             .fullScreenCover(isPresented: $showTutorial) {
                 TutorialView { showTutorial = false }

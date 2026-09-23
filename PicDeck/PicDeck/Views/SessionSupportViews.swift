@@ -164,11 +164,9 @@ struct PendingTrashView: View {
         NavigationStack {
             Group {
                 if model.trashedAssetIDs.isEmpty {
-                    ContentUnavailableView {
-                        Label("Trash is empty", systemImage: "trash")
-                    } description: {
-                        Text("Photos you swipe up land here first. Nothing is deleted until you confirm.")
-                    }
+                    AppEmptyState(icon: "trash",
+                                  title: String(localized: "Trash is empty"),
+                                  message: String(localized: "Photos you swipe up land here first. Nothing is deleted until you confirm."))
                 } else {
                     ScrollView {
                         LazyVGrid(columns: columns, spacing: 4) {
@@ -274,11 +272,9 @@ struct AlbumQuickPicker: View {
         NavigationStack {
             Group {
                 if albums.isEmpty {
-                    ContentUnavailableView {
-                        Label("No albums", systemImage: "folder")
-                    } description: {
-                        Text("Albums you create in the Photos app show up here.")
-                    }
+                    AppEmptyState(icon: "folder",
+                                  title: String(localized: "No albums"),
+                                  message: String(localized: "Albums you create in the Photos app show up here."))
                 } else {
                     List(albums) { album in
                         Button {

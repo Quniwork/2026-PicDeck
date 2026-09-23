@@ -67,6 +67,20 @@ struct TagFormView: View {
                     }
                 }
 
+                // 封面：從這個標籤的照片挑一張、調整位置。建立時還沒有照片，只有編輯才有。
+                if let editingTag, !tagStore.assetIDs(withTag: editingTag.id).isEmpty {
+                    Section {
+                        NavigationLink {
+                            TagCoverEditorView(tagID: editingTag.id)
+                        } label: {
+                            Label("Cover", systemImage: "photo")
+                        }
+                        .accessibilityIdentifier("tag.cover")
+                    } footer: {
+                        Text("Choose which photo shows on the tag's card and widget, and move it to show the part you like.")
+                    }
+                }
+
                 Section {
                     Toggle(isOn: $pinnedOnHome) {
                         Label("Pin to Home", systemImage: "pin")
@@ -90,6 +104,7 @@ struct TagFormView: View {
                     }
                 }
             }
+            .appCanvas()
             .navigationTitle(editingTag == nil
                              ? String(localized: "New tag")
                              : String(localized: "Edit tag"))
@@ -97,6 +112,7 @@ struct TagFormView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("tag.cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(editingTag == nil

@@ -177,10 +177,11 @@ enum DateTitle {
 }
 
 enum GridContext: String {
-    case all, timeline, journal, collection
+    case year, all, timeline, journal, collection
 
     init?(_ scale: PhotoScale) {
         switch scale {
+        case .year: self = .year
         case .all: self = .all
         case .timeline: self = .timeline
         default: return nil

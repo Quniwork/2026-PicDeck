@@ -11,6 +11,8 @@ struct PhotoDetailView: View {
     @State private var currentID: String
     /// 從日記點進來時不再有「日記」（已經在日記裡了）。
     private let showsJournal: Bool
+    /// false 時只看照片與備註：沒有下面那排功能按鈕，也沒有待刪除。收藏、月曆、週曆點開用。
+    private let showsActions: Bool
 
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var library: PhotoLibraryService
@@ -41,8 +43,9 @@ struct PhotoDetailView: View {
         var id: Int { hashValue }
     }
 
-    init(assets: [PHAsset], startID: String, showsJournal: Bool = true) {
+    init(assets: [PHAsset], startID: String, showsJournal: Bool = true, showsActions: Bool = true) {
         self.showsJournal = showsJournal
+        self.showsActions = showsActions
         _assets = State(initialValue: assets)
         _currentID = State(initialValue: startID)
     }
@@ -83,7 +86,11 @@ struct PhotoDetailView: View {
                         }
                 )
 
-                actionBar
+                if showsActions {
+                    actionBar
+                } else {
+                    noteCaption
+                }
             }
         }
         .preferredColorScheme(.dark)
@@ -133,28 +140,51 @@ struct PhotoDetailView: View {
 
             Spacer()
 
-            GlassCircleButton { showTrash = true } label: {
-                Image(systemName: "trash")
-                    .overlay(alignment: .topTrailing) {
-                        if !model.trashedAssetIDs.isEmpty {
-                            Text("\(model.trashedAssetIDs.count)")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                                .fixedSize()
-                                .padding(.horizontal, 5)
-                                .frame(minWidth: 18, minHeight: 18)
-                                .background(Color.red, in: Capsule())
-                                .offset(x: 12, y: -12)
+            if showsActions {
+                GlassCircleButton { showTrash = true } label: {
+                    Image(systemName: "trash")
+                        .overlay(alignment: .topTrailing) {
+                            if !model.trashedAssetIDs.isEmpty {
+                                Text("\(model.trashedAssetIDs.count)")
+                                    .font(.system(.caption2, design: .rounded, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                                    .padding(.horizontal, 5)
+                                    .frame(minWidth: 18, minHeight: 18)
+                                    .background(Color.red, in: Capsule())
+                                    .offset(x: 12, y: -12)
+                            }
                         }
-                    }
+                }
+                .accessibilityLabel(Text("Pending deletion"))
+                .accessibilityIdentifier("detail.trash")
+            } else {
+                Color.clear.frame(width: 44, height: 44)
             }
-            .accessibilityLabel(Text("Pending deletion"))
-            .accessibilityIdentifier("detail.trash")
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 8)
+    }
+
+    /// 沒有功能按鈕時，這張有備註就顯示在底下。
+    @ViewBuilder
+    private var noteCaption: some View {
+        if let asset = current, let text = noteStore.note(for: asset)?.text, !text.isEmpty {
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .floatingGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .accessibilityIdentifier("detail.note.text")
+        } else {
+            Color.clear.frame(height: 16)
+        }
     }
 
     private var titleText: String {
@@ -247,9 +277,12 @@ struct PhotoDetailView: View {
         return (parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 
+    /// `asset` 是傳進來時就已經抓好的實體，直接讀它的 `isFavorite` 就好；
+    /// 不要為了「保險」再用 ID 去 PhotoKit 重新查一次——`ForEach` 每張都會呼叫這個函式，
+    /// 開「全部」這種上千張的清單時，等於在主執行緒排隊打上千次 Photos 資料庫查詢，
+    /// 卡住超過系統的看門狗時限就會被強制關閉（實機上已經這樣當機過）。
     private func isFavorite(_ asset: PHAsset) -> Bool {
-        if let known = favoriteState[asset.localIdentifier] { return known }
-        return (library.asset(withID: asset.localIdentifier) ?? asset).isFavorite
+        favoriteState[asset.localIdentifier] ?? asset.isFavorite
     }
 
     private func toggleFavorite() {

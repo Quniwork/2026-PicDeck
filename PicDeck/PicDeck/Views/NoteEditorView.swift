@@ -73,6 +73,7 @@ struct NoteEditorView: View {
                 }
             }
             .scrollDismissesKeyboard(.interactively)
+            .appCanvas()
             .navigationTitle("Note")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -162,6 +163,7 @@ struct BatchNoteView: View {
                     }
                 }
             }
+            .appCanvas()
             .navigationTitle(String(format: String(localized: "Note for %lld photos"), assets.count))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

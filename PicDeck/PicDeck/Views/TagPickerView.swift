@@ -16,6 +16,7 @@ struct TagPickerView: View {
                 // 標籤多了之後放在最下面要捲很久，所以放最上面。
                 Section {
                     CreateTagButton(assets: assets)
+                        .pageRowInsets(vertical: 6)
                 }
 
                 if !tagStore.tags.isEmpty {
@@ -35,6 +36,8 @@ struct TagPickerView: View {
                                     }
                                 }
                             }
+                            .buttonStyle(.plain)
+                            .pageRowInsets(vertical: 6)
                         }
                     }
                 }
@@ -47,6 +50,7 @@ struct TagPickerView: View {
                     }
                 }
             }
+            .pageList()
             .navigationTitle("Add tags")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

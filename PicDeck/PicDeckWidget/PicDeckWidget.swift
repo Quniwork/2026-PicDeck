@@ -49,7 +49,7 @@ struct TagProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> TagEntry {
         TagEntry(date: Date(),
                  tag: WidgetTag(id: "sample", name: "Tag", emoji: "🍜", symbolName: nil,
-                                countText: "12", dayTexts: [], coverFiles: []),
+                                countText: "12", dayTexts: [], coverFiles: [], coverFraming: nil),
                  dayText: nil)
     }
 
@@ -97,13 +97,14 @@ private struct TagIcon: View {
 
 private struct CoverView: View {
     let file: String?
+    var framing: CoverFraming = .standard
     var body: some View {
         // 圖片放在透明底的 overlay 裡再裁切：圖片再大也不會撐大外面的版面，
         // 疊在上面的文字才會留在卡片範圍內（中尺寸比較寬，以前文字被擠出畫面外）。
         Color.clear
             .overlay {
                 if let file, let image = coverImage(file) {
-                    Image(uiImage: image).resizable().scaledToFill()
+                    PositionedImage(image: image, framing: framing)
                 } else {
                     LinearGradient(colors: [Color(red: 0.25, green: 0.6, blue: 1), Color(red: 0.0, green: 0.42, blue: 1)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -121,7 +122,7 @@ struct TagCardView: View {
         if let tag = entry.tag {
             let snapshot = WidgetSnapshot.load()
             ZStack {
-                CoverView(file: tag.coverFiles.first)
+                CoverView(file: tag.coverFiles.first, framing: tag.coverFraming ?? .standard)
                 CardTextOverlay(name: tag.name,
                                 primary: entry.dayText ?? tag.countText,
                                 secondary: entry.dayText != nil ? tag.countText : nil,

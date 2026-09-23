@@ -1,6 +1,16 @@
 import SwiftUI
 import Photos
 
+private struct ScrollContentMinYKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
+private struct ScrollVisibleMetrics: Equatable {
+    let offset: CGFloat
+    let viewportHeight: CGFloat
+}
+
 /// 會自動捲到指定錨點的捲動容器。
 /// 定位完成前先把內容藏起來，避免看到畫面從頂端跳到目標位置的閃動。
 struct AnchoredScrollView<Content: View>: View {
@@ -10,6 +20,9 @@ struct AnchoredScrollView<Content: View>: View {
     let isReady: Bool
     /// 右側拖拉軸要用的落點。沒給就不顯示。
     var scrub: ScrubIndex? = nil
+    var scrubTopInset: CGFloat = 10
+    var onScrollOffsetChange: ((CGFloat, CGFloat) -> Void)? = nil
+    var scrollToAnchor: UnitPoint = .top
     @ViewBuilder let content: () -> Content
 
     @State private var isPositioned = false
@@ -22,9 +35,32 @@ struct AnchoredScrollView<Content: View>: View {
     var body: some View {
         ScrollViewReader { proxy in
             // 有拖拉把手的畫面就不用系統捲軸，兩個並排會打架。
-            ScrollView(showsIndicators: !(scrub?.isUsable ?? false)) {
+            let scrollView = ScrollView(showsIndicators: !(scrub?.isUsable ?? false)) {
                 content()
                     .trackedByScrubber(scrubController)
+                    .background {
+                        GeometryReader { geometry in
+                            Color.clear.preference(key: ScrollContentMinYKey.self,
+                                                   value: geometry.frame(in: .named("anchored-scroll-content")).minY)
+                        }
+                    }
+            }
+            .coordinateSpace(name: "anchored-scroll-content")
+
+            Group {
+                if #available(iOS 18.0, *) {
+                    scrollView.onScrollGeometryChange(for: ScrollVisibleMetrics.self) { geometry in
+                        ScrollVisibleMetrics(offset: geometry.contentOffset.y,
+                                             viewportHeight: geometry.containerSize.height)
+                    } action: { _, metrics in
+                        onScrollOffsetChange?(metrics.offset, metrics.viewportHeight)
+                    }
+                } else {
+                    scrollView
+                }
+            }
+            .onPreferenceChange(ScrollContentMinYKey.self) { minY in
+                if #unavailable(iOS 18.0) { onScrollOffsetChange?(-minY, 0) }
             }
             .opacity(isHidden ? 0 : 1)
             .overlay {
@@ -32,7 +68,7 @@ struct AnchoredScrollView<Content: View>: View {
             }
             .overlay(alignment: .trailing) {
                 if let scrub, scrub.isUsable, !isHidden {
-                    ScrubberOverlay(index: scrub, controller: scrubController)
+                    ScrubberOverlay(index: scrub, controller: scrubController, topInset: scrubTopInset)
                 }
             }
             .task(id: "\(anchorID ?? "")-\(isReady)") {
@@ -46,7 +82,7 @@ struct AnchoredScrollView<Content: View>: View {
                 // 讓延遲載入的版面先排好，否則捲不到還沒實體化的區段。
                 await Task.yield()
                 try? await Task.sleep(nanoseconds: 120_000_000)
-                proxy.scrollTo(anchorID, anchor: .top)
+                proxy.scrollTo(anchorID, anchor: scrollToAnchor)
                 try? await Task.sleep(nanoseconds: 80_000_000)
                 withMotion(.easeIn(duration: 0.12)) { isPositioned = true }
             }
@@ -58,27 +94,37 @@ struct AnchoredScrollView<Content: View>: View {
 struct BucketGridView: View {
     let buckets: [PhotoGrouping.Bucket]
     var minimum: CGFloat = 100
+    var columns: Int? = nil
     var compact: Bool = false
+    var onScrollOffsetChange: ((CGFloat) -> Void)? = nil
     let onSelect: (PhotoGrouping.Bucket) -> Void
 
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: minimum), spacing: compact ? 8 : 12)],
+        AnchoredScrollView(anchorID: nil, isReady: true,
+                           onScrollOffsetChange: { offset, _ in onScrollOffsetChange?(offset) }) {
+            LazyVGrid(columns: gridColumns,
                       spacing: compact ? 12 : 16) {
                 ForEach(buckets) { bucket in
                     Button {
                         onSelect(bucket)
                     } label: {
-                        BucketCard(bucket: bucket, compact: compact)
+                        BucketCard(bucket: bucket, compact: compact, titleColumnCount: columns)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("bucket.\(bucket.id)")
                 }
             }
-            .padding(.horizontal, PageMetrics.contentInset)
-            .padding(.top, compact ? 12 : 16)
+            .padding(.horizontal, PageMetrics.edge)
+            .padding(.top, PageMetrics.contentTopGap)
             .padding(.bottom, 28)
         }
+    }
+
+    private var gridColumns: [GridItem] {
+        guard let columns else {
+            return [GridItem(.adaptive(minimum: minimum), spacing: compact ? 8 : 12)]
+        }
+        return Array(repeating: GridItem(.flexible(), spacing: compact ? 8 : 12), count: max(1, columns))
     }
 }
 
@@ -95,25 +141,53 @@ struct CompactGridView: View {
     var selectedIDs: Binding<Set<String>>? = nil
     /// 右側拖拉軸。
     var scrub: ScrubIndex? = nil
+    var onVisibleDateRangeChange: ((CGFloat, Date?, Date?) -> Void)? = nil
+    /// 點開要從縮圖位置展開，跟呼叫端共用同一個 namespace。
+    var zoomNamespace: Namespace.ID? = nil
 
     var body: some View {
-        AnchoredScrollView(anchorID: nil, isReady: !assets.isEmpty, scrub: scrub) {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: columns),
-                      spacing: 2) {
-                ForEach(assets, id: \.localIdentifier) { asset in
-                    SelectableThumbnail(asset: asset,
-                                        size: columns >= 6 ? 100 : (columns >= 4 ? 130 : 220),
-                                        isSelecting: isSelecting,
-                                        isSelected: selectedIDs?.wrappedValue.contains(asset.localIdentifier) ?? false,
-                                        onToggle: { toggle(asset) },
-                                        menu: { actions?(asset) },
-                                        fitsAspect: fitsAspect,
-                                        onOpen: { onOpen?(asset) })
-                        .id(asset.localIdentifier)
+        GeometryReader { proxy in
+            let safeColumns = max(columns, 1)
+            let cellWidth = max(1, (proxy.size.width - CGFloat(safeColumns - 1) * 2) / CGFloat(safeColumns))
+            AnchoredScrollView(anchorID: assets.last?.localIdentifier, isReady: !assets.isEmpty, scrub: scrub,
+                               scrubTopInset: 160,
+                               onScrollOffsetChange: { offset, viewportHeight in
+                let cellExtent = cellWidth + 2
+                let firstRow = max(0, Int(max(0, offset) / max(cellExtent, 1)))
+                let visibleHeight = viewportHeight > 0 ? viewportHeight : proxy.size.height
+                let lastRow = max(firstRow, Int((max(0, offset) + visibleHeight) / max(cellExtent, 1)))
+                let firstIndex = min(firstRow * safeColumns, assets.count - 1)
+                let lastIndex = min((lastRow + 1) * safeColumns - 1, assets.count - 1)
+                let firstDate = assets.indices.contains(firstIndex) ? assets[firstIndex].creationDate : nil
+                let lastDate = assets.indices.contains(lastIndex) ? assets[lastIndex].creationDate : nil
+                onVisibleDateRangeChange?(offset, firstDate, lastDate)
+            }, scrollToAnchor: .bottom) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2,
+                                                             alignment: fitsAspect ? .top : .center), count: safeColumns),
+                          spacing: 2) {
+                    ForEach(assets, id: \.localIdentifier) { asset in
+                        thumbnail(asset, size: cellWidth)
+                    }
                 }
+                .padding(.top, assets.count > max(columns, 1) * 4 ? 0 : 12)
             }
-            .padding(.horizontal, 2)
+            .softScrollEdges()
+            // A short library cannot scroll its first row back out from under the title.
+            .ignoresSafeArea(edges: assets.count > max(columns, 1) * 4 ? .top : [])
         }
+    }
+
+    private func thumbnail(_ asset: PHAsset, size: CGFloat) -> some View {
+        SelectableThumbnail(asset: asset,
+                            size: size,
+                            isSelecting: isSelecting,
+                            isSelected: selectedIDs?.wrappedValue.contains(asset.localIdentifier) ?? false,
+                            onToggle: { toggle(asset) },
+                            menu: { actions?(asset) },
+                            fitsAspect: fitsAspect,
+                            onOpen: { onOpen?(asset) },
+                            zoomNamespace: zoomNamespace)
+            .id(asset.localIdentifier)
     }
 
     private func toggle(_ asset: PHAsset) {
@@ -156,30 +230,29 @@ struct TimelineView: View {
     /// 每列幾張、是否依原比例顯示。
     var columnCount: Int = 4
     var fitsAspect: Bool = false
+    var onScrollOffsetChange: ((CGFloat) -> Void)? = nil
     var onOpen: ((PHAsset) -> Void)? = nil
+    /// 點開要從縮圖位置展開，跟呼叫端共用同一個 namespace。
+    var zoomNamespace: Namespace.ID? = nil
 
     private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 2), count: columnCount) }
 
-    /// 時間軸線靠左，線上每一天有一個圓點，內容整體往右縮進去。
-    private let railWidth: CGFloat = 30
-    private let dotSize: CGFloat = 7
-
     var body: some View {
-        AnchoredScrollView(anchorID: focusSectionID, isReady: !sections.isEmpty, scrub: scrub) {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
-                    daySection(section, isFirst: index == 0, isLast: index == sections.count - 1)
+        AnchoredScrollView(anchorID: focusSectionID, isReady: !sections.isEmpty, scrub: scrub,
+                           onScrollOffsetChange: { offset, _ in onScrollOffsetChange?(offset) }) {
+            LazyVStack(alignment: .leading, spacing: PageMetrics.photoSectionSpacing) {
+                ForEach(sections) { section in
+                    daySection(section)
                         .id(section.id)
                 }
             }
+            .padding(.top, PageMetrics.contentTopGap)
             .padding(.bottom, 20)
         }
     }
 
-    private func daySection(_ section: PhotoGrouping.DaySection,
-                            isFirst: Bool,
-                            isLast: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func daySection(_ section: PhotoGrouping.DaySection) -> some View {
+        VStack(alignment: .leading, spacing: PageMetrics.photoSectionGap) {
             header(for: section)
 
             LazyVGrid(columns: columns, spacing: 2) {
@@ -191,29 +264,12 @@ struct TimelineView: View {
                                         onToggle: { toggle(asset) },
                                         menu: { actions?(asset) },
                                         fitsAspect: fitsAspect,
-                                        onOpen: { onOpen?(asset) })
+                                        onOpen: { onOpen?(asset) },
+                                        zoomNamespace: zoomNamespace)
                 }
             }
-            .padding(.trailing, 2)
         }
-        .padding(.leading, railWidth)
-        .padding(.bottom, 22)
-        // 線畫在內容後面，高度自動跟著這一天的內容走，天與天之間就連成一條。
-        .background(alignment: .topLeading) {
-            Rectangle()
-                .fill(Color.secondary.opacity(0.16))
-                .frame(width: 1)
-                .padding(.leading, railWidth / 2 - 0.5)
-                .padding(.top, isFirst ? 11.5 : 0)
-                .padding(.bottom, isLast ? 22 : 0)
-        }
-        .overlay(alignment: .topLeading) {
-            Circle()
-                .fill(Color.accentColor)
-                .frame(width: dotSize, height: dotSize)
-                .padding(.leading, railWidth / 2 - dotSize / 2)
-                .padding(.top, 8)
-        }
+        .padding(.horizontal, PageMetrics.edge)
     }
 
     private func toggle(_ asset: PHAsset) {
@@ -234,22 +290,22 @@ struct TimelineView: View {
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
             if let elapsed {
                 Text(elapsed)
-                    .font(.headline)
+                    .font(TypeScale.photoSectionTitle)
                     .accessibilityIdentifier("anniversary.chip")
                 Text("\(section.title) \(section.weekday)")
-                    .font(.footnote)
+                    .font(TypeScale.subtitle)
                     .foregroundStyle(.secondary)
             } else {
                 Text(section.title)
-                    .font(.headline)
+                    .font(TypeScale.photoSectionTitle)
                 Text(section.weekday)
-                    .font(.footnote)
+                    .font(TypeScale.subtitle)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
             if elapsed == nil {
                 Text("\(section.count)")
-                    .font(.caption)
+                    .font(TypeScale.subtitle)
                     .foregroundStyle(.secondary)
                     .padding(.trailing, 12)
             }
@@ -264,35 +320,75 @@ struct TimelineView: View {
 struct BucketCard: View {
     let bucket: PhotoGrouping.Bucket
     var compact: Bool = false
+    var titleColumnCount: Int? = nil
+    @ScaledMetric(relativeTo: .headline) private var baseYearTitleSize: CGFloat = 17
+
+    private var titleOverCover: Bool { titleColumnCount != nil }
+    /// Keep the widest year tile at a landscape thumbnail proportion, like the largest Library tiles.
+    private var coverAspectRatio: CGFloat { titleColumnCount == 1 ? 4.0 / 3.0 : 1 }
+    private var yearTitleSize: CGFloat {
+        guard let titleColumnCount else { return baseYearTitleSize }
+        let scale = min(3 / CGFloat(max(titleColumnCount, 1)), 1.5)
+        return baseYearTitleSize * scale
+    }
 
     var body: some View {
         VStack(spacing: 6) {
             ZStack(alignment: .bottomTrailing) {
                 if let coverID = bucket.coverID {
                     CoverImage(assetID: coverID, size: compact ? 90 : 140)
-                        .aspectRatio(1, contentMode: .fill)
+                        .aspectRatio(coverAspectRatio, contentMode: .fill)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: compact ? 10 : 12))
                 } else {
                     RoundedRectangle(cornerRadius: compact ? 10 : 12)
                         .fill(Color(.secondarySystemBackground))
-                        .aspectRatio(1, contentMode: .fit)
+                        .aspectRatio(coverAspectRatio, contentMode: .fit)
                 }
 
-                Text("\(bucket.count)")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.black.opacity(0.45), in: Capsule())
-                    .padding(5)
+                if titleOverCover {
+                    RoundedRectangle(cornerRadius: compact ? 10 : 12)
+                        .fill(LinearGradient(colors: [.clear, .black.opacity(0.48)],
+                                             startPoint: .center, endPoint: .bottom))
+                        .allowsHitTesting(false)
+
+                    HStack(alignment: .lastTextBaseline, spacing: 6) {
+                        Text(bucket.title)
+                            .font(.system(size: yearTitleSize, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.55), radius: 3, y: 1)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+
+                        Spacer(minLength: 0)
+
+                        countLabel
+                    }
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, 8)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                } else {
+                    countLabel
+                        .padding(5)
+                }
             }
 
-            Text(bucket.title)
-                .font(compact ? .caption2 : .caption)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+            if !titleOverCover {
+                Text(bucket.title)
+                    .font(compact ? .caption2 : .caption)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+            }
         }
+    }
+
+    private var countLabel: some View {
+        Text("\(bucket.count)")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(.black.opacity(0.45), in: Capsule())
     }
 }
 

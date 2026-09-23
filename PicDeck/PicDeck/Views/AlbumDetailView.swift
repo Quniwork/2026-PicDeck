@@ -16,7 +16,7 @@ struct AlbumDetailView: View {
                     AssetThumbnail(asset: asset, size: 130)
                 }
             }
-            .padding(.horizontal, 2)
+            .padding(.horizontal, PageMetrics.edge)
         }
         .navigationTitle(album.title)
         .navigationBarTitleDisplayMode(.inline)

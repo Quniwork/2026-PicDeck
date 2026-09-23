@@ -115,6 +115,7 @@ struct HomeBlockEditorView: View {
                 }
             }
             .environment(\.editMode, .constant(.active))
+            .appCanvas()
             .navigationTitle(block.title.isEmpty ? HomeBlockNames.defaultTitle(for: block.mode) : block.title)
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showPicker) {
@@ -217,6 +218,7 @@ struct BlockTagPickerView: View {
                     Text("Choose a tag")
                 }
             }
+            .appCanvas()
             .navigationTitle("Add a tag")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

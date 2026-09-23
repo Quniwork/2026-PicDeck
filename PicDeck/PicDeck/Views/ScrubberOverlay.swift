@@ -187,6 +187,7 @@ extension View {
 struct ScrubberOverlay: View {
     let index: ScrubIndex
     @ObservedObject var controller: ScrubController
+    var topInset: CGFloat = 10
 
     @State private var isDragging = false
     @State private var isScrolling = false
@@ -207,10 +208,10 @@ struct ScrubberOverlay: View {
 
     var body: some View {
         GeometryReader { geo in
-            let track = max(geo.size.height - inset * 2 - handleSize.height, 1)
+            let track = max(geo.size.height - topInset - inset - handleSize.height, 1)
             let metrics = controller.metrics
             let shown = dragFraction ?? metrics.fraction
-            let handleTop = inset + shown * track
+            let handleTop = topInset + shown * track
             let handleCenter = handleTop + handleSize.height / 2
 
             ZStack(alignment: .topTrailing) {
@@ -256,7 +257,7 @@ struct ScrubberOverlay: View {
     /// 跟右上角篩選鈕同一種樣式：玻璃圓形，黑色的線條圖示。
     private var handle: some View {
         Image(systemName: "chevron.up.chevron.down")
-            .font(.system(size: 17, weight: .medium))
+            .font(.body.weight(.medium))
             .foregroundStyle(isDragging ? Color.accentColor : Color.primary)
             .frame(width: handleSize.width, height: handleSize.height)
             .floatingGlass(in: Circle())
@@ -333,7 +334,7 @@ struct ScrubberOverlay: View {
                     .accessibilityIdentifier("scrubber.range")
             }
         }
-        .padding(atTop ? .top : .bottom, 12)
+        .padding(atTop ? .top : .bottom, atTop ? topInset : 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: atTop ? .top : .bottom)
         .allowsHitTesting(false)
         .transition(.opacity)
@@ -372,7 +373,7 @@ struct ScrubberOverlay: View {
 
         var marks: [(year: Int, center: CGFloat)] = index.yearStarts.map { entry in
             let fraction = min(CGFloat(entry.start / index.totalWeight) * scale, 1)
-            return (entry.year, inset + handleSize.height / 2 + fraction * track)
+            return (entry.year, topInset + handleSize.height / 2 + fraction * track)
         }
         marks.sort { $0.center < $1.center }
 
@@ -401,7 +402,7 @@ struct ScrubberOverlay: View {
                     }
                 }
                 let center = value.location.y - grabOffset
-                let top = center - handleSize.height / 2 - inset
+                let top = center - handleSize.height / 2 - topInset
                 let fraction = min(max(top / track, 0), 1)
                 dragFraction = fraction
                 controller.scroll(toFraction: fraction)

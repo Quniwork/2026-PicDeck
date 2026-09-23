@@ -3,6 +3,7 @@ import Photos
 
 /// 整理分頁：固定三個入口，底下接未整理照片依月份分組。
 struct OrganizeTabView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var organized: OrganizedStore
@@ -21,10 +22,18 @@ struct OrganizeTabView: View {
                 case .albums: AlbumManagerList()
                 }
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
+                    .accessibilityHidden(true)
+            }
             .navigationTitle("Organize")
             .failureToast()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { LeadingTitleToolbar(title: String(localized: "Organize"), ) }
+            .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
+            .toolbar {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    LeadingTitleToolbar(title: String(localized: "Organize"), font: .largeTitle)
+                }
+            }
             // 只有照片子層需要載入，而且不能掛在會消失又出現的清單上，不然會一直重載。
             .task(id: model.organizeSection) {
                 if model.organizeSection == .photos { await reload() }
@@ -62,11 +71,7 @@ struct OrganizeTabView: View {
                     Text("By month")
                 }
             }
-            .listStyle(.insetGrouped)
-            // 群組之間的距離縮小，預設的太大。
-            .listSectionSpacing(.custom(10))
-            // 標題下到第一列的距離跟其他分頁一致。
-            .contentMargins(.top, 0, for: .scrollContent)
+            .pageList()
             .refreshable { await reload() }
         }
     }
@@ -88,9 +93,9 @@ struct OrganizeTabView: View {
                 .accessibilityIdentifier("organize.section.\(option.rawValue)")
             }
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, PageMetrics.gapSM)
         .floatingGlass(in: Capsule())
-        .padding(.horizontal, 20)
+        .padding(.horizontal, PageMetrics.edge)
         .padding(.vertical, 6)
     }
 
@@ -129,6 +134,7 @@ struct OrganizeTabView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pageRowInsets()
         .disabled(count == 0 && model.canUse(bucket))
     }
 

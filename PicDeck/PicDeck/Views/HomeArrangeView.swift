@@ -24,7 +24,7 @@ struct HomeArrangeView: View {
                                 editingBlockID = block.id
                             } label: {
                                 Image(systemName: "pencil")
-                                    .frame(width: 32, height: 32)
+                                    .frame(width: 44, height: 44)
                             }
                             .buttonStyle(.borderless)
                             .accessibilityLabel(Text("Edit"))
@@ -35,7 +35,7 @@ struct HomeArrangeView: View {
                             } label: {
                                 Image(systemName: block.isHidden ? "eye.slash" : "eye")
                                     .foregroundStyle(block.isHidden ? Color.secondary : Color.accentColor)
-                                    .frame(width: 32, height: 32)
+                                    .frame(width: 44, height: 44)
                             }
                             .buttonStyle(.borderless)
                             .accessibilityLabel(Text(block.isHidden ? "Show" : "Hide"))
@@ -55,6 +55,7 @@ struct HomeArrangeView: View {
                 }
             }
             .environment(\.editMode, .constant(.active))
+            .appCanvas()
             .navigationTitle("Arrange Collections")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(item: $editingBlockID) { id in
@@ -134,6 +135,7 @@ struct AddHomeBlockView: View {
                     Text("Choose a block type")
                 }
             }
+            .appCanvas()
             .navigationTitle("New block")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

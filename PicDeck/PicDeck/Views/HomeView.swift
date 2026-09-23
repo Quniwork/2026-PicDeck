@@ -8,6 +8,7 @@ import Photos
 /// - 標籤：只有釘在首頁的標籤才會出現，例如 #美食，點進去看存下來的照片與備註，可再用其他標籤篩選。沒釘的標籤只在照片分頁的篩選裡。
 /// - 那年今天：往年的今天拍的照片。
 struct HomeView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var tagStore: TagStore
@@ -17,11 +18,13 @@ struct HomeView: View {
     private enum HomeSheet: Identifiable {
         case cardStyle, arrange
         case editTag(PhotoTag)
+        case editCover(PhotoTag)
         var id: String {
             switch self {
             case .cardStyle: return "cardStyle"
             case .arrange: return "arrange"
             case .editTag(let tag): return "edit-\(tag.id)"
+            case .editCover(let tag): return "cover-\(tag.id)"
             }
         }
     }
@@ -35,6 +38,8 @@ struct HomeView: View {
     @State private var onThisDay: [OnThisDayItem] = []
     /// 點那年今天的照片打開放大檢視，可以左右滑看其他張。
     @State private var onThisDayViewer: String?
+    /// 點那年今天的照片打開檢視時，從縮圖位置展開。
+    @Namespace private var photoZoom
 
     private struct OnThisDayItem: Identifiable {
         let asset: PHAsset
@@ -80,7 +85,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: PageMetrics.gapLG) {
                     if isEmpty { emptyState }
                     // 依使用者排的順序，一個區塊一個區塊往下放。
                     ForEach(model.homeBlocks.filter { !$0.isHidden }) { block in blockView(block) }
@@ -88,11 +93,15 @@ struct HomeView: View {
                 .padding(.top, PageMetrics.contentTopGap)
                 .padding(.bottom, 12)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color(.systemBackground))
             .background(GeometryReader { proxy in
                 Color.clear.onAppear { contentWidth = proxy.size.width }
                     .onChange(of: proxy.size.width) { _, width in contentWidth = width }
             })
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
+                    .accessibilityHidden(true)
+            }
             .navigationDestination(item: $openedCollection) { tag in
                 TagCollectionView(tag: tag)
             }
@@ -103,9 +112,11 @@ struct HomeView: View {
             .onChange(of: tagStore.tags) { _, _ in reconcileSections() }
             .onChange(of: model.requestedCollectionTagID) { _, _ in openRequestedCollection() }
             .navigationTitle("Collections")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .toolbar {
-                LeadingTitleToolbar(title: String(localized: "Collections"))
+                if !dynamicTypeSize.isAccessibilitySize {
+                    LeadingTitleToolbar(title: String(localized: "Collections"), font: .largeTitle)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { sheet = .cardStyle } label: {
@@ -131,6 +142,7 @@ struct HomeView: View {
             .fullScreenCover(item: Binding(get: { onThisDayViewer.map(ViewerStart.init) },
                                            set: { onThisDayViewer = $0?.id })) { start in
                 PhotoDetailView(assets: onThisDay.map(\.asset), startID: start.id)
+                    .zoomDestination(id: start.id, in: photoZoom)
             }
             .sheet(item: $sheet) { which in
                 switch which {
@@ -142,6 +154,8 @@ struct HomeView: View {
                         .presentationDetents([.large])
                 case .editTag(let tag):
                     TagFormView(mode: .edit(tag))
+                case .editCover(let tag):
+                    NavigationStack { TagCoverEditorView(tagID: tag.id) }
                 }
             }
             .task(id: tagStore.assignments.count + tagStore.tags.count) { loadCoversAndCounts() }
@@ -181,7 +195,7 @@ struct HomeView: View {
             LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
                 ForEach(items) { tag in content(tag, dimension) }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, PageMetrics.edge)
         } else {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 12) {
@@ -189,7 +203,7 @@ struct HomeView: View {
                 }
                 .scrollTargetLayout()
             }
-            .contentMargins(.leading, 16, for: .scrollContent)
+            .contentMargins(.leading, PageMetrics.edge, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .frame(height: dimension.height + 8)
         }
@@ -224,11 +238,11 @@ struct HomeView: View {
                         .contextMenu { editMenu(tag) }
                         .accessibilityElement(children: .combine)
                         .accessibilityIdentifier("home.collection")
-                        if index < items.count - 1 { Divider().padding(.leading, 64) }
+                        if index < items.count - 1 { Divider().padding(.leading, 64 - 16 + PageMetrics.edge) }
                     }
                 }
-                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(.horizontal, 16)
+                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.horizontal, PageMetrics.edge)
             }
         }
         .motionAnimation(value: block.layout)
@@ -306,6 +320,7 @@ struct HomeView: View {
                             AssetThumbnail(asset: item.asset, size: 160, showsDuration: false)
                                 .frame(width: 120, height: 120)
                                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .zoomSource(id: item.asset.localIdentifier, in: photoZoom)
                             Text("\(item.yearsAgo) years ago")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -315,7 +330,7 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.onthisday.photo")
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, PageMetrics.edge)
             }
         }
     }
@@ -323,20 +338,14 @@ struct HomeView: View {
     // MARK: - 空狀態
 
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("Nothing pinned yet", systemImage: "house")
-        } description: {
-            Text("Create a tag in Organize and pin it to Home, or give it a start date such as a child's birthday, and it shows up here as a card.")
-        } actions: {
-            // 直接帶到管理標籤，不用自己找。
-            Button("Manage tags") {
-                model.organizeSection = .tags
-                model.selectedTab = 3
-            }
-            .buttonStyle(.borderedProminent)
-            .accessibilityIdentifier("home.manageTags")
+        AppEmptyState(icon: "house",
+                      title: String(localized: "Nothing pinned yet"),
+                      message: String(localized: "Create a tag in Organize and pin it to Home, or give it a start date such as a child's birthday, and it shows up here as a card."),
+                      actionTitle: String(localized: "Manage tags"),
+                      actionIdentifier: "home.manageTags") {
+            model.organizeSection = .tags
+            model.selectedTab = 3
         }
-        .padding(.top, 40)
     }
 
     // MARK: - 共用
@@ -344,14 +353,14 @@ struct HomeView: View {
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
             .font(.title3.weight(.bold))
-            .padding(.horizontal, 16)
+            .padding(.horizontal, PageMetrics.edge)
     }
 
     @ViewBuilder
     private func cover(for tag: PhotoTag) -> some View {
         if let asset = covers[tag.id] {
             // 填滿的封面。AssetThumbnail 固定是正方形，放進直的卡片會留一塊空。
-            CoverImage(assetID: asset.localIdentifier, size: 400)
+            TagCoverImage(assetID: asset.localIdentifier, size: 500, framing: tag.coverFraming)
         } else {
             // 沒有照片時放灰底加圖標。圖標放右上角，不會壓到底下的文字。
             ZStack(alignment: .topTrailing) {
@@ -387,6 +396,9 @@ struct HomeView: View {
         Button { sheet = .editTag(tag) } label: {
             Label(String(localized: "Edit tag"), systemImage: "pencil")
         }
+        Button { sheet = .editCover(tag) } label: {
+            Label(String(localized: "Set cover"), systemImage: "photo")
+        }
     }
 
     /// 點卡片：切到照片分頁，並套用那個標籤。
@@ -404,6 +416,11 @@ struct HomeView: View {
         for tag in tagStore.tags {
             let ids = tagStore.assetIDs(withTag: tag.id)
             newCounts[tag.id] = ids.count
+            // 自己選的封面優先，沒選（或那張已經不在）就用最新一張。
+            if let custom = tag.coverAssetID, let asset = library.asset(withID: custom) {
+                newCovers[tag.id] = asset
+                continue
+            }
             let assets = library.assets(withIDs: ids)
             if let latest = assets.max(by: { ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast) }) {
                 newCovers[tag.id] = latest

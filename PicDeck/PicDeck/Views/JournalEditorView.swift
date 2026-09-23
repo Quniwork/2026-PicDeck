@@ -1,29 +1,45 @@
 import SwiftUI
 import Photos
 
-/// 寫日記：選心情、寫文字，並挑選當天要附上的照片。
-/// 以「日」為單位，同一天共用一篇。
+/// 寫日記：選心情、分類、寫文字，並挑選要附上的照片。
+/// 同一天可以有好幾篇，新增永遠是新的一篇；只有從列表點開既有的那篇才是編輯。
 struct JournalEditorView: View {
-    let initialYear: Int
-    let initialMonth: Int
-    let initialDay: Int
-    /// 從長按或多選進來時，預設先選好這些照片。
-    var preselectedIDs: [String] = []
-    /// 從「＋」新增時可以改日期。從照片進來的日期由照片決定，不能改。
-    var allowsDateChange = false
+    /// 新增一篇（一定是新的，就算當天已經有別篇了）；或編輯指定的那一篇。
+    enum Target {
+        case new(year: Int, month: Int, day: Int, preselectedIDs: [String] = [], allowsDateChange: Bool = false)
+        case edit(JournalEntry)
+    }
 
-    init(year: Int, month: Int, day: Int,
-         preselectedIDs: [String] = [], allowsDateChange: Bool = false) {
-        initialYear = year
-        initialMonth = month
-        initialDay = day
-        self.preselectedIDs = preselectedIDs
-        self.allowsDateChange = allowsDateChange
-        var parts = DateComponents()
-        parts.year = year
-        parts.month = month
-        parts.day = day
-        _date = State(initialValue: PhotoGrouping.calendar.date(from: parts) ?? Date())
+    let target: Target
+
+    init(target: Target) {
+        self.target = target
+        switch target {
+        case .new(let year, let month, let day, _, _):
+            var parts = DateComponents()
+            parts.year = year; parts.month = month; parts.day = day
+            _date = State(initialValue: PhotoGrouping.calendar.date(from: parts) ?? Date())
+        case .edit(let entry):
+            let comps = JournalStore.components(fromKey: entry.dateKey)
+            var parts = DateComponents()
+            parts.year = comps?.year; parts.month = comps?.month; parts.day = comps?.day
+            _date = State(initialValue: PhotoGrouping.calendar.date(from: parts) ?? Date())
+            _mood = State(initialValue: entry.mood)
+            _text = State(initialValue: entry.text)
+            _selectedIDs = State(initialValue: entry.photoIDs)
+            _categoryID = State(initialValue: entry.categoryID)
+        }
+    }
+
+    /// 新增時，方便的建構子。
+    init(year: Int, month: Int, day: Int, preselectedIDs: [String] = [], allowsDateChange: Bool = false) {
+        self.init(target: .new(year: year, month: month, day: day,
+                               preselectedIDs: preselectedIDs, allowsDateChange: allowsDateChange))
+    }
+
+    /// 編輯既有那篇的建構子。
+    init(entry: JournalEntry) {
+        self.init(target: .edit(entry))
     }
 
     @EnvironmentObject private var journalStore: JournalStore
@@ -34,6 +50,7 @@ struct JournalEditorView: View {
     @State private var date = Date()
     @State private var mood = ""
     @State private var text = ""
+    @State private var categoryID: JournalCategory.ID?
     @State private var selectedIDs: [String] = []
     @State private var dayAssets: [PHAsset] = []
     /// 已選、但不是當天拍的照片（從「加入照片」挑的）。
@@ -42,19 +59,33 @@ struct JournalEditorView: View {
     @State private var showLimitAlert = false
 
     private enum EditorSheet: Identifiable {
-        case picker, paywall
+        case picker, paywall, categories
         var id: Int { hashValue }
     }
     @State private var isLoading = true
 
     private let photoColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 4)
 
+    private var existingEntry: JournalEntry? {
+        if case .edit(let entry) = target { return entry }
+        return nil
+    }
+    /// 新增時可以改日期；編輯既有的那篇，日期就固定在它原本那天。
+    private var allowsDateChange: Bool {
+        if case .new(_, _, _, _, let allows) = target { return allows }
+        return false
+    }
+    private var preselectedIDs: [String] {
+        if case .new(_, _, _, let ids, _) = target { return ids }
+        return []
+    }
+
     private var parts: DateComponents {
         PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: date)
     }
-    private var year: Int { parts.year ?? initialYear }
-    private var month: Int { parts.month ?? initialMonth }
-    private var day: Int { parts.day ?? initialDay }
+    private var year: Int { parts.year ?? 1970 }
+    private var month: Int { parts.month ?? 1 }
+    private var day: Int { parts.day ?? 1 }
 
     private var dateKey: String { JournalStore.key(year: year, month: month, day: day) }
     private var dateTitle: String { DateTitle.day(year: year, month: month, day: day) }
@@ -67,10 +98,6 @@ struct JournalEditorView: View {
                         DatePicker(String(localized: "Date"), selection: $date,
                                    in: ...Date(), displayedComponents: .date)
                             .accessibilityIdentifier("journal.date")
-                    } footer: {
-                        if journalStore.entry(forKey: dateKey) != nil {
-                            Text("This day already has an entry. Saving will replace it.")
-                        }
                     }
                 }
 
@@ -88,6 +115,12 @@ struct JournalEditorView: View {
                     .padding(.vertical, 2)
                 } header: {
                     Text("Mood")
+                }
+
+                Section {
+                    categoryChips
+                } header: {
+                    Text("Category")
                 }
 
                 Section(String(localized: "Journal")) {
@@ -126,36 +159,26 @@ struct JournalEditorView: View {
                     Text(dayAssets.isEmpty ? "No photos on this day." : "Pick the photos to show with this entry.")
                 }
 
-                if journalStore.entry(forKey: dateKey) != nil {
+                if existingEntry != nil {
                     Section {
                         DestructiveRowButton(title: String(localized: "Delete entry"),
                                              identifier: "journal.delete") {
-                            journalStore.delete(forKey: dateKey)
+                            if let id = existingEntry?.id { journalStore.delete(id: id) }
                             dismiss()
                         }
                     }
                 }
             }
-            // 新增時標題就是「新增日記」，日期在下面的欄位改；編輯既有的才顯示日期。
-            .navigationTitle(allowsDateChange ? String(localized: "New journal entry") : dateTitle)
+            // 新增時標題是「新增日記」；編輯既有的顯示那篇的日期。
+            .appCanvas()
+            .navigationTitle(existingEntry == nil ? String(localized: "New journal entry") : dateTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let isNew = journalStore.entry(forKey: dateKey) == nil
-                        // 免費版每天只能新增 1 則；編輯已有的日記不受限。
-                        if isNew && !model.canCreateJournal {
-                            showLimitAlert = true
-                            return
-                        }
-                        journalStore.save(mood: mood, text: text,
-                                          photoIDs: selectedIDs, forKey: dateKey)
-                        if isNew { model.noteJournalCreated() }
-                        dismiss()
-                    }
+                    Button("Save") { save() }
                     .accessibilityIdentifier("journal.save")
                 }
             }
@@ -164,6 +187,7 @@ struct JournalEditorView: View {
                 switch which {
                 case .picker: JournalPhotoPicker(selectedIDs: $selectedIDs)
                 case .paywall: PaywallView()
+                case .categories: JournalCategoryManagerView()
                 }
             }
             .alert(String(localized: "Free plan: 1 new journal entry per day"), isPresented: $showLimitAlert) {
@@ -174,11 +198,68 @@ struct JournalEditorView: View {
             }
             .onChange(of: selectedIDs) { _ in refreshOthers() }
             .onChange(of: date) { _ in
-                // 換日期：那天已經有日記就載入它來編輯（一天只有一篇），並重取那天的照片。
-                Task { await dateChanged() }
+                // 換日期：新增時只是換照片來源那天，不會去載入那天既有的日記（同一天可以有好幾篇）。
+                Task { dayAssets = await library.assets(onYear: year, month: month, day: day); refreshOthers() }
             }
         }
         .accessibilityIdentifier("journal.editor")
+    }
+
+    /// 分類：一排膠囊，「沒有分類」固定在最前面，最後一顆是管理分類。
+    private var categoryChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                categoryChip(nil, name: String(localized: "None"), symbol: nil)
+                ForEach(journalStore.categories) { category in
+                    categoryChip(category.id, name: category.name, symbol: category.symbol)
+                }
+                Button { editorSheet = .categories } label: {
+                    Label("Manage", systemImage: "slider.horizontal.3")
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .foregroundStyle(.secondary)
+                        .background(Color(.secondarySystemFill), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("journal.category.manage")
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func categoryChip(_ id: JournalCategory.ID?, name: String, symbol: String?) -> some View {
+        let isOn = categoryID == id
+        return Button { categoryID = id } label: {
+            HStack(spacing: 4) {
+                if let symbol { IconLabel(raw: symbol, size: 13) }
+                Text(name).font(.subheadline.weight(.medium)).lineLimit(1)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .foregroundStyle(isOn ? Color.white : Color.primary)
+            .background(isOn ? Color.accentColor : Color(.secondarySystemFill), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("journal.category.chip")
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private func save() {
+        if let entry = existingEntry {
+            journalStore.update(id: entry.id, mood: mood, text: text,
+                                photoIDs: selectedIDs, categoryID: categoryID)
+        } else {
+            // 免費版每天只能新增 1 則；編輯已有的日記不受限。
+            guard model.canCreateJournal else {
+                showLimitAlert = true
+                return
+            }
+            let created = journalStore.create(mood: mood, text: text, photoIDs: selectedIDs,
+                                              dateKey: dateKey, categoryID: categoryID)
+            if created != nil { model.noteJournalCreated() }
+        }
+        dismiss()
     }
 
     /// 格子裡的照片：當天的在前，其餘已選的在後。
@@ -193,24 +274,30 @@ struct JournalEditorView: View {
 
     private func selectableThumbnail(_ asset: PHAsset) -> some View {
         let isSelected = selectedIDs.contains(asset.localIdentifier)
-        return AssetThumbnail(asset: asset, size: 90, showsDuration: false)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.accentColor, lineWidth: 3)
+        return Button {
+            toggle(asset)
+        } label: {
+            AssetThumbnail(asset: asset, size: 90, showsDuration: false)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.accentColor, lineWidth: 3)
+                    }
                 }
-            }
-            .overlay(alignment: .topTrailing) {
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Color.accentColor)
-                        .padding(3)
+                .overlay(alignment: .topTrailing) {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, Color.accentColor)
+                            .padding(3)
+                    }
                 }
-            }
-            .onTapGesture { toggle(asset) }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(asset.accessibilitySummary)
+        .accessibilityValue(Text(isSelected ? "Selected" : "Not selected"))
     }
 
     private func toggle(_ asset: PHAsset) {
@@ -222,25 +309,10 @@ struct JournalEditorView: View {
         }
     }
 
-    private func dateChanged() async {
-        if let existing = journalStore.entry(forKey: dateKey) {
-            mood = existing.mood
-            text = existing.text
-            selectedIDs = existing.photoIDs
-        }
-        dayAssets = await library.assets(onYear: year, month: month, day: day)
-        refreshOthers()
-    }
-
     private func load() async {
         isLoading = true
         defer { isLoading = false }
 
-        if let existing = journalStore.entry(forKey: dateKey) {
-            mood = existing.mood
-            text = existing.text
-            selectedIDs = existing.photoIDs
-        }
         // 帶進來的照片一律補上，且不重複。
         for id in preselectedIDs where !selectedIDs.contains(id) {
             selectedIDs.append(id)
@@ -353,11 +425,18 @@ struct JournalPhotoPicker: View {
 
     @State private var mode: Mode = .all
     @State private var filter: PhotoFilter = .all
+    @State private var sortsByAdded = false
+    @State private var addedRanks: [String: Int] = [:]
     @State private var assets: [PHAsset] = []
     @State private var sections: [PhotoGrouping.DaySection] = []
     @State private var isLoading = true
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 4)
+
+    private var orderedAssets: [PHAsset] {
+        guard sortsByAdded, !addedRanks.isEmpty else { return assets }
+        return assets.sorted { (addedRanks[$0.localIdentifier] ?? .min) > (addedRanks[$1.localIdentifier] ?? .min) }
+    }
 
     var body: some View {
         NavigationStack {
@@ -387,6 +466,10 @@ struct JournalPhotoPicker: View {
             }
             .task(id: filter) { await load() }
             .task(id: mode) { await buildSections() }
+            .task(id: sortsByAdded) {
+                if sortsByAdded { addedRanks = await library.addedRanks() }
+                await buildSections()
+            }
         }
         .accessibilityIdentifier("journal.picker")
     }
@@ -410,7 +493,7 @@ struct JournalPhotoPicker: View {
         }
         .padding(.horizontal, 8)
         .floatingGlass(in: Capsule())
-        .padding(.horizontal, 20)
+        .padding(.horizontal, PageMetrics.edge)
         .padding(.vertical, 6)
     }
 
@@ -443,7 +526,7 @@ struct JournalPhotoPicker: View {
                     .padding(.bottom, 20)
                 } else {
                     LazyVGrid(columns: columns, spacing: 2) {
-                        ForEach(assets, id: \.localIdentifier) { cell($0) }
+                        ForEach(orderedAssets, id: \.localIdentifier) { cell($0) }
                     }
                 }
             }
@@ -453,6 +536,8 @@ struct JournalPhotoPicker: View {
     /// 跟照片分頁右上角同一組過濾條件。
     private var filterMenu: some View {
         Menu {
+            PhotoSortMenuSection(sortsByAdded: $sortsByAdded)
+            Divider()
             PhotoFilterMenuSection(isSelected: { filter == $0 }, onSelect: { filter = $0 })
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
@@ -475,7 +560,14 @@ struct JournalPhotoPicker: View {
 
     private func buildSections() async {
         guard mode == .timeline else { return }
-        sections = await PhotoGrouping.daySections(from: assets)
+        sections = await PhotoGrouping.daySections(from: orderedAssets)
+        if sortsByAdded {
+            sections.sort {
+                let firstRank = $0.assets.last.flatMap { addedRanks[$0.localIdentifier] } ?? .min
+                let secondRank = $1.assets.last.flatMap { addedRanks[$0.localIdentifier] } ?? .min
+                return firstRank > secondRank
+            }
+        }
     }
 
     private func cell(_ asset: PHAsset) -> some View {

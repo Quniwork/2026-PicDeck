@@ -1,11 +1,44 @@
 import SwiftUI
 import Photos
 
+@MainActor
+private final class PhotoVisibleDateState: ObservableObject {
+    @Published var range: ClosedRange<Date>?
+    @Published var hasScrolled = false
+}
+
+private struct PhotosTitleToolbar: ToolbarContent {
+    @ObservedObject var dateState: PhotoVisibleDateState
+    let title: String
+    let itemCount: String
+    let isAllScale: Bool
+    let colorScheme: ColorScheme
+
+    private var subtitle: String? {
+        if isAllScale, let range = dateState.range {
+            return DateTitle.range(from: range.lowerBound, to: range.upperBound)
+        }
+        return isAllScale || dateState.hasScrolled ? itemCount : nil
+    }
+
+    var body: some ToolbarContent {
+        LeadingTitleToolbar(title: title,
+                            accessibilityIdentifier: "photos.title",
+                            font: .largeTitle,
+                            subtitle: subtitle,
+                            reservesSubtitleAlignment: true,
+                            titleColor: colorScheme == .dark ? .white : .black,
+                            subtitleColor: colorScheme == .dark ? .white.opacity(0.62) : .black.opacity(0.55))
+    }
+}
+
 /// 照片分頁：App 的首頁，開啟就直接顯示照片。
 ///
 /// 層級之間不推入新畫面，而是切換子分頁並捲到對應位置，
 /// 這樣子分頁列與底部分頁列全程保留，也可以繼續上下滑動看其他年、月、日。
 struct PhotosTabView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let appColorScheme: ColorScheme
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var tagStore: TagStore
@@ -24,10 +57,13 @@ struct PhotosTabView: View {
     @State private var showBatchNote = false
     /// 點一張照片打開的全螢幕檢視。
     @State private var detail: DetailTarget?
+    /// 點縮圖打開檢視時，從縮圖的位置展開。
+    @Namespace private var photoZoom
     @State private var albums: [AlbumSummary] = []
     @State private var assets: [PHAsset] = []
     /// 依加入時間排的名次，切到「已加入」排序時才取。
     @State private var addedRanks: [String: Int] = [:]
+    @State private var visibleDateState = PhotoVisibleDateState()
     @State private var years: [PhotoGrouping.Bucket] = []
     @State private var monthCalendars: [PhotoGrouping.YearOfMonths] = []
     @State private var dayCalendars: [PhotoGrouping.MonthOfDays] = []
@@ -109,15 +145,21 @@ struct PhotosTabView: View {
     var body: some View {
         NavigationStack {
             content
-                // 每個分頁的背景統一用系統的分組灰底（首頁、日記、整理、更多也是）。
-                .background(Color(.systemGroupedBackground))
+                .background(Color(.systemBackground))
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    Color.clear
+                        .frame(height: dynamicTypeSize.isAccessibilitySize || scale == .all
+                               ? 0 : PageMetrics.largeTitleBodyOffset)
+                        .accessibilityHidden(true)
+                }
                 // 換篩選、排序、縮放時內容淡入淡出，不是一下子跳掉。
                 .motionAnimation(.easeInOut(duration: 0.22), value: isLoading)
                 .motionAnimation(value: selection)
+                .motionAnimation(value: model.gridColumns(for: .year))
                 .motionAnimation(value: model.gridColumns(for: .all))
                 .motionAnimation(value: model.gridColumns(for: .timeline))
                 .failureToast()
-                // 全部與時間軸：兩指放大縮小。
+                // 年、全部與時間軸：兩指放大縮小。
                 .pinchToZoomGrid { zoomIn in
                     if let context = GridContext(scale) { withMotion { model.zoom(context, in: zoomIn) } }
                 }
@@ -127,25 +169,37 @@ struct PhotosTabView: View {
                 Group {
                     if isSelecting {
                         selectionBar
-                    } else {
+                    } else if #unavailable(iOS 26.0) {
                         scalePicker
                     }
                 }
                 .transition(.opacity)
             }
             .animation(.easeInOut(duration: 0.2), value: isSelecting)
-            // 標題就是標籤切換器：靠左的大字標題加小箭頭，點了直接選「所有項目」或某個標籤。
-            // 系統的大標題不能點，所以標題自己畫在工具列左邊，系統標題留空。
             .navigationTitle(displayTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
+            .toolbarColorScheme(appColorScheme, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .principal) { Text("").accessibilityHidden(true) }
-                titleToolbarItem
+                if !dynamicTypeSize.isAccessibilitySize {
+                    PhotosTitleToolbar(dateState: visibleDateState,
+                                       title: displayTitle,
+                                       itemCount: itemCountText,
+                                       isAllScale: scale == .all,
+                                       colorScheme: appColorScheme)
+                }
                 trailingToolbar
             }
             .task(id: selection) { await reload() }
             // 首頁的標籤卡片點進來時，切到那個標籤。
             .onAppear(perform: applyRequestedSelection)
+            .onChange(of: model.lastPhotoScale) { _, _ in
+                visibleDateState.range = nil
+                visibleDateState.hasScrolled = false
+                anchorYearID = nil
+                anchorMonthID = nil
+                anchorDayID = nil
+                if isSelecting { exitSelection() }
+            }
             .onChange(of: model.requestedSelection) { _ in applyRequestedSelection() }
             // 勾選或取消勾選時輕輕震一下。
             .sensoryFeedback(.selection, trigger: selectedIDs.count)
@@ -158,6 +212,7 @@ struct PhotosTabView: View {
             // （畫面被求值了，.task 與 onAppear 卻都沒有觸發，結果是一片空白）。所以合併成一個。
             .fullScreenCover(item: $detail) { target in
                 PhotoDetailView(assets: target.assets, startID: target.startID)
+                    .zoomDestination(id: target.startID, in: photoZoom)
             }
             .sheet(item: activeSheet) { sheet in
                 switch sheet {
@@ -229,6 +284,7 @@ struct PhotosTabView: View {
         Button {
             withMotion {
                 isSelecting.toggle()
+                model.isSelectingPhotos = isSelecting
                 if !isSelecting { selectedIDs.removeAll() }
             }
         } label: {
@@ -244,18 +300,41 @@ struct PhotosTabView: View {
 
     /// 「全部」格狀畫面用的順序：依拍攝時間，或依加入時間。其他子分頁固定依拍攝日期分組。
     private var gridAssets: [PHAsset] {
-        guard model.sortsByAdded, !addedRanks.isEmpty else { return assets }
-        return assets.sorted { (addedRanks[$0.localIdentifier] ?? .max) < (addedRanks[$1.localIdentifier] ?? .max) }
+        if model.sortsByAdded, !addedRanks.isEmpty {
+            // addedRanks is newest-first; the Library places the newest item at the bottom.
+            return assets.sorted { (addedRanks[$0.localIdentifier] ?? .max) > (addedRanks[$1.localIdentifier] ?? .max) }
+        }
+        // PhotoKit fetches newest-first; the Library starts with older photos.
+        return Array(assets.reversed())
     }
 
     // MARK: - 右側拖拉軸
 
-    /// 全部：每張照片各一個落點，格子高度一致所以權重都是 1。
+    /// 全部：依照片列高分配拖拉軸權重，原比例格線下也能大致對準日期位置。
     private var allScrub: ScrubIndex {
-        ScrubIndex(anchors: gridAssets.compactMap { asset in
-            guard let date = asset.creationDate else { return nil }
-            return ScrubAnchor(date: date, weight: 1)
-        })
+        let items = gridAssets
+        let columnCount = max(model.gridColumns(for: .all), 1)
+        let usesAspectRatio = model.gridFitsAspect(for: .all)
+        var anchors: [ScrubAnchor] = []
+        anchors.reserveCapacity(items.count)
+
+        for start in stride(from: 0, to: items.count, by: columnCount) {
+            let end = min(start + columnCount, items.count)
+            let row = items[start..<end]
+            let rowHeight = usesAspectRatio
+                ? row.map { asset in
+                    asset.pixelWidth > 0
+                        ? Double(asset.pixelHeight) / Double(asset.pixelWidth)
+                        : 1
+                }.max() ?? 1
+                : 1
+            let itemWeight = max(rowHeight, 0.1) * Double(columnCount) / Double(row.count)
+            for asset in row {
+                guard let date = asset.creationDate else { continue }
+                anchors.append(ScrubAnchor(date: date, weight: itemWeight))
+            }
+        }
+        return ScrubIndex(anchors: anchors)
     }
 
     /// 時間軸：一天一個落點。權重是這一天佔的列數加上標題。
@@ -350,10 +429,10 @@ struct PhotosTabView: View {
             }
             .disabled(selectedIDs.isEmpty)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, PageMetrics.edge)
         .padding(.vertical, 10)
         .floatingGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .padding(.horizontal, 16)
+        .padding(.horizontal, PageMetrics.edge)
         .padding(.vertical, 6)
     }
 
@@ -396,6 +475,7 @@ struct PhotosTabView: View {
     private func exitSelection() {
         withMotion {
             isSelecting = false
+            model.isSelectingPhotos = false
             selectedIDs.removeAll()
         }
     }
@@ -463,67 +543,12 @@ struct PhotosTabView: View {
         String(format: String(localized: "%lld items"), assets.count)
     }
 
-    /// 標題選單放在工具列左邊。iOS 26 以後工具列項目預設有玻璃底，標題不需要，所以關掉。
-    @ToolbarContentBuilder
-    private var titleToolbarItem: some ToolbarContent {
-        if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .topBarLeading) { titleMenu }
-                .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .topBarLeading) { titleMenu }
+    /// 只有離開列表頂端後才在標題下顯示項目數；回到頂端再隱藏。
+    private func updateCountVisibility(_ offset: CGFloat) {
+        let hasScrolled = offset > 12
+        if visibleDateState.hasScrolled != hasScrolled {
+            visibleDateState.hasScrolled = hasScrolled
         }
-    }
-
-    /// 點標題切換標籤：所有項目、每一個標籤（照管理頁排的順序）、最後是管理標籤。
-    private var titleMenu: some View {
-        Menu {
-            Toggle(isOn: Binding(get: { selection.isAll },
-                                 set: { _ in choose(.filter(.all)) })) {
-                Label(String(localized: "All Items"), systemImage: "square.grid.2x2")
-            }
-
-            if !tagStore.tags.isEmpty {
-                Section(String(localized: "Tags")) {
-                    ForEach(tagStore.tags) { tag in
-                        tagButton(tag)
-                    }
-                }
-            }
-
-            Divider()
-            Button {
-                // 管理標籤在整理分頁的「標籤」子層。
-                model.organizeSection = .tags
-                model.selectedTab = 3
-            } label: {
-                Label("Manage tags", systemImage: "gearshape")
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 5) {
-                    // 篩選到標籤時，名稱前面顯示它的表情或圖示；所有項目不需要。
-                    if case .tag(let id) = selection, let tag = tagStore.tag(withID: id) {
-                        IconLabel(raw: tag.symbol, size: 22)
-                    }
-                    Text(displayTitle)
-                        .font(TypeScale.titleWithActions.weight(.bold))
-                        .lineLimit(1)
-                    Image(systemName: "chevron.down")
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(.secondary)
-                }
-                Text(itemCountText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .foregroundStyle(.primary)
-            .contentShape(Rectangle())
-            // 跟右邊的按鈕視覺置中，不要偏上。
-            .offset(y: 4)
-        }
-        .accessibilityLabel(Text(displayTitle))
-        .accessibilityHint(Text("Switch tag"))
-        .accessibilityIdentifier("photos.title")
     }
 
     // MARK: - 內容
@@ -533,22 +558,23 @@ struct PhotosTabView: View {
         if isLoading {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if assets.isEmpty {
-            ContentUnavailableView {
-                Label("No photos", systemImage: "photo.on.rectangle")
-            } description: {
-                Text("This filter has nothing to show.")
-            }
+            AppEmptyState(icon: "photo.on.rectangle",
+                          title: String(localized: "No photos"),
+                          message: String(localized: "This filter has nothing to show."))
         } else {
             switch scale {
             case .year:
-                BucketGridView(buckets: years, minimum: 100) { bucket in
+                BucketGridView(buckets: years,
+                               columns: model.gridColumns(for: .year),
+                               onScrollOffsetChange: updateCountVisibility) { bucket in
                     // 點年份 → 切到月，並捲到該年。
                     anchorYearID = "yr\(bucket.year)"
                     switchScale(to: .month, keepAnchors: true)
                 }
 
             case .month:
-                MonthCalendarGridView(years: monthCalendars, focusYearID: anchorYearID) { month in
+                MonthCalendarGridView(years: monthCalendars, focusYearID: anchorYearID,
+                                      onScrollOffsetChange: updateCountVisibility) { month in
                     // 點月份 → 切到日，並捲到該月。
                     anchorMonthID = "md\(month.year)-\(month.month)"
                     switchScale(to: .day, keepAnchors: true)
@@ -562,7 +588,8 @@ struct PhotosTabView: View {
                                         anchorDayID = "s\(year)-\(month)-\(day)"
                                         switchScale(to: .timeline, keepAnchors: true)
                                     },
-                                    scrub: dayScrub)
+                                    scrub: dayScrub,
+                                    onScrollOffsetChange: updateCountVisibility)
 
             case .timeline:
                 TimelineView(sections: sections,
@@ -574,7 +601,9 @@ struct PhotosTabView: View {
                              scrub: timelineScrub,
                              columnCount: model.gridColumns(for: .timeline),
                              fitsAspect: model.gridFitsAspect(for: .timeline),
-                             onOpen: { open($0, in: assets) })
+                             onScrollOffsetChange: updateCountVisibility,
+                             onOpen: { open($0, in: assets) },
+                             zoomNamespace: photoZoom)
 
             case .all:
                 CompactGridView(assets: gridAssets,
@@ -584,7 +613,22 @@ struct PhotosTabView: View {
                                 actions: { AnyView(photoActions(for: $0)) },
                                 isSelecting: isSelecting,
                                 selectedIDs: $selectedIDs,
-                                scrub: allScrub)
+                                scrub: allScrub,
+                                onVisibleDateRangeChange: { offset, start, end in
+                                    let nextRange: ClosedRange<Date>?
+                                    if offset > 24, let start, let end {
+                                        nextRange = min(start, end)...max(start, end)
+                                    } else {
+                                        nextRange = nil
+                                    }
+                                    if let old = visibleDateState.range, let nextRange,
+                                       PhotoGrouping.calendar.isDate(old.lowerBound, inSameDayAs: nextRange.lowerBound),
+                                       PhotoGrouping.calendar.isDate(old.upperBound, inSameDayAs: nextRange.upperBound) { return }
+                                    if visibleDateState.range == nil, nextRange == nil { return }
+                                    visibleDateState.range = nextRange
+                                },
+                                zoomNamespace: photoZoom)
+                    .id(model.sortsByAdded)
 
             }
         }
@@ -603,39 +647,39 @@ struct PhotosTabView: View {
 
     // MARK: - 篩選
 
-    /// 跟系統照片的篩選選單同一套：排序、過濾條件、媒體類型、顯示方式選項。
-    /// 有套用非預設的篩選（媒體類型、隱藏截圖、依加入時間排序）就有紅點。標籤選擇看標題就知道，不算在裡面。
+    /// 標籤與照片條件都由這個篩選選單管理；排序放前面，日期曆維持時間順序。
     private var hasActiveFilter: Bool {
-        if case .filter(let current) = selection, current != .all { return true }
-        return !model.showsScreenshots || model.sortsByAdded
+        !selection.isAll || !model.showsScreenshots || model.sortsByAdded
     }
 
     /// 快速點兩下：全部恢復預設。
     private func resetFilters() {
-        if case .filter = selection { selection = .filter(.all) }
+        selection = .filter(.all)
         model.showsScreenshots = true
         model.sortsByAdded = false
     }
 
     private var filterMenu: some View {
         Menu {
-            ResetFiltersButton(isActive: hasActiveFilter) { resetFilters() }
+            PhotoSortMenuSection(sortsByAdded: $model.sortsByAdded)
+            Divider()
 
-            // 排序：上面一排兩個「圖示加文字」，選中的有底色，跟系統一樣。
-            ControlGroup {
-                Toggle(isOn: Binding(get: { model.sortsByAdded }, set: { _ in model.sortsByAdded = true })) {
-                    Label(String(localized: "Date Added"), systemImage: "clock")
-                }
-                Toggle(isOn: Binding(get: { !model.sortsByAdded }, set: { _ in model.sortsByAdded = false })) {
-                    Label(String(localized: "Capture Date"), systemImage: "camera")
+            Menu(String(localized: "Tag Filter")) {
+                if tagStore.tags.isEmpty {
+                    Text(String(localized: "No tags"))
+                } else {
+                    ForEach(tagStore.tags) { tag in tagButton(tag) }
                 }
             }
 
-            PhotoFilterMenuSection(isSelected: { selection == .filter($0) },
-                                   onSelect: { choose(.filter($0)) })
+            Menu(String(localized: "Filter Criteria")) {
+                PhotoFilterMenuSection(isSelected: { selection == .filter($0) },
+                                       onSelect: { choose(.filter($0)) },
+                                       showsSectionTitle: false)
+            }
 
             // 跟系統照片一樣，這個子選單的標題沒有圖示。
-            // 全部、時間軸、日記各自設定；年、月、日沒有這個選項。
+            // 年、全部、時間軸可調整格線密度；全部與時間軸另有顯示方式設定。
             if let context = GridContext(scale) {
                 Menu(String(localized: "View Options")) {
                     Button {
@@ -643,28 +687,33 @@ struct PhotosTabView: View {
                     } label: {
                         Label(String(localized: "Zoom In"), systemImage: "plus.magnifyingglass")
                     }
-                    .disabled(model.gridColumns(for: context) <= Self.columnRange.lowerBound)
+                    .disabled(model.gridColumns(for: context) <= AppModel.columnRange(for: context).lowerBound)
 
                     Button {
                         model.zoom(context, in: false)
                     } label: {
                         Label(String(localized: "Zoom Out"), systemImage: "minus.magnifyingglass")
                     }
-                    .disabled(model.gridColumns(for: context) >= Self.columnRange.upperBound)
+                    .disabled(model.gridColumns(for: context) >= AppModel.columnRange(for: context).upperBound)
 
-                    Toggle(isOn: Binding(get: { model.gridFitsAspect(for: context) },
-                                         set: { model.setGridFitsAspect($0, for: context) })) {
-                        Label(String(localized: "Aspect Ratio Grid"),
-                              systemImage: "rectangle.arrowtriangle.2.outward")
-                    }
+                    if context != .year {
+                        Toggle(isOn: Binding(get: { model.gridFitsAspect(for: context) },
+                                             set: { model.setGridFitsAspect($0, for: context) })) {
+                            Label(String(localized: "Aspect Ratio Grid"),
+                                  systemImage: "rectangle.arrowtriangle.2.outward")
+                        }
 
-                    Section(String(localized: "Show:")) {
-                        Toggle(isOn: $model.showsScreenshots) {
-                            Label(String(localized: "Screenshots"), systemImage: "camera.viewfinder")
+                        Section(String(localized: "Show:")) {
+                            Toggle(isOn: $model.showsScreenshots) {
+                                Label(String(localized: "Screenshots"), systemImage: "camera.viewfinder")
+                            }
                         }
                     }
                 }
             }
+
+            Divider()
+            ResetFiltersButton(isActive: hasActiveFilter) { resetFilters() }
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
                 .filterIndicator(isActive: hasActiveFilter) { resetFilters() }
@@ -673,8 +722,11 @@ struct PhotosTabView: View {
         .accessibilityIdentifier("photos.filter")
         .onChange(of: model.showsScreenshots) { _ in Task { await reload() } }
         .onChange(of: model.sortsByAdded) { newValue in
-            guard newValue, addedRanks.isEmpty else { return }
-            Task { addedRanks = await library.addedRanks() }
+            visibleDateState.range = nil
+            Task {
+                if newValue, addedRanks.isEmpty { addedRanks = await library.addedRanks() }
+                await rebuildCurrentScale()
+            }
         }
     }
 
@@ -737,35 +789,7 @@ struct PhotosTabView: View {
     // MARK: - 子分頁
 
     private var scalePicker: some View {
-        HStack(spacing: 0) {
-            ForEach(PhotoScale.allCases) { option in
-                Button {
-                    if model.canUse(option) {
-                        switchScale(to: option, keepAnchors: false)
-                    } else {
-                        showPaywall = true
-                    }
-                } label: {
-                    HStack(spacing: 2) {
-                        Text(option.title)
-                        if !model.canUse(option) {
-                            Image(systemName: "lock.fill").font(.system(size: 8))
-                        }
-                    }
-                    .font(.footnote.weight(scale == option ? .semibold : .regular))
-                    .foregroundStyle(scale == option ? Color.accentColor : Color.primary.opacity(0.78))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("scale.\(option.rawValue)")
-            }
-        }
-        .padding(.horizontal, 8)
-        .floatingGlass(in: Capsule())
-        .padding(.horizontal, 20)
-        .padding(.vertical, 6)
+        PhotoScalePickerContent(isCompact: false, usesLegacyGlass: true, appColorScheme: appColorScheme)
     }
 
     // MARK: - 載入
@@ -773,6 +797,7 @@ struct PhotosTabView: View {
     /// 只重取照片與相簿清單，不動位置也不顯示載入中，變動很頻繁時畫面才不會閃。
     private func refreshAssets() async {
         assets = await loadAssets()
+        await loadAddedRanksIfNeeded()
         albums = await library.userAlbums()
         await rebuildCurrentScale()
     }
@@ -781,12 +806,20 @@ struct PhotosTabView: View {
         isLoading = true
         defer { isLoading = false }
 
+        visibleDateState.range = nil
+        visibleDateState.hasScrolled = false
         anchorYearID = nil
         anchorMonthID = nil
         anchorDayID = nil
         assets = await loadAssets()
+        await loadAddedRanksIfNeeded()
         albums = await library.userAlbums()
         await rebuildCurrentScale()
+    }
+
+    private func loadAddedRanksIfNeeded() async {
+        guard model.sortsByAdded, addedRanks.isEmpty else { return }
+        addedRanks = await library.addedRanks()
     }
 
     private func loadAssets() async -> [PHAsset] {
@@ -817,13 +850,86 @@ struct PhotosTabView: View {
         case .day:
             dayCalendars = await PhotoGrouping.dayCalendars(from: assets)
         case .timeline:
-            sections = await PhotoGrouping.daySections(from: assets)
+            let ordered = model.sortsByAdded
+                ? assets.sorted { (addedRanks[$0.localIdentifier] ?? .max) > (addedRanks[$1.localIdentifier] ?? .max) }
+                : assets
+            sections = await PhotoGrouping.daySections(from: ordered)
+            if model.sortsByAdded {
+                sections.sort {
+                    let firstRank = $0.assets.last.flatMap { addedRanks[$0.localIdentifier] } ?? .min
+                    let secondRank = $1.assets.last.flatMap { asset in addedRanks[asset.localIdentifier] } ?? .min
+                    return firstRank > secondRank
+                }
+            }
         case .all:
             break
         }
     }
 }
 
+
+/// 照片檢視切換器：在底部配件展開時使用膠囊，收合時縮成單列按鈕。
+struct PhotoScalePickerContent: View {
+    @EnvironmentObject private var model: AppModel
+    let isCompact: Bool
+    var usesLegacyGlass = false
+    let appColorScheme: ColorScheme
+
+    private var inactiveColor: Color {
+        appColorScheme == .dark ? .white.opacity(0.78) : .black.opacity(0.72)
+    }
+
+    var body: some View {
+        HStack(spacing: isCompact ? 2 : 0) {
+            ForEach(PhotoScale.allCases) { option in
+                Button {
+                    guard model.canUse(option) else { return }
+                    model.setLastPhotoScale(option)
+                } label: {
+                    HStack(spacing: 2) {
+                        Text(option.title)
+                        if !model.canUse(option) {
+                            Image(systemName: "lock.fill").font(.system(size: 8))
+                        }
+                    }
+                    .font((isCompact ? Font.caption : .footnote).weight(model.lastPhotoScale == option ? .semibold : .regular))
+                    .foregroundStyle(model.lastPhotoScale == option ? Color.accentColor : inactiveColor)
+                    .frame(maxWidth: .infinity, minHeight: isCompact ? 30 : 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("scale.\(option.rawValue)")
+            }
+        }
+        .padding(.horizontal, usesLegacyGlass ? 8 : (isCompact ? 2 : 0))
+        .modifier(LegacyPhotoScaleGlass(isEnabled: usesLegacyGlass))
+    }
+}
+
+@available(iOS 26.0, *)
+struct PhotosTabAccessory: View {
+    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+    let appColorScheme: ColorScheme
+
+    var body: some View {
+        PhotoScalePickerContent(isCompact: placement == .inline, appColorScheme: appColorScheme)
+    }
+}
+
+private struct LegacyPhotoScaleGlass: ViewModifier {
+    let isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content
+                .floatingGlass(in: Capsule())
+                .padding(.horizontal, PageMetrics.edge)
+                .padding(.vertical, 6)
+        } else {
+            content
+        }
+    }
+}
 
 /// 日記要開哪一天，以及要預先選好的照片。
 struct JournalDate: Identifiable, Hashable {

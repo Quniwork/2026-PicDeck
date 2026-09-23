@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 全專案共用的 Liquid Glass 樣式。iOS 26 以後用系統的玻璃，之前的系統退回半透明材質。
 ///
@@ -39,6 +40,7 @@ extension View {
             self
         }
     }
+
 }
 
 /// 把幾個玻璃元件放進同一個容器，它們靠近時會像液體一樣融合，也避免玻璃各自取樣互相干擾。
@@ -51,6 +53,62 @@ struct GlassGroup<Content: View>: View {
             GlassEffectContainer(spacing: spacing) { content() }
         } else {
             content()
+        }
+    }
+}
+
+/// 限定在目前導覽堆疊的導覽列上，移除系統預設的底部分隔線，並於離開時還原。
+struct NavigationBarSeparatorHider: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.updateAppearance()
+    }
+
+    final class Controller: UIViewController {
+        private weak var configuredBar: UINavigationBar?
+        private var originalStandard: UINavigationBarAppearance?
+        private var originalScrollEdge: UINavigationBarAppearance?
+        private var originalCompact: UINavigationBarAppearance?
+        private var originalCompactScrollEdge: UINavigationBarAppearance?
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            updateAppearance()
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            restoreAppearance()
+        }
+
+        func updateAppearance() {
+            guard let bar = navigationController?.navigationBar else { return }
+            if configuredBar !== bar {
+                restoreAppearance()
+                configuredBar = bar
+                originalStandard = bar.standardAppearance.copy() as? UINavigationBarAppearance
+                originalScrollEdge = bar.scrollEdgeAppearance?.copy() as? UINavigationBarAppearance
+                originalCompact = bar.compactAppearance?.copy() as? UINavigationBarAppearance
+                originalCompactScrollEdge = bar.compactScrollEdgeAppearance?.copy() as? UINavigationBarAppearance
+            }
+
+            [bar.standardAppearance, bar.scrollEdgeAppearance, bar.compactAppearance, bar.compactScrollEdgeAppearance]
+                .compactMap { $0 }
+                .forEach { $0.shadowColor = .clear }
+        }
+
+        private func restoreAppearance() {
+            guard let bar = configuredBar else { return }
+            if let originalStandard { bar.standardAppearance = originalStandard }
+            bar.scrollEdgeAppearance = originalScrollEdge
+            bar.compactAppearance = originalCompact
+            bar.compactScrollEdgeAppearance = originalCompactScrollEdge
+            configuredBar = nil
+            originalStandard = nil
+            originalScrollEdge = nil
+            originalCompact = nil
+            originalCompactScrollEdge = nil
         }
     }
 }
@@ -91,30 +149,43 @@ struct DestructiveRowButton: View {
 /// 各分頁的標題：跟照片分頁一樣靠左、貼近頂端的一行字，不用系統的大標題（上面會留一大塊空白）。
 struct LeadingTitleToolbar: ToolbarContent {
     let title: String
+    var accessibilityIdentifier = "page.title"
     /// 首頁、整理、更多用大一點的；日記旁邊有兩顆按鈕，維持較小。
     var font: Font = TypeScale.titlePlain
 
     /// 標題下面的小字，例如「2 則日記」。
     var subtitle: String? = nil
+    /// 副標暫時隱藏時仍維持主標題的位置，避免捲動時標題上下跳動。
+    var reservesSubtitleAlignment = false
+    var titleColor: Color? = nil
+    var subtitleColor: Color? = nil
 
     private var label: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
                 .font(font.weight(.bold))
+                .foregroundStyle(titleColor ?? Color.primary)
                 .lineLimit(1)
                 .fixedSize()
             if let subtitle {
                 Text(subtitle)
                     .font(TypeScale.subtitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(subtitleColor ?? Color.secondary)
                     .lineLimit(1)
                     .fixedSize()
+            } else if reservesSubtitleAlignment {
+                // 照片的其他層級在頂端隱藏副標，仍保留與「全部」相同的高度。
+                Text(" ")
+                    .font(TypeScale.subtitle)
+                    .hidden()
             }
         }
-        // 跟右邊的按鈕視覺置中，不要偏上。
-        .offset(y: 4)
+        // 標題列與右側按鈕垂直對齊；有副標時下移整組，讓主標題仍對齊按鈕，副標自然跟在下方。
+        // x 往左微調，讓字的左緣落在 PageMetrics.edge 上（系統工具列項目自己有內距）。
+        .offset(x: PageMetrics.titleNudge, y: subtitle == nil && !reservesSubtitleAlignment ? 0 : 8)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 
     @ToolbarContentBuilder

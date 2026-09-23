@@ -153,7 +153,7 @@ struct ReviewSessionView: View {
                                 // 待刪除的張數，紅色圓形加數字。
                                 if !model.trashedAssetIDs.isEmpty {
                                     Text("\(model.trashedAssetIDs.count)")
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.system(.caption2, design: .rounded, weight: .bold))
                                         .foregroundStyle(.white)
                                         .lineLimit(1)
                                         .fixedSize()
@@ -196,17 +196,13 @@ struct ReviewSessionView: View {
             if isLoading {
                 ProgressView()
             } else if assets.isEmpty {
-                ContentUnavailableView {
-                    Label("Nothing left here", systemImage: "checkmark.circle")
-                } description: {
-                    Text("This source is all reviewed.")
-                }
+                AppEmptyState(icon: "checkmark.circle",
+                              title: String(localized: "Nothing left here"),
+                              message: String(localized: "This source is all reviewed."))
             } else if index >= assets.count {
-                ContentUnavailableView {
-                    Label("All done", systemImage: "checkmark.circle")
-                } description: {
-                    Text("You reached the end of this batch.")
-                }
+                AppEmptyState(icon: "checkmark.circle",
+                              title: String(localized: "All done"),
+                              message: String(localized: "You reached the end of this batch."))
             } else if let asset = currentAsset {
                 SessionPhotoCard(asset: asset, isZoomed: $isZoomed)
                     .offset(dragOffset)

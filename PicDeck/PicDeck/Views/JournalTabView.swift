@@ -1,24 +1,30 @@
 import SwiftUI
 import Photos
 
-/// 日記分頁：列出寫過的日記。右上角可以用標籤篩選、調整照片大小，旁邊的 + 新增日記。
+/// 日記分頁：列出寫過的日記。右上角可以用標籤、分類篩選，調整照片大小，旁邊的 + 新增日記。
 struct JournalTabView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var tagStore: TagStore
     @EnvironmentObject private var journalStore: JournalStore
 
     @State private var tagID: UUID?
+    @State private var categoryID: JournalCategory.ID?
     @State private var activeSheet: ActiveSheet?
 
     /// 這個畫面會跳出的表單。合併成一個 sheet，避免多個 .sheet 疊在同一個畫面上（見照片分頁的註解）。
     private enum ActiveSheet: Identifiable {
         case paywall
-        case editor(JournalDate)
+        case newEntry(JournalDate)
+        case editEntry(JournalEntry)
+        case categories
 
         var id: String {
             switch self {
             case .paywall: return "paywall"
-            case .editor(let date): return "editor-\(date.id)"
+            case .newEntry(let date): return "new-\(date.id)-\(date.photoIDs.count)"
+            case .editEntry(let entry): return "edit-\(entry.id)"
+            case .categories: return "categories"
             }
         }
     }
@@ -35,40 +41,57 @@ struct JournalTabView: View {
         return Set(tagStore.assetIDs(withTag: selectedTag.id))
     }
 
-    /// 目前看得到的日記篇數（有標籤篩選就只算符合的）。
+    private var isFilterActive: Bool {
+        tagID != nil || categoryID != nil || !model.journalNewestFirst
+    }
+
+    private func resetFilters() {
+        tagID = nil
+        categoryID = nil
+        model.journalNewestFirst = true
+    }
+
+    /// 目前看得到的日記篇數（有篩選就只算符合的）。
     private var entryCountText: String {
-        let entries = journalStore.sortedEntries
-        let count: Int
-        if let allowedPhotoIDs {
-            count = entries.filter { entry in entry.photoIDs.contains { allowedPhotoIDs.contains($0) } }.count
-        } else {
-            count = entries.count
+        let entries = journalStore.sortedEntries.filter { entry in
+            if let allowedPhotoIDs, !entry.photoIDs.contains(where: { allowedPhotoIDs.contains($0) }) { return false }
+            if let categoryID, entry.categoryID != categoryID { return false }
+            return true
         }
-        return String(format: String(localized: "%lld journal entries"), count)
+        return String(format: String(localized: "%lld journal entries"), entries.count)
     }
 
     var body: some View {
         NavigationStack {
             Group {
-                JournalEntriesView(onEdit: { year, month, day in
-                    activeSheet = .editor(JournalDate(year: year, month: month, day: day))
+                JournalEntriesView(onEdit: { entry in
+                    activeSheet = .editEntry(entry)
+                }, onAddForDay: { year, month, day in
+                    newEntry(year: year, month: month, day: day)
                 },
                                    anniversaryTag: selectedTag?.hasAnniversary == true ? selectedTag : nil,
                                    allowedPhotoIDs: allowedPhotoIDs,
+                                   categoryID: categoryID,
                                    newestFirst: model.journalNewestFirst,
                                    columnCount: model.gridColumns(for: .journal),
                                    fitsAspect: model.gridFitsAspect(for: .journal))
                     .pinchToZoomGrid { model.zoom(.journal, in: $0) }
-                    // 換標籤篩選、排序時，日記卡片淡入淡出並重新排列。
+                    // 換篩選、排序時，日記卡片淡入淡出並重新排列。
                     .motionAnimation(value: tagID)
+                    .motionAnimation(value: categoryID)
                     .motionAnimation(value: model.journalNewestFirst)
                     .motionAnimation(value: model.gridColumns(for: .journal))
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
+                    .accessibilityHidden(true)
+            }
             .navigationTitle(String(localized: "Journal"))
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .toolbar {
-                // 主標題與副標題的字級跟照片分頁的「所有項目／607 個項目」一樣。
-                LeadingTitleToolbar(title: String(localized: "Journal"), font: TypeScale.titleWithActions, subtitle: entryCountText)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    LeadingTitleToolbar(title: String(localized: "Journal"), font: .largeTitle)
+                }
                 ToolbarItem(placement: .topBarTrailing) { filterMenu }
                 if #available(iOS 26.0, *) {
                     ToolbarSpacer(.fixed, placement: .topBarTrailing)
@@ -88,34 +111,46 @@ struct JournalTabView: View {
             switch sheet {
             case .paywall:
                 PaywallView()
-            case .editor(let date):
+            case .newEntry(let date):
                 JournalEditorView(year: date.year, month: date.month, day: date.day,
                                   preselectedIDs: date.photoIDs,
                                   allowsDateChange: date.isNew)
+            case .editEntry(let entry):
+                JournalEditorView(entry: entry)
+            case .categories:
+                JournalCategoryManagerView()
             }
         }
     }
 
-    /// 新增今天的日記；已經有的話編輯畫面會載入原本的內容。
+    /// 新增今天的日記；永遠是新的一篇，就算今天已經寫過了。
     private func addEntry() {
-        // 免費版每天新增 1 則；已經新增過就直接請他訂閱。
+        // 免費版每天只能新增 1 則，這裡先擋，省得使用者寫完才被告知。
+        // 訂閱後這裡永遠會過，每次都是開一篇新的空白日記，不會變成編輯舊的。
         guard model.canCreateJournal else {
             activeSheet = .paywall
             return
         }
         let parts = PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: Date())
         guard let year = parts.year, let month = parts.month, let day = parts.day else { return }
-        activeSheet = .editor(JournalDate(year: year, month: month, day: day, isNew: true))
+        // 從「＋」新增可以改日期，寫到別天去。
+        activeSheet = .newEntry(JournalDate(year: year, month: month, day: day, isNew: true))
+    }
+
+    /// 從某一天的日期旁「＋」新增這天的另一篇：日期固定，不能改。
+    private func newEntry(year: Int, month: Int, day: Int) {
+        guard model.canCreateJournal else {
+            activeSheet = .paywall
+            return
+        }
+        activeSheet = .newEntry(JournalDate(year: year, month: month, day: day))
     }
 
     // MARK: - 篩選
 
     private var filterMenu: some View {
         Menu {
-            ResetFiltersButton(isActive: tagID != nil || !model.journalNewestFirst) {
-                tagID = nil
-                model.journalNewestFirst = true
-            }
+            ResetFiltersButton(isActive: isFilterActive, reset: resetFilters)
 
             // 一排文字：預設由新到舊；點一下（打勾）就變成由舊到新，再點回來。
             Toggle(isOn: Binding(get: { !model.journalNewestFirst },
@@ -137,6 +172,25 @@ struct JournalTabView: View {
                         }
                     }
                 }
+            }
+
+            Section(String(localized: "Category")) {
+                Toggle(isOn: Binding(get: { categoryID == nil }, set: { _ in categoryID = nil })) {
+                    Label(String(localized: "All Categories"), systemImage: "square.grid.3x3")
+                }
+                ForEach(journalStore.categories) { category in
+                    Toggle(isOn: Binding(get: { categoryID == category.id }, set: { _ in categoryID = category.id })) {
+                        Label {
+                            Text(category.name)
+                        } icon: {
+                            IconLabel(raw: category.symbol, size: 18)
+                        }
+                    }
+                }
+                Button { activeSheet = .categories } label: {
+                    Label(String(localized: "Manage categories"), systemImage: "slider.horizontal.3")
+                }
+                .accessibilityIdentifier("journal.category.manage.menu")
             }
 
             Menu(String(localized: "View Options")) {
@@ -162,10 +216,7 @@ struct JournalTabView: View {
             }
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .filterIndicator(isActive: tagID != nil || !model.journalNewestFirst) {
-                    tagID = nil
-                    model.journalNewestFirst = true
-                }
+                .filterIndicator(isActive: isFilterActive, reset: resetFilters)
         }
         .accessibilityLabel(Text("Filter"))
         .accessibilityIdentifier("journal.filter")

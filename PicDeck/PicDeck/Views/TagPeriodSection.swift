@@ -13,7 +13,16 @@ struct TagPeriodSection: View {
     @EnvironmentObject private var tagStore: TagStore
 
     /// 每一天（當天 0 點）對應的第一張照片。
-    @State private var photoByDay: [Date: PHAsset] = [:]
+    @State private var photosByDay: [Date: [PHAsset]] = [:]
+    /// 點有照片的那一天打開的檢視（那天這個標籤的所有照片，沒有功能按鈕）。
+    @State private var viewer: DayViewer?
+    /// 點某一天打開檢視時，從那天的縮圖位置展開。
+    @Namespace private var photoZoom
+
+    private struct DayViewer: Identifiable {
+        let assets: [PHAsset]
+        var id: String { assets.first?.localIdentifier ?? UUID().uuidString }
+    }
 
     private var calendar: Calendar { PhotoGrouping.calendar }
 
@@ -57,18 +66,17 @@ struct TagPeriodSection: View {
                     IconLabel(raw: tag.symbol, size: 16)
                     Text(tag.name).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, PageMetrics.edge)
             }
 
-            NavigationLink {
-                TagCollectionView(tag: tag)
-            } label: {
-                card
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 16)
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("home.period")
+            card
+                .padding(.horizontal, PageMetrics.edge)
+                .accessibilityIdentifier("home.period")
+        }
+        .fullScreenCover(item: $viewer) { day in
+            let startID = day.assets.last?.localIdentifier ?? ""
+            PhotoDetailView(assets: day.assets, startID: startID, showsActions: false)
+                .zoomDestination(id: startID, in: photoZoom)
         }
         .task(id: tagStore.assignments.count) { reload() }
     }
@@ -78,13 +86,13 @@ struct TagPeriodSection: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(title).font(.headline)
                 Spacer()
-                Text(String(format: String(localized: "%lld days recorded"), photoByDay.count))
+                Text(String(format: String(localized: "%lld days recorded"), photosByDay.count))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
-            LazyVGrid(columns: columns, spacing: 6) {
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+            LazyVGrid(columns: columns, spacing: 4) {
                 ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                     Text(symbol).font(.caption2).foregroundStyle(.secondary)
                 }
@@ -94,7 +102,7 @@ struct TagPeriodSection: View {
             }
         }
         .padding(14)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     @ViewBuilder
@@ -102,16 +110,26 @@ struct TagPeriodSection: View {
         let number = calendar.component(.day, from: day)
         let isToday = calendar.isDateInToday(day)
         Group {
-            if let asset = photoByDay[calendar.startOfDay(for: day)] {
-                AssetThumbnail(asset: asset, size: 120, showsDuration: false)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(alignment: .bottomTrailing) {
-                        Text("\(number)")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
-                            .shadow(radius: 2)
-                            .padding(3)
-                    }
+            if let dayAssets = photosByDay[calendar.startOfDay(for: day)], let asset = dayAssets.last {
+                Button {
+                    viewer = DayViewer(assets: dayAssets)
+                } label: {
+                    AssetThumbnail(asset: asset, size: 120, showsDuration: false)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .zoomSource(id: asset.localIdentifier, in: photoZoom)
+                        .overlay(alignment: .bottomTrailing) {
+                            Text("\(number)")
+                                .font(.system(.caption2, design: .rounded, weight: .bold))
+                                .foregroundStyle(.white)
+                                .shadow(radius: 2)
+                                .padding(3)
+                                .background(.black.opacity(0.5), in: Capsule())
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(day.formatted(date: .complete, time: .omitted)))
+                .accessibilityValue(Text("\(dayAssets.count) photos"))
+                .accessibilityIdentifier("period.day")
             } else {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color(.tertiarySystemFill))
@@ -133,14 +151,14 @@ struct TagPeriodSection: View {
 
     private func reload() {
         let assets = library.assets(withIDs: tagStore.assetIDs(withTag: tag.id))
-        var result: [Date: PHAsset] = [:]
+        var result: [Date: [PHAsset]] = [:]
         let cellSet = Set(cells.compactMap { $0 }.map { calendar.startOfDay(for: $0) })
-        // 同一天有好幾張，用最晚拍的那一張。
+        // 同一天有好幾張，依拍攝時間排，縮圖用最晚拍的那一張。
         for asset in assets.sorted(by: { ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast) }) {
             guard let date = asset.creationDate else { continue }
             let day = calendar.startOfDay(for: date)
-            if cellSet.contains(day) { result[day] = asset }
+            if cellSet.contains(day) { result[day, default: []].append(asset) }
         }
-        photoByDay = result
+        photosByDay = result
     }
 }
