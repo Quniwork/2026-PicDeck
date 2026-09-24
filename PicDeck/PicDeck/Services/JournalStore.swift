@@ -111,10 +111,16 @@ final class JournalStore: ObservableObject {
         entries.values.filter { $0.dateKey == key }.sorted { $0.createdAt < $1.createdAt }
     }
 
-    /// 這張照片所屬的那一篇日記（不管是不是同一天拍的照片都放在同一篇）。
+    /// 這張照片所屬的那一篇日記（相容舊呼叫）。
     func entry(for asset: PHAsset) -> JournalEntry? {
+        entries(for: asset).first
+    }
+
+    /// 這張照片所屬的所有日記（依日期由新到舊排）。
+    func entries(for asset: PHAsset) -> [JournalEntry] {
         let id = asset.localIdentifier
-        return entries.values.first { $0.photoIDs.contains(id) }
+        return entries.values.filter { $0.photoIDs.contains(id) }
+            .sorted { $0.dateKey > $1.dateKey }
     }
 
     /// 這一天代表性的心情（月曆用），取最新寫的那一篇。

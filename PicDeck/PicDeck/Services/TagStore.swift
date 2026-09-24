@@ -374,6 +374,15 @@ final class TagStore: ObservableObject {
         }
     }
 
+    /// 一次從多張照片移除同一個標籤。
+    func removeTag(_ tagID: UUID, from assets: [PHAsset]) {
+        for asset in assets {
+            var current = tagIDs(for: asset)
+            current.remove(tagID)
+            setTags(current, for: asset)
+        }
+    }
+
     func resetForTesting() {
         tags.removeAll()
         assignments.removeAll()

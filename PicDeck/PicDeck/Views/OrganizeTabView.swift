@@ -39,7 +39,7 @@ struct OrganizeTabView: View {
                 if model.organizeSection == .photos { await reload() }
             }
             .navigationDestination(item: $selectedBucket) { bucket in
-                ReviewSessionView(bucket: bucket)
+                ReviewSessionView(bucket: bucket, initialSummary: summary)
             }
             .sheet(isPresented: $showPaywall) { PaywallView() }
             // 三個子層放在底部分頁列上方，跟照片分頁的子分類同一種浮動玻璃樣式。
@@ -144,7 +144,8 @@ struct OrganizeTabView: View {
 
         let all = await library.assets(matching: .all)
         await organized.refresh(allAssets: all)
-        let unorganized = all.filter { !organized.isOrganized($0) }
+        let trashed = Set(model.trashedAssetIDs)
+        let unorganized = all.filter { !organized.isOrganized($0) && !trashed.contains($0.localIdentifier) }
 
         summary = await UnorganizedSummary.build(from: unorganized)
     }

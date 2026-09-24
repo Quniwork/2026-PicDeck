@@ -68,6 +68,11 @@ final class NoteStore: ObservableObject {
         scheduleSave()
     }
 
+    func save(text: String, for asset: PHAsset) {
+        let isDone = note(for: asset)?.isDone ?? false
+        save(text: text, isDone: isDone, for: asset)
+    }
+
     func setDone(_ isDone: Bool, forNoteID id: String) {
         guard var note = notes[id] else { return }
         note.isDone = isDone

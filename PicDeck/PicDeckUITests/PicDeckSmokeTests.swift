@@ -62,6 +62,56 @@ final class PicDeckSmokeTests: XCTestCase {
         attachScreenshot(app, name: "verify-scrim-and-white-header")
     }
 
+    /// 驗證從整理進入審核照片時，點 header 中間來源選單顯示所有未整理、照片、影片、截圖及年月子選單
+    func testReviewHeaderMenu() throws {
+        let app = XCUIApplication()
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+
+        openOrganize("photos", in: app)
+        sleep(2)
+
+        let monthRow = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "月")).firstMatch
+        if monthRow.waitForExistence(timeout: 5) {
+            tapByCoordinate(monthRow)
+        } else {
+            let allRow = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "所有未整理")).firstMatch
+            XCTAssertTrue(allRow.waitForExistence(timeout: 10))
+            tapByCoordinate(allRow)
+        }
+
+        let source = app.descendants(matching: .any)["session.source"]
+        XCTAssertTrue(source.waitForExistence(timeout: 10), "審核頁首沒有來源選單")
+        sleep(1)
+
+        // 標記一張為待刪以顯示紅底白字數字徽章
+        let deleteBtn = app.buttons["session.delete"]
+        if deleteBtn.waitForExistence(timeout: 3) {
+            tapByCoordinate(deleteBtn)
+            sleep(1)
+        }
+
+        // 點開下拉選單，驗證紅底白字數字徽章在選單展開時不被圓形裁切
+        tapByCoordinate(source)
+        sleep(1)
+        attachScreenshot(app, name: "verify-badge-during-menu")
+
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "所有未整理")).firstMatch.waitForExistence(timeout: 4), "選單缺少所有未整理")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "未整理照片")).firstMatch.waitForExistence(timeout: 4), "選單缺少未整理照片")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "未整理影片")).firstMatch.waitForExistence(timeout: 4), "選單缺少未整理影片")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "未整理截圖")).firstMatch.waitForExistence(timeout: 4), "選單缺少未整理截圖")
+
+        // 關閉選單並返回上一頁
+        tapByCoordinate(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "所有未整理")).firstMatch)
+        sleep(1)
+        let closeBtn = app.buttons["session.close"]
+        if closeBtn.exists {
+            tapByCoordinate(closeBtn)
+            sleep(1)
+            attachScreenshot(app, name: "verify-after-close")
+        }
+    }
+
     /// 首頁直接顯示照片 → 切子分頁 → 整理分頁 → 逐張審核（保留、右滑、刪除）→ 待刪清單。
     func testCoreFlow() throws {
         let app = XCUIApplication()
@@ -3138,6 +3188,129 @@ final class PicDeckSmokeTests: XCTestCase {
         let folder = URL(fileURLWithPath: "/tmp/picdeck-shots", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try? screenshot.pngRepresentation.write(to: folder.appendingPathComponent("\(name).png"))
+    }
+
+    func testReviewAndInspectorExperience() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+
+        // 1. 照片分頁：切換至照片分頁，點進照片
+        let photosTab = app.tabBars.buttons.element(boundBy: 2)
+        if photosTab.waitForExistence(timeout: 5) {
+            tapByCoordinate(photosTab)
+            sleep(3)
+        }
+
+        // 點擊畫面中央偏上的照片打開大圖
+        let photoTapCoord = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        photoTapCoord.tap()
+        sleep(3)
+        attachScreenshot(app, name: "verify-detail-initial")
+
+        // 點擊底部「標籤」按鈕展開標籤膠囊列表（圖 2 樣式）
+        let detailTagsBtn = app.buttons["detail.tags"]
+        if detailTagsBtn.waitForExistence(timeout: 4) {
+            tapByCoordinate(detailTagsBtn)
+            sleep(2)
+            attachScreenshot(app, name: "verify-detail-tag-chips")
+            tapByCoordinate(detailTagsBtn) // 再次點擊收起
+            sleep(1)
+        }
+
+        // 點擊底部「相簿」按鈕展開相簿膠囊列表（圖 3 樣式）
+        let detailAlbumsBtn = app.buttons["detail.album"]
+        if detailAlbumsBtn.waitForExistence(timeout: 4) {
+            tapByCoordinate(detailAlbumsBtn)
+            sleep(2)
+            attachScreenshot(app, name: "verify-detail-album-chips")
+            tapByCoordinate(detailAlbumsBtn) // 再次點擊收起
+            sleep(1)
+        }
+
+        // 點擊 Header ⓘ 資訊按鈕展開詳細資訊（只有備註與日記）
+        let infoButton = app.buttons["detail.info"]
+        if infoButton.waitForExistence(timeout: 4) {
+            tapByCoordinate(infoButton)
+            sleep(3)
+            attachScreenshot(app, name: "verify-inspector-panel-expanded")
+
+            // 測試左右滑動照片：上方照片滑到下一張，下方欄維持展開
+            let photoArea = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.25))
+            let photoLeft = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.25))
+            photoArea.press(forDuration: 0.1, thenDragTo: photoLeft)
+            sleep(3)
+            attachScreenshot(app, name: "verify-inspector-swiped-photo")
+
+            // 點擊收起按鈕收起下方欄
+            let collapseBtn = app.buttons["inspector.collapse"]
+            if collapseBtn.waitForExistence(timeout: 3) {
+                tapByCoordinate(collapseBtn)
+                sleep(2)
+                attachScreenshot(app, name: "verify-inspector-collapsed")
+            }
+        }
+
+        // 關閉照片大圖
+        let closeButton = app.buttons["detail.close"]
+        if closeButton.waitForExistence(timeout: 3) {
+            tapByCoordinate(closeButton)
+            sleep(1)
+        }
+
+        // 2. 切換至整理分頁
+        let organizeTab = app.tabBars.buttons.element(boundBy: 3)
+        if organizeTab.waitForExistence(timeout: 5) {
+            tapByCoordinate(organizeTab)
+            sleep(2)
+
+            let firstBucketRow = app.cells.element(boundBy: 0)
+            if firstBucketRow.waitForExistence(timeout: 5) {
+                firstBucketRow.tap()
+                sleep(3)
+                attachScreenshot(app, name: "verify-review-session-initial")
+
+                // 測試標籤點擊：展開快速膠囊列
+                let tagsBarBtn = app.buttons["session.tags"]
+                if tagsBarBtn.waitForExistence(timeout: 4) {
+                    tapByCoordinate(tagsBarBtn)
+                    sleep(2)
+                    attachScreenshot(app, name: "verify-review-tag-chips")
+                    tapByCoordinate(tagsBarBtn) // 收起標籤列
+                    sleep(1)
+                }
+
+                // 測試相簿點擊：展開相簿膠囊列
+                let albumsBarBtn = app.buttons["session.albums"]
+                if albumsBarBtn.waitForExistence(timeout: 4) {
+                    tapByCoordinate(albumsBarBtn)
+                    sleep(2)
+                    attachScreenshot(app, name: "verify-review-album-chips")
+                    tapByCoordinate(albumsBarBtn) // 收起相簿列
+                    sleep(1)
+                }
+
+                // 測試上滑刪除
+                app.swipeUp()
+                sleep(2)
+
+                // 測試右滑返回上一張（驗證右上角出現「移出待刪除」按鈕）
+                app.swipeRight()
+                sleep(2)
+                attachScreenshot(app, name: "verify-review-untrash-button")
+
+                // 測試左滑保留（不跳出提示橫幅）
+                app.swipeLeft()
+                sleep(2)
+                attachScreenshot(app, name: "verify-review-keep-no-banner")
+
+                // 測試下滑關閉
+                app.swipeDown()
+                sleep(2)
+                attachScreenshot(app, name: "verify-review-dismiss")
+            }
+        }
     }
 }
 

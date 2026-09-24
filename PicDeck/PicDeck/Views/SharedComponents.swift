@@ -230,6 +230,7 @@ struct ActionBarButton: View {
     var iconOnly = false
     /// 一般狀態的顏色。深色的單張檢視用白色。
     var tint: Color = .primary
+    var badgeCount: Int? = nil
     let action: () -> Void
 
     @Environment(\.actionBarCompact) private var compact
@@ -240,25 +241,56 @@ struct ActionBarButton: View {
             Group {
                 if iconOnly && compact {
                     Image(systemName: icon).font(.system(size: 20))
+                        .overlay(alignment: .topTrailing) {
+                            if let badgeCount, badgeCount > 0 {
+                                Text("\(badgeCount)")
+                                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 3)
+                                    .frame(minWidth: 14, minHeight: 14)
+                                    .background(Color.accentColor, in: Capsule())
+                                    .offset(x: 8, y: -6)
+                            }
+                        }
                         .frame(minWidth: 48, minHeight: 48)
                 } else if compact {
                     VStack(spacing: 3) {
                         Image(systemName: icon).font(.callout)
+                            .overlay(alignment: .topTrailing) {
+                                if let badgeCount, badgeCount > 0 {
+                                    Text("\(badgeCount)")
+                                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 3)
+                                        .frame(minWidth: 13, minHeight: 13)
+                                        .background(Color.accentColor, in: Capsule())
+                                        .offset(x: 9, y: -6)
+                                }
+                            }
                         Text(key).font(.caption2).lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(minWidth: 44)
                 } else {
-                    Label(key, systemImage: icon)
-                        .font(.caption)
-                        .labelStyle(.titleAndIcon)
-                        .lineLimit(1)
-                        .fixedSize()
+                    HStack(spacing: 4) {
+                        Label(key, systemImage: icon)
+                        if let badgeCount, badgeCount > 0 {
+                            Text("\(badgeCount)")
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4)
+                                .frame(minWidth: 15, minHeight: 15)
+                                .background(Color.accentColor, in: Capsule())
+                        }
+                    }
+                    .font(.caption)
+                    .lineLimit(1)
+                    .fixedSize()
                 }
             }
             .foregroundStyle(color)
             .padding(.vertical, compact ? 4 : 8)
-            .padding(.horizontal, isActive ? 6 : 2)
-            .background(isActive ? Color.accentColor.opacity(0.14) : Color.clear, in: Capsule())
+            .padding(.horizontal, 2)
+            .background(Color.clear)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

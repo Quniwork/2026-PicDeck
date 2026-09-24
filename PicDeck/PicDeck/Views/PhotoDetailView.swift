@@ -18,11 +18,22 @@ struct PhotoDetailView: View {
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var journalStore: JournalStore
     @EnvironmentObject private var noteStore: NoteStore
+    @EnvironmentObject private var tagStore: TagStore
     @Environment(\.dismiss) private var dismiss
 
+    private enum QuickMode {
+        case tags
+        case albums
+    }
+
     @State private var sheet: DetailSheet?
+    @State private var quickMode: QuickMode?
+    @State private var currentAlbumIDs: Set<String> = []
+    @State private var isInspectorExpanded = false
     /// 往下滑關閉時，畫面跟著手指往下走的距離。
     @State private var dragDown: CGFloat = 0
+    /// 記錄每次拖曳「起始時」inspector 是否展開，避免手勢結束時狀態已變而誤觸 dismiss。
+    @State private var inspectorExpandedAtGestureStart = false
     @State private var showTrash = false
     /// 這次自己改過的喜愛狀態，系統照片庫通知回來之前先用它顯示。
     @State private var favoriteState: [String: Bool] = [:]
@@ -53,43 +64,105 @@ struct PhotoDetailView: View {
     private var current: PHAsset? { assets.first { $0.localIdentifier == currentID } }
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                header
+                VStack(spacing: 10) {
+                    header
 
-                TabView(selection: $currentID) {
-                    ForEach(assets, id: \.localIdentifier) { asset in
-                        DetailPage(asset: asset, isFavorite: isFavorite(asset))
-                            .tag(asset.localIdentifier)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                // 往下滑就關閉：畫面跟著手指往下走，滑超過一段距離放開就關掉，不夠就彈回來。
-                // 只在明顯是垂直的滑動才算，左右翻頁不受影響。
-                .offset(y: dragDown)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 20)
-                        .onChanged { value in
-                            let vertical = value.translation.height
-                            guard vertical > 0, vertical > abs(value.translation.width) * 1.5 else { return }
-                            dragDown = vertical
+                    TabView(selection: $currentID) {
+                        ForEach(assets, id: \.localIdentifier) { asset in
+                            DetailPage(asset: asset, isFavorite: isFavorite(asset))
+                                .tag(asset.localIdentifier)
                         }
-                        .onEnded { value in
-                            let vertical = value.translation.height
-                            if vertical > 110, vertical > abs(value.translation.width) * 1.5 {
-                                dismiss()
-                            } else {
-                                withMotion(.spring(response: 0.3, dampingFraction: 0.8)) { dragDown = 0 }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(minHeight: geometry.size.height * 0.32)
+                    .layoutPriority(1)
+                    .offset(y: isInspectorExpanded ? 0 : dragDown)
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 20)
+                            .onChanged { value in
+                                let vertical = value.translation.height
+                                let horizontal = abs(value.translation.width)
+                                // 在手勢剛啟動時（位移很小）記錄 inspector 當下狀態
+                                if abs(vertical) < 4, abs(value.translation.width) < 4 {
+                                    inspectorExpandedAtGestureStart = isInspectorExpanded
+                                }
+                                if !isInspectorExpanded {
+                                    if vertical > 0, vertical > horizontal * 1.5 {
+                                        dragDown = vertical
+                                    }
+                                }
+                            }
+                            .onEnded { value in
+                                let vertical = value.translation.height
+                                let horizontal = abs(value.translation.width)
+                                // 判斷依據：手勢「起始」時 inspector 是否展開，而非當下狀態
+                                if !inspectorExpandedAtGestureStart {
+                                    if vertical > 110, vertical > horizontal * 1.5 {
+                                        dismiss()
+                                    } else if vertical < -45, abs(vertical) > horizontal * 1.5 {
+                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                            dragDown = 0
+                                            isInspectorExpanded = true
+                                        }
+                                    } else {
+                                        withMotion(.spring(response: 0.3, dampingFraction: 0.8)) { dragDown = 0 }
+                                    }
+                                } else {
+                                    // 手勢起始時 inspector 是開著的 → 只收起，絕不 dismiss
+                                    if vertical > 50, vertical > horizontal * 1.3 {
+                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                            isInspectorExpanded = false
+                                        }
+                                    }
+                                }
+                            }
+                    )
+
+                    if isInspectorExpanded, let currentAsset = current {
+                        PhotoInspectorPanelView(asset: currentAsset) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                isInspectorExpanded = false
                             }
                         }
-                )
+                        .gesture(
+                            DragGesture(minimumDistance: 12)
+                                .onEnded { value in
+                                    let dy = value.translation.height
+                                    let dx = abs(value.translation.width)
+                                    if dy > 40, dy > dx * 1.2 {
+                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                            isInspectorExpanded = false
+                                        }
+                                    }
+                                }
+                        )
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .padding(.horizontal, 10)
+                    }
 
-                if showsActions {
-                    actionBar
-                } else {
-                    noteCaption
+                    // 4. 展開標籤或相簿列表（點 3 內的標籤或相簿時展開，位於 3 上方）
+                    if let mode = quickMode, let currentAsset = current {
+                        QuickAssetChipsBar(
+                            mode: mode == .tags ? .tags : .albums,
+                            asset: currentAsset,
+                            assignedAlbumIDs: $currentAlbumIDs,
+                            onManage: {
+                                sheet = (mode == .tags) ? .tags : .album
+                            }
+                        )
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    // 3. 固定在頁尾的功能列（就算 2 展開了還是保留）
+                    if showsActions {
+                        actionBar
+                    } else {
+                        noteCaption
+                    }
                 }
             }
         }
@@ -114,6 +187,13 @@ struct PhotoDetailView: View {
             }
         }
         .sheet(isPresented: $showTrash) { PendingTrashView() }
+        .task(id: currentID) {
+            if let asset = current {
+                currentAlbumIDs = library.albumIDs(for: asset)
+            } else {
+                currentAlbumIDs = []
+            }
+        }
         .sensoryFeedback(.success, trigger: favoriteTick)
         .sensoryFeedback(.warning, trigger: deleteTick)
         .sensoryFeedback(.selection, trigger: currentID)
@@ -140,27 +220,28 @@ struct PhotoDetailView: View {
 
             Spacer()
 
-            if showsActions {
-                GlassCircleButton { showTrash = true } label: {
-                    Image(systemName: "trash")
-                        .overlay(alignment: .topTrailing) {
-                            if !model.trashedAssetIDs.isEmpty {
-                                Text("\(model.trashedAssetIDs.count)")
-                                    .font(.system(.caption2, design: .rounded, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .lineLimit(1)
-                                    .fixedSize()
-                                    .padding(.horizontal, 5)
-                                    .frame(minWidth: 18, minHeight: 18)
-                                    .background(Color.red, in: Capsule())
-                                    .offset(x: 12, y: -12)
-                            }
+            HStack(spacing: 8) {
+                if showsActions {
+                    GlassCircleButton { showTrash = true } label: {
+                        Image(systemName: "trash")
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if !model.trashedAssetIDs.isEmpty {
+                            Text("\(model.trashedAssetIDs.count)")
+                                .font(.system(.caption2, design: .rounded, weight: .bold))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .padding(.horizontal, 5)
+                                .frame(minWidth: 18, minHeight: 18)
+                                .background(Color.red, in: Capsule())
+                                .offset(x: 5, y: -5)
+                                .allowsHitTesting(false)
                         }
+                    }
+                    .accessibilityLabel(Text("Pending deletion"))
+                    .accessibilityIdentifier("detail.trash")
                 }
-                .accessibilityLabel(Text("Pending deletion"))
-                .accessibilityIdentifier("detail.trash")
-            } else {
-                Color.clear.frame(width: 44, height: 44)
             }
         }
         .padding(.horizontal, 16)
@@ -197,20 +278,53 @@ struct PhotoDetailView: View {
 
     // MARK: - 功能列
 
+    private var tagsCount: Int {
+        guard let current else { return 0 }
+        return tagStore.tagIDs(for: current).count
+    }
+
+    private var tagsButtonKey: LocalizedStringKey {
+        if tagsCount == 0 {
+            return "Tags"
+        } else {
+            return "\(String(localized: "Tags"))(\(tagsCount))"
+        }
+    }
+
+    private var albumsButtonKey: LocalizedStringKey {
+        let count = currentAlbumIDs.count
+        if count == 0 {
+            return "Album"
+        } else {
+            return "\(String(localized: "Album"))(\(count))"
+        }
+    }
+
     private var actionBar: some View {
         let asset = current
         let favorite = asset.map(isFavorite) ?? false
 
         return ActionBarRow {
-            if showsJournal {
-                barButton("Journal", icon: "book.closed", id: "detail.journal") { sheet = .journal }
-                Spacer(minLength: 4)
+            barButton("資訊", icon: isInspectorExpanded ? "info.circle.fill" : "info.circle",
+                      id: "detail.info", isActive: isInspectorExpanded) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                    isInspectorExpanded.toggle()
+                }
             }
-            barButton("Note", icon: "note.text", id: "detail.note") { sheet = .note }
             Spacer(minLength: 4)
-            barButton("Tags", icon: "tag", id: "detail.tags") { sheet = .tags }
+            barButton(tagsButtonKey, icon: "tag", id: "detail.tags",
+                      isActive: quickMode == .tags) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                    quickMode = (quickMode == .tags) ? nil : .tags
+                }
+            }
             Spacer(minLength: 4)
-            barButton("Album", icon: "rectangle.stack.badge.plus", id: "detail.album") { sheet = .album }
+            barButton(albumsButtonKey, icon: "rectangle.stack.badge.plus", id: "detail.album",
+                      isActive: quickMode == .albums) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                    quickMode = (quickMode == .albums) ? nil : .albums
+                }
+            }
             Spacer(minLength: 4)
             barButton(favorite ? "Remove from favorites" : "Favorite",
                       icon: favorite ? "heart.slash" : "heart", id: "detail.favorite") {
@@ -225,13 +339,15 @@ struct PhotoDetailView: View {
         .padding(.vertical, 10)
         .floatingGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous), interactive: true)
         .padding(.horizontal, 16)
-        .padding(.vertical, 6)
+        .padding(.bottom, 10)
         .disabled(asset == nil)
     }
 
     private func barButton(_ key: LocalizedStringKey, icon: String, id: String,
+                           isActive: Bool = false,
                            isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
-        ActionBarButton(key: key, icon: icon, id: id, isDestructive: isDestructive,
+        ActionBarButton(key: key, icon: icon, id: id, isActive: isActive,
+                        isDestructive: isDestructive,
                         tint: .white, action: action)
     }
 

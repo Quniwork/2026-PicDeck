@@ -6,15 +6,17 @@ import Photos
 /// 下滑加入系統喜愛（再滑一次就移出喜愛）、雙擊放大。
 /// 底下的功能列是寫日記、喜愛、標籤、相簿、刪除。保留只用手勢，沒有按鈕。
 struct ReviewSessionView: View {
-    /// 目前看的來源。可以從頁首的選單切到其他未整理集合。
     @State private var bucket: OrganizeBucket
     @State private var initialMonthBucket: OrganizeBucket?
+    @State private var summary: UnorganizedSummary
+    @State private var showPaywall = false
 
-    init(bucket: OrganizeBucket) {
+    init(bucket: OrganizeBucket, initialSummary: UnorganizedSummary? = nil) {
         _bucket = State(initialValue: bucket)
         if case .month = bucket {
             _initialMonthBucket = State(initialValue: bucket)
         }
+        _summary = State(initialValue: initialSummary ?? UnorganizedSummary())
     }
 
     /// 未整理的全部照片與截圖的識別碼，切換來源時不用重抓。
@@ -27,6 +29,7 @@ struct ReviewSessionView: View {
     @EnvironmentObject private var organized: OrganizedStore
     @EnvironmentObject private var tagStore: TagStore
     @EnvironmentObject private var journalStore: JournalStore
+    @EnvironmentObject private var noteStore: NoteStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var assets: [PHAsset] = []
@@ -44,6 +47,10 @@ struct ReviewSessionView: View {
     @State private var showMoreAlbums = false
     @State private var isZoomed = false
     @State private var showTagPicker = false
+    @State private var showNoteEditor = false
+    @State private var isInspectorExpanded = false
+    /// 記錄每次拖曳「起始時」inspector 是否展開，避免手勢結束時誤觸 dismiss。
+    @State private var inspectorExpandedAtGestureStart = false
     /// 目前這張照片所屬的相簿名稱與 ID 清單。
     @State private var currentAlbums: [String] = []
     @State private var currentAlbumIDs: Set<String> = []
@@ -58,16 +65,37 @@ struct ReviewSessionView: View {
     private let threshold: CGFloat = 100
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 10) {
             header
             photoArea
-            GlassGroup(spacing: 10) {
-                VStack(spacing: 0) {
-                    actionBar
-                    quickRow
+                .layoutPriority(1)
+
+            if isInspectorExpanded, let asset = currentAsset {
+                PhotoInspectorPanelView(asset: asset) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                        isInspectorExpanded = false
+                    }
                 }
+                .gesture(
+                    DragGesture(minimumDistance: 12)
+                        .onEnded { value in
+                            let dy = value.translation.height
+                            let dx = abs(value.translation.width)
+                            if dy > 40, dy > dx * 1.2 {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                    isInspectorExpanded = false
+                                }
+                            }
+                        }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(.horizontal, 10)
             }
+
+            quickRow
+            actionBar
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.82), value: isInspectorExpanded)
         .background(Color(.systemBackground))
         // 每個動作的結果提示出現時，配一個對應的觸覺：保留與撤銷輕、喜愛與分類成功、刪除警告。
         .sensoryFeedback(trigger: banner?.id) { _, new in
@@ -85,12 +113,23 @@ struct ReviewSessionView: View {
         .task(id: currentAsset?.localIdentifier) {
             await updateCurrentAssetAlbums()
         }
+        .onChange(of: currentAsset?.localIdentifier) { _, newID in
+            if let newID {
+                model.setLastReviewedAssetID(newID, for: bucket.id)
+            }
+        }
         .sheet(isPresented: $showTagPicker) {
             if let asset = currentAsset {
                 TagPickerView(assets: [asset])
             }
         }
+        .sheet(isPresented: $showNoteEditor) {
+            if let asset = currentAsset {
+                NoteEditorView(asset: asset)
+            }
+        }
         .sheet(isPresented: $showTrash) { PendingTrashView() }
+        .sheet(isPresented: $showPaywall) { PaywallView() }
         .sheet(isPresented: $showMoreAlbums, onDismiss: {
             Task {
                 albums = await library.userAlbums()
@@ -139,19 +178,48 @@ struct ReviewSessionView: View {
                     Spacer()
 
                     Menu {
-                        // 切到其他未整理集合。張數是 0 的不列出；沒解鎖的顯示鎖頭，不能選。
-                        ForEach(sourceBuckets) { option in
-                            Button {
-                                switchBucket(option)
+                        bucketButton(for: .allUnorganized, count: summary.allCount)
+                        bucketButton(for: .unorganizedPhotos, count: summary.photoCount)
+                        bucketButton(for: .unorganizedVideos, count: summary.videoCount)
+                        bucketButton(for: .unorganizedScreenshots, count: summary.screenshotCount)
+
+                        let monthList = monthsForMenu
+                        if !monthList.isEmpty {
+                            Menu {
+                                ForEach(monthList) { month in
+                                    let monthBucket = OrganizeBucket.month(year: month.year, month: month.month)
+                                    Button {
+                                        if model.canUse(monthBucket) {
+                                            switchBucket(monthBucket)
+                                        } else {
+                                            showPaywall = true
+                                        }
+                                    } label: {
+                                        Label {
+                                            Text("\(month.title)（\(month.count)）")
+                                        } icon: {
+                                            if monthBucket == bucket {
+                                                Image(systemName: "checkmark")
+                                            } else if !model.canUse(monthBucket) {
+                                                Image(systemName: "lock.fill")
+                                            } else {
+                                                Image(systemName: "calendar")
+                                            }
+                                        }
+                                    }
+                                    .disabled(!model.canUse(monthBucket) && monthBucket != bucket)
+                                }
                             } label: {
                                 Label {
-                                    Text("\(option.title)（\(sourceCounts[option.id] ?? 0)）")
+                                    Text(String(localized: "By month"))
                                 } icon: {
-                                    Image(systemName: option == bucket ? "checkmark"
-                                                       : (model.canUse(option) ? sourceIcon(option) : "lock.fill"))
+                                    if case .month = bucket {
+                                        Image(systemName: "calendar.badge.checkmark")
+                                    } else {
+                                        Image(systemName: "calendar")
+                                    }
                                 }
                             }
-                            .disabled(!model.canUse(option) && option != bucket)
                         }
                     } label: {
                         HStack(spacing: 4) {
@@ -169,24 +237,25 @@ struct ReviewSessionView: View {
 
                     GlassCircleButton { showTrash = true } label: {
                         Image(systemName: "trash")
-                            .overlay(alignment: .topTrailing) {
-                                // 待刪除的張數，紅色圓形加數字。
-                                if !model.trashedAssetIDs.isEmpty {
-                                    Text("\(model.trashedAssetIDs.count)")
-                                        .font(.system(.caption2, design: .rounded, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .lineLimit(1)
-                                        .fixedSize()
-                                        .padding(.horizontal, 5)
-                                        .frame(minWidth: 18, minHeight: 18)
-                                        .background(Color.red, in: Capsule())
-                                        .offset(x: 12, y: -12)
-                                        .accessibilityIdentifier("session.trash.count")
-                                }
-                            }
                     }
                     .accessibilityLabel(Text("Pending deletion"))
                     .accessibilityIdentifier("session.trash")
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                // 待刪除的張數，紅色圓形加數字。放在 GlassGroup 與按鈕外層，避免在選單展開或返回頁面時被圓形玻璃裁切。
+                if !model.trashedAssetIDs.isEmpty {
+                    Text("\(model.trashedAssetIDs.count)")
+                        .font(.system(.caption2, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 5)
+                        .frame(minWidth: 18, minHeight: 18)
+                        .background(Color.red, in: Capsule())
+                        .offset(x: 5, y: -5)
+                        .allowsHitTesting(false)
+                        .accessibilityIdentifier("session.trash.count")
                 }
             }
             .padding(.horizontal, 16)
@@ -225,14 +294,47 @@ struct ReviewSessionView: View {
                               message: String(localized: "You reached the end of this batch."))
             } else if let asset = currentAsset {
                 SessionPhotoCard(asset: asset, isZoomed: $isZoomed)
-                    .offset(dragOffset)
-                    .rotationEffect(.degrees(Double(dragOffset.width / 30)))
+                    .overlay {
+                        // 手勢滑動時的色彩遮罩回饋：左滑綠色（保留）、上滑紅色（刪除）
+                        // 置於 offset/rotationEffect 之前，拖拉時遮罩完全貼合卡片並跟隨移動旋轉
+                        if dragOffset.width < -20 {
+                            Color.green.opacity(min(0.38, Double(-dragOffset.width / 200)))
+                                .allowsHitTesting(false)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                        } else if dragOffset.height < -20 {
+                            Color.red.opacity(min(0.38, Double(-dragOffset.height / 200)))
+                                .allowsHitTesting(false)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                    }
                     .overlay(alignment: .top) {
                         HStack(alignment: .top, spacing: 8) {
-                            if !currentTags.isEmpty || !currentAlbums.isEmpty {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 6) {
-                                        ForEach(currentTags) { tag in
+                            // 左側：水平滾動膠囊列（喜愛、標籤、相簿、備註）
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 6) {
+                                    if isFavorite(asset) {
+                                        Button {
+                                            toggleFavoriteCurrent()
+                                        } label: {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "heart.fill")
+                                                    .font(.system(size: 11))
+                                                    .foregroundStyle(.pink)
+                                                Text(String(localized: "Favorite"))
+                                                    .font(.caption2.weight(.medium))
+                                            }
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .foregroundStyle(.primary)
+                                            .floatingGlass(in: Capsule(), interactive: true)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+
+                                    ForEach(currentTags) { tag in
+                                        Button {
+                                            showTagPicker = true
+                                        } label: {
                                             HStack(spacing: 4) {
                                                 if !tag.symbol.isEmpty {
                                                     IconLabel(raw: tag.symbol, size: 13)
@@ -247,9 +349,15 @@ struct ReviewSessionView: View {
                                             .padding(.horizontal, 10)
                                             .padding(.vertical, 6)
                                             .foregroundStyle(.primary)
-                                            .floatingGlass(in: Capsule())
+                                            .floatingGlass(in: Capsule(), interactive: true)
                                         }
-                                        ForEach(currentAlbums, id: \.self) { albumTitle in
+                                        .buttonStyle(.plain)
+                                    }
+
+                                    ForEach(currentAlbums, id: \.self) { albumTitle in
+                                        Button {
+                                            showMoreAlbums = true
+                                        } label: {
                                             HStack(spacing: 4) {
                                                 Image(systemName: "rectangle.stack.fill")
                                                     .font(.system(size: 11))
@@ -261,34 +369,71 @@ struct ReviewSessionView: View {
                                             .padding(.horizontal, 10)
                                             .padding(.vertical, 6)
                                             .foregroundStyle(.primary)
-                                            .floatingGlass(in: Capsule())
+                                            .floatingGlass(in: Capsule(), interactive: true)
                                         }
+                                        .buttonStyle(.plain)
+                                    }
+
+                                    if let note = noteStore.note(for: asset)?.text, !note.isEmpty {
+                                        Button {
+                                            showNoteEditor = true
+                                        } label: {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "note.text")
+                                                    .font(.system(size: 11))
+                                                    .foregroundStyle(.yellow)
+                                                Text(note)
+                                                    .font(.caption2.weight(.medium))
+                                                    .lineLimit(1)
+                                                    .frame(maxWidth: 120)
+                                            }
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .foregroundStyle(.primary)
+                                            .floatingGlass(in: Capsule(), interactive: true)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
 
-                            Spacer(minLength: 0)
+                            Spacer(minLength: 4)
 
-                            if isFavorite(asset) {
-                                // 玻璃圓形加粉紅愛心，浮在照片右上角。
-                                Image(systemName: "heart.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(.pink)
-                                    .frame(width: 44, height: 44)
-                                    .floatingGlass(in: Circle())
-                                    .transition(.scale.combined(with: .opacity))
-                                    .accessibilityIdentifier("session.favorite.badge")
+                            // 右上角：若為待刪除照片，顯示「移出待刪除」按鈕
+                            if model.trashedAssetIDs.contains(asset.localIdentifier) {
+                                Button {
+                                    untrashCurrent()
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "arrow.uturn.backward")
+                                            .font(.system(size: 10, weight: .bold))
+                                        Text(String(localized: "Remove from pending deletion", defaultValue: "移出待刪除"))
+                                            .font(.caption2.weight(.bold))
+                                    }
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color.red, in: Capsule())
+                                }
+                                .buttonStyle(.plain)
+                                .transition(.scale.combined(with: .opacity))
                             }
                         }
                         .padding(12)
-                        .allowsHitTesting(false)
                         .animation(.spring(response: 0.28, dampingFraction: 0.82), value: currentTags)
                         .animation(.spring(response: 0.28, dampingFraction: 0.82), value: currentAlbums)
                     }
+                    .offset(dragOffset)
+                    .rotationEffect(dragOffset.height > 0 && dragOffset.height > abs(dragOffset.width) ? .zero : .degrees(Double(dragOffset.width / 30)))
                     .overlay(alignment: .center) { gestureHint }
                     .highPriorityGesture(
                         DragGesture(minimumDistance: 12)
-                            .onChanged { dragOffset = $0.translation }
+                            .onChanged { value in
+                                if abs(value.translation.height) < 4, abs(value.translation.width) < 4 {
+                                    inspectorExpandedAtGestureStart = isInspectorExpanded
+                                }
+                                dragOffset = value.translation
+                            }
                             .onEnded { handleDrag($0.translation) }
                     )
                     .animation(.spring(response: 0.28, dampingFraction: 0.82), value: dragOffset)
@@ -302,12 +447,10 @@ struct ReviewSessionView: View {
     private var gestureHint: some View {
         if dragOffset.height < -55 {
             hint("Delete", icon: "trash.fill", color: .red)
-        } else if dragOffset.height > 55 {
-            hint("Favorite", icon: "heart.fill", color: .pink)
         } else if dragOffset.width < -55 {
-            hint("Keep", icon: "arrow.down.to.line.circle.fill", color: .green)
+            hint("Keep", icon: "checkmark.circle.fill", color: .green)
         } else if dragOffset.width > 55 {
-            hint("Previous", icon: "arrow.right.circle.fill", color: .accentColor)
+            hint("Previous", icon: "arrow.left.circle.fill", color: .accentColor)
         }
     }
 
@@ -322,17 +465,41 @@ struct ReviewSessionView: View {
 
     // MARK: - 功能列
 
+    private var tagsButtonKey: LocalizedStringKey {
+        if currentTags.isEmpty {
+            return "Tags"
+        } else {
+            return "\(String(localized: "Tags"))(\(currentTags.count))"
+        }
+    }
+
+    private var albumsButtonKey: LocalizedStringKey {
+        if currentAlbums.isEmpty {
+            return "Album"
+        } else {
+            return "\(String(localized: "Album"))(\(currentAlbums.count))"
+        }
+    }
+
     /// 跟選取照片時的功能列同一種樣式：玻璃膠囊、小圖示加文字、間距平均。
     private var actionBar: some View {
         let favorite = currentAsset.map(isFavorite) ?? false
 
-        // 整理畫面不寫日記。順序：標籤、相簿、喜愛（移出喜愛）、保留、刪除。
+        // 順序：資訊、標籤、相簿、喜愛（移出喜愛）、保留、刪除。
         return ActionBarRow {
-            barButton("Tags", icon: currentTags.isEmpty ? "tag" : "tag.fill", id: "session.tags", isActive: quickMode == .tags) {
+            barButton("資訊", icon: isInspectorExpanded ? "info.circle.fill" : "info.circle",
+                      id: "session.info", isActive: isInspectorExpanded) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                    isInspectorExpanded.toggle()
+                }
+            }
+            Spacer(minLength: 4)
+            barButton(tagsButtonKey, icon: "tag", id: "session.tags",
+                      isActive: quickMode == .tags) {
                 quickMode = (quickMode == .tags) ? nil : .tags
             }
             Spacer(minLength: 4)
-            barButton("Album", icon: currentAlbums.isEmpty ? "rectangle.stack.badge.plus" : "rectangle.stack.fill", id: "session.albums",
+            barButton(albumsButtonKey, icon: "rectangle.stack.badge.plus", id: "session.albums",
                       isActive: quickMode == .albums) {
                 quickMode = (quickMode == .albums) ? nil : .albums
             }
@@ -355,132 +522,38 @@ struct ReviewSessionView: View {
         .padding(.vertical, 10)
         .floatingGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous), interactive: true)
         .padding(.horizontal, 16)
-        .padding(.vertical, 6)
+        .padding(.bottom, 10)
         .disabled(currentAsset == nil)
     }
 
     private func barButton(_ key: LocalizedStringKey, icon: String, id: String,
                            isActive: Bool = false, isDestructive: Bool = false,
+                           badgeCount: Int? = nil,
                            action: @escaping () -> Void) -> some View {
         ActionBarButton(key: key, icon: icon, id: id, isActive: isActive,
-                        isDestructive: isDestructive, action: action)
+                        isDestructive: isDestructive, badgeCount: badgeCount, action: action)
     }
 
     // MARK: - 快速分類列
 
-    /// 點了標籤或相簿之後才出現：前三個項目加上第四個「更多」。
+    /// 點了標籤或相簿之後才出現：水平滑動膠囊列（圖 2、圖 3 樣式）。
     @ViewBuilder
     private var quickRow: some View {
-        switch quickMode {
-        case .tags:
-            quickPanel(title: String(localized: "File into tag…"),
-                       moreTitle: String(localized: "More tags"),
-                       id: "session.tagrow",
-                       items: tagStore.tagsByRecentUse.prefix(3).map { tag in
-                           let isSelected = currentAsset.map { tagStore.tagIDs(for: $0).contains(tag.id) } ?? false
-                           return QuickItem(id: tag.id.uuidString, title: tag.name, iconRaw: tag.symbol, systemImage: nil, isSelected: isSelected) {
-                               fileCurrent(intoTag: tag)
-                           }
-                       },
-                       onMore: { showTagPicker = true })
-        case .albums:
-            quickPanel(title: String(localized: "File into album…"),
-                       moreTitle: String(localized: "More albums"),
-                       id: "session.albumrow",
-                       items: albums.prefix(3).map { album in
-                           let isSelected = currentAlbumIDs.contains(album.id)
-                           return QuickItem(id: album.id, title: album.title, iconRaw: nil, systemImage: "rectangle.stack", isSelected: isSelected) {
-                               fileCurrent(into: album)
-                           }
-                       },
-                       onMore: { showMoreAlbums = true })
-        case nil:
-            EmptyView()
-        }
-    }
-
-    private struct QuickItem: Identifiable {
-        let id: String
-        let title: String
-        let iconRaw: String?
-        let systemImage: String?
-        var isSelected: Bool = false
-        let action: () -> Void
-    }
-
-    private func quickPanel(title: String,
-                            moreTitle: String,
-                            id: String,
-                            items: [QuickItem],
-                            onMore: @escaping () -> Void) -> some View {
-        VStack(spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            // 固定四格：前三個是項目，第四個永遠是「更多」。
-            HStack(alignment: .top, spacing: 0) {
-                ForEach(0..<3, id: \.self) { slot in
-                    if slot < items.count {
-                        quickButton(title: items[slot].title,
-                                    iconRaw: items[slot].iconRaw,
-                                    systemImage: items[slot].systemImage,
-                                    isSelected: items[slot].isSelected,
-                                    action: items[slot].action)
+        if let mode = quickMode, let asset = currentAsset {
+            QuickAssetChipsBar(
+                mode: mode == .tags ? .tags : .albums,
+                asset: asset,
+                assignedAlbumIDs: $currentAlbumIDs,
+                onManage: {
+                    if mode == .tags {
+                        showTagPicker = true
                     } else {
-                        Color.clear.frame(maxWidth: .infinity, minHeight: 1)
+                        showMoreAlbums = true
                     }
                 }
-                quickButton(title: moreTitle, iconRaw: nil, systemImage: "ellipsis", action: onMore)
-            }
+            )
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
-        .padding(.top, 10)
-        .padding(.bottom, 10)
-        .padding(.horizontal, 12)
-        .floatingGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .padding(.horizontal, 16)
-        .padding(.bottom, 6)
-        .accessibilityIdentifier(id)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-    }
-
-    private func quickButton(title: String,
-                             iconRaw: String?,
-                             systemImage: String?,
-                             isSelected: Bool = false,
-                             action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                ZStack(alignment: .topTrailing) {
-                    Group {
-                        if let iconRaw {
-                            IconLabel(raw: iconRaw, size: 22)
-                        } else if let systemImage {
-                            Image(systemName: systemImage).font(.title3)
-                        }
-                    }
-                    .frame(height: 30)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.accentColor)
-                            .offset(x: 8, y: -2)
-                    }
-                }
-                Text(title)
-                    .font(.caption2.weight(isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(title))
-        .accessibilityIdentifier("session.quick")
-        .disabled(currentAsset == nil)
     }
 
     // MARK: - 狀態
@@ -495,58 +568,50 @@ struct ReviewSessionView: View {
     private func handleDrag(_ translation: CGSize) {
         dragOffset = .zero
 
-        if translation.height < -threshold {
+        let vertical = translation.height
+        let horizontal = translation.width
+
+        if vertical > 100 && vertical > abs(horizontal) * 1.3 {
+            // 手勢起始時 inspector 開著 → 只收起面板，不 dismiss 整理畫面
+            if inspectorExpandedAtGestureStart {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                    isInspectorExpanded = false
+                }
+            } else {
+                dismiss()
+            }
+        } else if vertical < -threshold && abs(vertical) > abs(horizontal) * 1.3 {
             deleteCurrent()
-        } else if translation.height > threshold {
-            toggleFavoriteCurrent()
-        } else if translation.width < -threshold {
+        } else if horizontal < -threshold {
             keepCurrent()
-        } else if translation.width > threshold {
+        } else if horizontal > threshold {
             goPrevious()
         }
     }
 
-    /// 右滑：上一張，若上一張剛做過保留或刪除就一併撤銷。
+    /// 右滑：上一張，單純返回前一張瀏覽，不做任何動作撤銷。
     private func goPrevious() {
-        guard let last = history.popLast() else {
-            if index > 0 { withMotion { index -= 1 } }
-            return
+        if index > 0 {
+            withMotion { index -= 1 }
         }
-
-        switch last.kind {
-        case .keep:
-            if let asset = library.asset(withID: last.assetID) {
-                organized.unmarkOrganized(asset)
-            }
-            model.refundQuota()
-            showBanner(String(localized: "Undone"), icon: "arrow.uturn.backward", tint: .secondary)
-        case .delete:
-            model.unmarkTrashed(last.assetID)
-            model.refundQuota()
-            showBanner(String(localized: "Undone"), icon: "arrow.uturn.backward", tint: .secondary)
-        case .favorite(let previous):
-            if let asset = library.asset(withID: last.assetID) {
-                Task {
-                    await library.attempt(String(localized: "Couldn't change favorites")) {
-                        try await library.setFavorite(asset, to: previous)
-                    }
-                }
-            }
-            showBanner(String(localized: "Undone"), icon: "arrow.uturn.backward", tint: .secondary)
-        case .skip:
-            break
-        }
-
-        withMotion { index = max(0, index - 1) }
     }
 
-    /// 保留：標記成已整理，之後不再出現在未整理清單。
+    /// 移出待刪除：若前一張照片原本在待刪清單，可點擊右上角膠囊移出。
+    private func untrashCurrent() {
+        guard let asset = currentAsset else { return }
+        model.unmarkTrashed(asset.localIdentifier)
+        incrementCounts(for: asset)
+        showBanner(String(localized: "Removed from pending deletion", defaultValue: "已移出待刪除"),
+                   icon: "arrow.uturn.backward", tint: .secondary)
+    }
+
+    /// 保留：標記成已整理，之後不再出現在未整理清單。左滑保留不跳出提示橫幅。
     private func keepCurrent() {
         guard let asset = currentAsset, model.hasQuotaLeft else { return }
         organized.markOrganized(asset)
         model.consumeQuota()
+        decrementCounts(for: asset)
         history.append(SessionAction(assetID: asset.localIdentifier, kind: .keep))
-        showBanner(String(localized: "Kept"), icon: "checkmark.circle.fill", tint: .green)
         withMotion { index += 1 }
     }
 
@@ -555,6 +620,7 @@ struct ReviewSessionView: View {
         guard let asset = currentAsset, model.hasQuotaLeft else { return }
         model.markTrashed(asset.localIdentifier)
         model.consumeQuota()
+        decrementCounts(for: asset)
         history.append(SessionAction(assetID: asset.localIdentifier, kind: .delete))
         showBanner(String(localized: "Marked for deletion"), icon: "trash.fill", tint: .red, haptic: .warning)
         withMotion { index += 1 }
@@ -583,30 +649,98 @@ struct ReviewSessionView: View {
                    haptic: now ? .success : .light)
     }
 
-    /// 分類到標籤：加上標籤，同時視為已整理，然後看下一張。
-    private func fileCurrent(intoTag tag: PhotoTag) {
-        guard let asset = currentAsset, model.hasQuotaLeft else { return }
-        tagStore.addTag(tag.id, to: [asset])
-        organized.markOrganized(asset)
-        model.consumeQuota()
-        history.append(SessionAction(assetID: asset.localIdentifier, kind: .keep))
-        showBanner(String(localized: "Filed into \(tag.name)"), icon: "tag.fill", tint: .accentColor, haptic: .success)
-        withMotion { index += 1 }
+    /// 切換標籤：若已加入則移除，未加入則加入。留在當前照片，不自動跳下一張。
+    private func toggleTag(_ tag: PhotoTag) {
+        guard let asset = currentAsset else { return }
+        let hasTag = tagStore.tagIDs(for: asset).contains(tag.id)
+        if hasTag {
+            tagStore.removeTag(tag.id, from: [asset])
+            showBanner("已移除標籤 \(tag.name)",
+                       icon: "tag.slash.fill", tint: .secondary, haptic: .light)
+        } else {
+            tagStore.addTag(tag.id, to: [asset])
+            showBanner("已加入標籤 \(tag.name)",
+                       icon: "tag.fill", tint: .accentColor, haptic: .success)
+        }
     }
 
-    /// 歸檔到本機相簿，同時視為已整理。
-    private func fileCurrent(into album: AlbumSummary) {
-        guard let asset = currentAsset, model.hasQuotaLeft else { return }
-        Task {
-            await library.attempt(String(localized: "Couldn't add to the album")) {
-                try await library.addAsset(asset, toAlbumWithID: album.id)
+    /// 切換相簿：若已加入則移出，未加入則加入。留在當前照片，不自動跳下一張。
+    private func toggleAlbum(_ album: AlbumSummary) {
+        guard let asset = currentAsset else { return }
+        let inAlbum = currentAlbumIDs.contains(album.id)
+        if inAlbum {
+            currentAlbumIDs.remove(album.id)
+            currentAlbums.removeAll(where: { $0 == album.title })
+            Task {
+                await library.attempt(String(localized: "Couldn't remove from the album", defaultValue: "無法從相簿移除")) {
+                    try await library.removeAssets([asset], fromAlbumWithID: album.id)
+                }
+                await updateCurrentAssetAlbums()
+            }
+            showBanner("已從相簿 \(album.title) 移除",
+                       icon: "rectangle.stack.badge.minus", tint: .secondary, haptic: .light)
+        } else {
+            currentAlbumIDs.insert(album.id)
+            if !currentAlbums.contains(album.title) {
+                currentAlbums.append(album.title)
+            }
+            Task {
+                await library.attempt(String(localized: "Couldn't add to the album", defaultValue: "無法加入相簿")) {
+                    try await library.addAsset(asset, toAlbumWithID: album.id)
+                }
+                await updateCurrentAssetAlbums()
+            }
+            showBanner("已加入相簿 \(album.title)",
+                       icon: "rectangle.stack.fill", tint: .accentColor, haptic: .success)
+        }
+    }
+
+    private func decrementCounts(for asset: PHAsset) {
+        summary.allCount = max(0, summary.allCount - 1)
+        if asset.mediaType == .image {
+            summary.photoCount = max(0, summary.photoCount - 1)
+        } else if asset.mediaType == .video {
+            summary.videoCount = max(0, summary.videoCount - 1)
+        }
+        if screenshotIDs.contains(asset.localIdentifier) {
+            summary.screenshotCount = max(0, summary.screenshotCount - 1)
+        }
+        if let date = asset.creationDate {
+            let parts = Calendar.current.dateComponents([.year, .month], from: date)
+            if let y = parts.year, let m = parts.month {
+                if let idx = summary.months.firstIndex(where: { $0.year == y && $0.month == m }) {
+                    let old = summary.months[idx]
+                    summary.months[idx] = UnorganizedSummary.MonthBucket(
+                        id: old.id, year: old.year, month: old.month,
+                        title: old.title, count: max(0, old.count - 1), tint: old.tint
+                    )
+                }
             }
         }
-        organized.markOrganized(asset)
-        model.consumeQuota()
-        history.append(SessionAction(assetID: asset.localIdentifier, kind: .keep))
-        showBanner(String(localized: "Filed into \(album.title)"), icon: "rectangle.stack.fill", tint: .accentColor, haptic: .success)
-        withMotion { index += 1 }
+    }
+
+    private func incrementCounts(for asset: PHAsset) {
+        summary.allCount += 1
+        if asset.mediaType == .image {
+            summary.photoCount += 1
+        } else if asset.mediaType == .video {
+            summary.videoCount += 1
+        }
+        if screenshotIDs.contains(asset.localIdentifier) {
+            summary.screenshotCount += 1
+        }
+        if let date = asset.creationDate {
+            let parts = Calendar.current.dateComponents([.year, .month], from: date)
+            if let y = parts.year, let m = parts.month {
+                if let idx = summary.months.firstIndex(where: { $0.year == y && $0.month == m }) {
+                    let old = summary.months[idx]
+                    summary.months[idx] = UnorganizedSummary.MonthBucket(
+                        id: old.id, year: old.year, month: old.month,
+                        title: old.title, count: old.count + 1, tint: old.tint
+                    )
+                }
+            }
+        }
     }
 
     private func showBanner(_ text: String, icon: String, tint: Color,
@@ -632,26 +766,33 @@ struct ReviewSessionView: View {
 
         let all = await library.assets(matching: .all)
         await organized.refresh(allAssets: all)
-        basePool = all.filter { !organized.isOrganized($0) }
+        let trashed = Set(model.trashedAssetIDs)
+        basePool = all.filter { !organized.isOrganized($0) && !trashed.contains($0.localIdentifier) }
         screenshotIDs = Set(await library.assets(matching: .screenshots).map(\.localIdentifier))
+
+        let builtSummary = await UnorganizedSummary.build(from: basePool)
+        summary = builtSummary
+
         var counts: [String: Int] = [
-            OrganizeBucket.allUnorganized.id: basePool.count,
-            OrganizeBucket.unorganizedPhotos.id: basePool.filter { $0.mediaType == .image }.count,
-            OrganizeBucket.unorganizedVideos.id: basePool.filter { $0.mediaType == .video }.count,
-            OrganizeBucket.unorganizedScreenshots.id: basePool.filter { screenshotIDs.contains($0.localIdentifier) }.count,
+            OrganizeBucket.allUnorganized.id: builtSummary.allCount,
+            OrganizeBucket.unorganizedPhotos.id: builtSummary.photoCount,
+            OrganizeBucket.unorganizedVideos.id: builtSummary.videoCount,
+            OrganizeBucket.unorganizedScreenshots.id: builtSummary.screenshotCount,
         ]
-        let calendar = Calendar.current
+        for m in builtSummary.months {
+            counts["\(m.year)-\(m.month)"] = m.count
+        }
         if case .month(let year, let month) = bucket {
-            counts[bucket.id] = basePool.filter { asset in
+            counts[bucket.id] = counts[bucket.id] ?? basePool.filter { asset in
                 guard let date = asset.creationDate else { return false }
-                let parts = calendar.dateComponents([.year, .month], from: date)
+                let parts = Calendar.current.dateComponents([.year, .month], from: date)
                 return parts.year == year && parts.month == month
             }.count
         }
         if let initial = initialMonthBucket, case .month(let year, let month) = initial {
-            counts[initial.id] = basePool.filter { asset in
+            counts[initial.id] = counts[initial.id] ?? basePool.filter { asset in
                 guard let date = asset.creationDate else { return false }
-                let parts = calendar.dateComponents([.year, .month], from: date)
+                let parts = Calendar.current.dateComponents([.year, .month], from: date)
                 return parts.year == year && parts.month == month
             }.count
         }
@@ -660,9 +801,10 @@ struct ReviewSessionView: View {
         await updateCurrentAssetAlbums()
     }
 
-    /// 依目前的來源挑出要整理的照片，從第一張開始。
+    /// 依目前的來源挑出要整理的照片，排除已整理與待刪除，並接續進度。
     private func applyBucket() {
-        var pool = basePool
+        let trashed = Set(model.trashedAssetIDs)
+        var pool = basePool.filter { !organized.isOrganized($0) && !trashed.contains($0.localIdentifier) }
         switch bucket {
         case .allUnorganized:
             break
@@ -682,17 +824,53 @@ struct ReviewSessionView: View {
         }
         assets = pool
         sourceCounts[bucket.id] = pool.count
-        index = 0
+        if let bookmark = model.lastReviewedAssetIDs[bucket.id],
+           let found = pool.firstIndex(where: { $0.localIdentifier == bookmark }) {
+            index = found
+        } else {
+            index = 0
+        }
         history.removeAll()
     }
 
-    /// 選單裡的來源：四個固定集合，張數是 0 的不列（目前這個一定列）。
-    private var sourceBuckets: [OrganizeBucket] {
-        let all: [OrganizeBucket] = [.allUnorganized, .unorganizedPhotos, .unorganizedVideos, .unorganizedScreenshots]
-        var result = all.filter { (sourceCounts[$0.id] ?? 0) > 0 || $0 == bucket }
-        if case .month = bucket, !result.contains(bucket) { result.append(bucket) }
-        if let initial = initialMonthBucket, !result.contains(initial) { result.append(initial) }
-        return result
+    private var monthsForMenu: [UnorganizedSummary.MonthBucket] {
+        var list = summary.months
+        if case .month(let year, let month) = bucket {
+            if !list.contains(where: { $0.year == year && $0.month == month }) {
+                list.insert(UnorganizedSummary.MonthBucket(
+                    id: "\(year)-\(month)",
+                    year: year,
+                    month: month,
+                    title: DateTitle.month(year: year, month: month),
+                    count: sourceCounts[bucket.id] ?? assets.count,
+                    tint: .blue
+                ), at: 0)
+            }
+        }
+        return list
+    }
+
+    private func bucketButton(for option: OrganizeBucket, count: Int) -> some View {
+        Button {
+            if model.canUse(option) {
+                switchBucket(option)
+            } else {
+                showPaywall = true
+            }
+        } label: {
+            Label {
+                Text("\(option.title)（\(count)）")
+            } icon: {
+                if option == bucket {
+                    Image(systemName: "checkmark")
+                } else if !model.canUse(option) {
+                    Image(systemName: "lock.fill")
+                } else {
+                    Image(systemName: sourceIcon(option))
+                }
+            }
+        }
+        .disabled(count == 0 && option != bucket && model.canUse(option))
     }
 
     private func sourceIcon(_ bucket: OrganizeBucket) -> String {

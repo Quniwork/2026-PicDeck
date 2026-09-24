@@ -55,6 +55,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var gridFitsByScale: [String: Bool] = [:]
     @Published private(set) var monthCovers: [String: PhotoCoverPreference] = [:]
     @Published private(set) var yearCovers: [String: PhotoCoverPreference] = [:]
+    /// 整理分頁各來源（各年月、所有未整理等）最後瀏覽/整理到的照片 ID，用來接續進度。
+    @Published private(set) var lastReviewedAssetIDs: [String: String] = [:]
     static let gridColumnRange = 2...8
     static let yearGridColumnRange = 1...4
     static let defaultGridColumns = 4
@@ -188,6 +190,7 @@ final class AppModel: ObservableObject {
         static let tutorial = "picdeck.hasSeenTutorial"
         static let photoScale = "picdeck.lastPhotoScale"
         static let appearance = "picdeck.appearance"
+        static let lastReviewedAssetIDs = "picdeck.lastReviewedAssetIDs"
     }
 
     init() {
@@ -462,6 +465,19 @@ final class AppModel: ObservableObject {
             defaults.set(today, forKey: Key.processedDate)
             defaults.set(0, forKey: Key.processedCount)
         }
+
+        lastReviewedAssetIDs = (defaults.dictionary(forKey: Key.lastReviewedAssetIDs) as? [String: String]) ?? [:]
+    }
+
+    /// 記住各整理來源（bucket）最後整理或停留的照片 ID，供下次點進時無縫接續。
+    func setLastReviewedAssetID(_ assetID: String?, for bucketID: String) {
+        guard lastReviewedAssetIDs[bucketID] != assetID else { return }
+        if let assetID {
+            lastReviewedAssetIDs[bucketID] = assetID
+        } else {
+            lastReviewedAssetIDs.removeValue(forKey: bucketID)
+        }
+        defaults.set(lastReviewedAssetIDs, forKey: Key.lastReviewedAssetIDs)
     }
 
     /// 記住使用者最後切換的子分頁。
