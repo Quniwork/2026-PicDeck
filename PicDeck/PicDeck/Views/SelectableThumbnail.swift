@@ -15,12 +15,13 @@ struct SelectableThumbnail: View {
     var onOpen: (() -> Void)? = nil
     /// 打開檢視時要從這張縮圖的位置展開，跟呼叫端的 namespace 配一對。
     var zoomNamespace: Namespace.ID? = nil
+    var isActive: Bool = true
 
     var body: some View {
         Button {
             if isSelecting { onToggle() } else { onOpen?() }
         } label: {
-            AssetThumbnail(asset: asset, size: size, fitsAspect: fitsAspect, showsFavorite: true)
+            AssetThumbnail(asset: asset, size: size, fitsAspect: fitsAspect, showsFavorite: true, isActive: isActive)
                 .modifier(ZoomSourceIfNeeded(id: asset.localIdentifier, namespace: zoomNamespace))
                 .overlay {
                     if isSelecting && isSelected {
@@ -43,6 +44,6 @@ struct SelectableThumbnail: View {
         .accessibilityLabel(asset.accessibilitySummary)
         .accessibilityValue(isSelecting ? Text(isSelected ? "Selected" : "Not selected") : Text(""))
         .accessibilityIdentifier("selectable.thumb.\(asset.localIdentifier)")
-        .photoActions { isSelecting ? nil : menu?() }
+        .photoActions(isEnabled: !isSelecting) { menu?() }
     }
 }

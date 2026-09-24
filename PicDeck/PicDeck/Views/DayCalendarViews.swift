@@ -121,7 +121,7 @@ struct DayCalendarCell: View {
         VStack(spacing: 4) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                    .fill(Color(.tertiarySystemBackground))
                     .aspectRatio(1, contentMode: .fit)
 
                 if let coverID = cell?.coverID {

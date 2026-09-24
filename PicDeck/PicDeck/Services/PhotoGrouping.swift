@@ -89,10 +89,11 @@ enum PhotoGrouping {
 
     // MARK: - 年
 
-    static func years(from assets: [PHAsset]) async -> [Bucket] {
-        await Task.detached(priority: .userInitiated) {
+    static func years(from assets: [PHAsset], priority: TaskPriority = .userInitiated) async -> [Bucket] {
+        let worker = Task.detached(priority: priority) { () -> [Bucket] in
             var map: [Int: [PHAsset]] = [:]
-            for asset in assets {
+            for (index, asset) in assets.enumerated() {
+                if index.isMultiple(of: 256), Task.isCancelled { return [] }
                 guard let date = asset.creationDate else { continue }
                 let year = calendar.component(.year, from: date)
                 map[year, default: []].append(asset)
@@ -107,7 +108,8 @@ enum PhotoGrouping {
                            coverID: items.first?.localIdentifier,
                            year: year, month: nil, day: nil)
                 }
-        }.value
+        }
+        return await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
     }
 
     // MARK: - 月
@@ -146,12 +148,14 @@ enum PhotoGrouping {
 
     /// 產生帶小月曆的月份卡片，依年份分組（最新的年在前）。
     /// 傳入 year 就只算該年。
-    static func monthCalendars(from assets: [PHAsset], year: Int? = nil) async -> [YearOfMonths] {
-        await Task.detached(priority: .userInitiated) {
+    static func monthCalendars(from assets: [PHAsset], year: Int? = nil,
+                               priority: TaskPriority = .userInitiated) async -> [YearOfMonths] {
+        let worker = Task.detached(priority: priority) { () -> [YearOfMonths] in
             var monthAssets: [DateComponents: [PHAsset]] = [:]
             var monthDays: [DateComponents: Set<Int>] = [:]
 
-            for asset in assets {
+            for (index, asset) in assets.enumerated() {
+                if index.isMultiple(of: 256), Task.isCancelled { return [] }
                 guard let date = asset.creationDate else { continue }
                 let parts = calendar.dateComponents([.year, .month, .day], from: date)
                 if let year, parts.year != year { continue }
@@ -188,17 +192,19 @@ enum PhotoGrouping {
                                  year: year,
                                  months: months.sorted { $0.month < $1.month })
                 }
-        }.value
+        }
+        return await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
     }
 
     // MARK: - 日曆（日檢視）
 
     /// 產生依月份分組的日曆，每一天帶封面與張數。最新的月份在前。
-    static func dayCalendars(from assets: [PHAsset]) async -> [MonthOfDays] {
-        await Task.detached(priority: .userInitiated) {
+    static func dayCalendars(from assets: [PHAsset], priority: TaskPriority = .userInitiated) async -> [MonthOfDays] {
+        let worker = Task.detached(priority: priority) { () -> [MonthOfDays] in
             var dayAssets: [DateComponents: [PHAsset]] = [:]
 
-            for asset in assets {
+            for (index, asset) in assets.enumerated() {
+                if index.isMultiple(of: 256), Task.isCancelled { return [] }
                 guard let date = asset.creationDate else { continue }
                 let parts = calendar.dateComponents([.year, .month, .day], from: date)
                 dayAssets[parts, default: []].append(asset)
@@ -233,7 +239,8 @@ enum PhotoGrouping {
                 }
                 .sorted { $0.1 > $1.1 }
                 .map(\.0)
-        }.value
+        }
+        return await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
     }
 
     // MARK: - 日
@@ -288,10 +295,16 @@ enum PhotoGrouping {
     // MARK: - 時間軸
 
     /// 依日期分段，最新的在前。limit 可限制每段張數（摘要式檢視用）。
-    static func daySections(from assets: [PHAsset], limit: Int = .max) async -> [DaySection] {
-        await Task.detached(priority: .userInitiated) {
+    static func daySections(from assets: [PHAsset], limit: Int = .max,
+                            priority: TaskPriority = .userInitiated,
+                            addedRanks: [String: Int]? = nil) async -> [DaySection] {
+        let worker = Task.detached(priority: priority) { () -> [DaySection] in
+            let orderedAssets = addedRanks.map { ranks in
+                assets.sorted { (ranks[$0.localIdentifier] ?? .max) > (ranks[$1.localIdentifier] ?? .max) }
+            } ?? assets
             var map: [DateComponents: [PHAsset]] = [:]
-            for asset in assets {
+            for (index, asset) in orderedAssets.enumerated() {
+                if index.isMultiple(of: 256), Task.isCancelled { return [] }
                 guard let date = asset.creationDate else { continue }
                 let parts = calendar.dateComponents([.year, .month, .day], from: date)
                 map[parts, default: []].append(asset)
@@ -304,7 +317,7 @@ enum PhotoGrouping {
             let weekdayFormatter = DateFormatter()
             weekdayFormatter.setLocalizedDateFormatFromTemplate("EEEE")
 
-            return map
+            var sections = map
                 .compactMap { parts, items -> (DaySection, Date)? in
                     guard let y = parts.year, let m = parts.month, let d = parts.day,
                           let date = calendar.date(from: parts) else { return nil }
@@ -318,6 +331,15 @@ enum PhotoGrouping {
                 }
                 .sorted { $0.1 > $1.1 }
                 .map(\.0)
-        }.value
+            if let addedRanks {
+                sections.sort { first, second in
+                    let firstRank = first.assets.last.flatMap { addedRanks[$0.localIdentifier] } ?? .min
+                    let secondRank = second.assets.last.flatMap { addedRanks[$0.localIdentifier] } ?? .min
+                    return firstRank > secondRank
+                }
+            }
+            return Task.isCancelled ? [] : sections
+        }
+        return await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
     }
 }

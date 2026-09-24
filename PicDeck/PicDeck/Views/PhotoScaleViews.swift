@@ -21,11 +21,15 @@ struct AnchoredScrollView<Content: View>: View {
     /// 右側拖拉軸要用的落點。沒給就不顯示。
     var scrub: ScrubIndex? = nil
     var scrubTopInset: CGFloat = 10
+    /// Changes when a caller explicitly wants to reset this scroll view to its anchor.
+    var scrollRequestID: Int = 0
     var onScrollOffsetChange: ((CGFloat, CGFloat) -> Void)? = nil
     var scrollToAnchor: UnitPoint = .top
     @ViewBuilder let content: () -> Content
 
     @State private var isPositioned = false
+    /// 已經定位過的 anchor。分頁切走再切回來時 .task 會重跑，同一個 anchor 不重做，保留原本的捲動位置。
+    @State private var positionedKey: String?
     /// 拖拉軸用。放在 @State 裡但這個 View 不訂閱它，捲動時只有拖拉軸自己會更新。
     @State private var scrubController = ScrubController()
 
@@ -71,20 +75,30 @@ struct AnchoredScrollView<Content: View>: View {
                     ScrubberOverlay(index: scrub, controller: scrubController, topInset: scrubTopInset)
                 }
             }
-            .task(id: "\(anchorID ?? "")-\(isReady)") {
+            .task(id: "\(anchorID ?? "")-\(isReady)-\(scrollRequestID)") {
                 guard let anchorID else {
                     isPositioned = true
                     return
                 }
                 guard isReady else { return }
+                let key = "\(anchorID)-\(scrollToAnchor)-\(scrollRequestID)"
+                if positionedKey == key { isPositioned = true; return }
 
-                isPositioned = false
-                // 讓延遲載入的版面先排好，否則捲不到還沒實體化的區段。
-                await Task.yield()
-                try? await Task.sleep(nanoseconds: 120_000_000)
+                let wasAlreadyPositioned = isPositioned
+                if !wasAlreadyPositioned {
+                    isPositioned = false
+                    // 首次定位時讓延遲載入的版面先排好。
+                    await Task.yield()
+                    try? await Task.sleep(nanoseconds: 120_000_000)
+                    guard !Task.isCancelled else { return }
+                }
                 proxy.scrollTo(anchorID, anchor: scrollToAnchor)
-                try? await Task.sleep(nanoseconds: 80_000_000)
-                withMotion(.easeIn(duration: 0.12)) { isPositioned = true }
+                positionedKey = key
+                if !wasAlreadyPositioned {
+                    try? await Task.sleep(nanoseconds: 80_000_000)
+                    guard !Task.isCancelled else { return }
+                    withMotion(.easeIn(duration: 0.12)) { isPositioned = true }
+                }
             }
         }
     }
@@ -97,6 +111,8 @@ struct BucketGridView: View {
     var columns: Int? = nil
     var compact: Bool = false
     var onScrollOffsetChange: ((CGFloat) -> Void)? = nil
+    var coverForBucket: (PhotoGrouping.Bucket) -> PhotoCoverPreference? = { _ in nil }
+    var onEditCover: ((PhotoGrouping.Bucket) -> Void)? = nil
     let onSelect: (PhotoGrouping.Bucket) -> Void
 
     var body: some View {
@@ -108,9 +124,19 @@ struct BucketGridView: View {
                     Button {
                         onSelect(bucket)
                     } label: {
-                        BucketCard(bucket: bucket, compact: compact, titleColumnCount: columns)
+                        BucketCard(bucket: bucket, compact: compact, titleColumnCount: columns,
+                                   cover: coverForBucket(bucket))
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        if let onEditCover {
+                            Button {
+                                onEditCover(bucket)
+                            } label: {
+                                Label("Set cover", systemImage: "photo.badge.plus")
+                            }
+                        }
+                    }
                     .accessibilityIdentifier("bucket.\(bucket.id)")
                 }
             }
@@ -139,11 +165,14 @@ struct CompactGridView: View {
     /// 多選模式。
     var isSelecting: Bool = false
     var selectedIDs: Binding<Set<String>>? = nil
+    var selectedFavoriteIDs: Binding<Set<String>>? = nil
     /// 右側拖拉軸。
     var scrub: ScrubIndex? = nil
     var onVisibleDateRangeChange: ((CGFloat, Date?, Date?) -> Void)? = nil
+    var scrollRequestID: Int = 0
     /// 點開要從縮圖位置展開，跟呼叫端共用同一個 namespace。
     var zoomNamespace: Namespace.ID? = nil
+    var thumbnailsActive: Bool = true
 
     var body: some View {
         GeometryReader { proxy in
@@ -151,6 +180,7 @@ struct CompactGridView: View {
             let cellWidth = max(1, (proxy.size.width - CGFloat(safeColumns - 1) * 2) / CGFloat(safeColumns))
             AnchoredScrollView(anchorID: assets.last?.localIdentifier, isReady: !assets.isEmpty, scrub: scrub,
                                scrubTopInset: 160,
+                               scrollRequestID: scrollRequestID,
                                onScrollOffsetChange: { offset, viewportHeight in
                 let cellExtent = cellWidth + 2
                 let firstRow = max(0, Int(max(0, offset) / max(cellExtent, 1)))
@@ -162,11 +192,37 @@ struct CompactGridView: View {
                 let lastDate = assets.indices.contains(lastIndex) ? assets[lastIndex].creationDate : nil
                 onVisibleDateRangeChange?(offset, firstDate, lastDate)
             }, scrollToAnchor: .bottom) {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2,
-                                                             alignment: fitsAspect ? .top : .center), count: safeColumns),
-                          spacing: 2) {
-                    ForEach(assets, id: \.localIdentifier) { asset in
-                        thumbnail(asset, size: cellWidth)
+                Group {
+                    if fitsAspect {
+                        let rowCount = (assets.count + safeColumns - 1) / safeColumns
+                        LazyVStack(alignment: .leading, spacing: 2) {
+                            ForEach(0..<rowCount, id: \.self) { rowIndex in
+                                let start = rowIndex * safeColumns
+                                let end = min(start + safeColumns, assets.count)
+                                let rowAssets = Array(assets[start..<end])
+                                let rowHeight = rowAssets.map { asset in
+                                    asset.pixelWidth > 0 && asset.pixelHeight > 0
+                                        ? cellWidth * CGFloat(asset.pixelHeight) / CGFloat(asset.pixelWidth)
+                                        : cellWidth
+                                }.max() ?? cellWidth
+
+                                HStack(spacing: 2) {
+                                    ForEach(rowAssets, id: \.localIdentifier) { asset in
+                                        thumbnail(asset, size: cellWidth)
+                                            .frame(width: cellWidth, height: rowHeight, alignment: .center)
+                                            .background(Color(.secondarySystemBackground))
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    } else {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: safeColumns),
+                                  spacing: 2) {
+                            ForEach(assets, id: \.localIdentifier) { asset in
+                                thumbnail(asset, size: cellWidth)
+                            }
+                        }
                     }
                 }
                 .padding(.top, assets.count > max(columns, 1) * 4 ? 0 : 12)
@@ -186,7 +242,8 @@ struct CompactGridView: View {
                             menu: { actions?(asset) },
                             fitsAspect: fitsAspect,
                             onOpen: { onOpen?(asset) },
-                            zoomNamespace: zoomNamespace)
+                            zoomNamespace: zoomNamespace,
+                            isActive: thumbnailsActive)
             .id(asset.localIdentifier)
     }
 
@@ -195,20 +252,23 @@ struct CompactGridView: View {
         let id = asset.localIdentifier
         if selectedIDs.wrappedValue.contains(id) {
             selectedIDs.wrappedValue.remove(id)
+            selectedFavoriteIDs?.wrappedValue.remove(id)
         } else {
             selectedIDs.wrappedValue.insert(id)
+            if asset.isFavorite { selectedFavoriteIDs?.wrappedValue.insert(id) }
         }
     }
+
 }
 
 extension View {
     /// 長按照片跳出操作選單，內容由呼叫端決定。
-    @ViewBuilder
-    func photoActions<Menu: View>(@ViewBuilder _ menu: () -> Menu?) -> some View {
-        if let content = menu() {
-            self.contextMenu { content }
-        } else {
-            self
+    func photoActions<Menu: View>(isEnabled: Bool = true,
+                                  @ViewBuilder _ menu: @escaping () -> Menu?) -> some View {
+        self.contextMenu {
+            if isEnabled, let content = menu() {
+                content
+            }
         }
     }
 }
@@ -223,6 +283,7 @@ struct TimelineView: View {
     /// 多選模式。
     var isSelecting: Bool = false
     var selectedIDs: Binding<Set<String>>? = nil
+    var selectedFavoriteIDs: Binding<Set<String>>? = nil
     /// 目前篩選到的紀念日標籤，會顯示在每一天的日期標題下方。
     var anniversaryTag: PhotoTag? = nil
     /// 右側拖拉軸。
@@ -277,8 +338,28 @@ struct TimelineView: View {
         let id = asset.localIdentifier
         if selectedIDs.wrappedValue.contains(id) {
             selectedIDs.wrappedValue.remove(id)
+            selectedFavoriteIDs?.wrappedValue.remove(id)
         } else {
             selectedIDs.wrappedValue.insert(id)
+            if asset.isFavorite { selectedFavoriteIDs?.wrappedValue.insert(id) }
+        }
+    }
+
+    private func isSectionSelected(_ section: PhotoGrouping.DaySection) -> Bool {
+        guard let selectedIDs, !section.assets.isEmpty else { return false }
+        return section.assets.allSatisfy { selectedIDs.wrappedValue.contains($0.localIdentifier) }
+    }
+
+    private func toggleSection(_ section: PhotoGrouping.DaySection) {
+        guard let selectedIDs else { return }
+        let identifiers = Set(section.assets.map(\.localIdentifier))
+        if identifiers.isSubset(of: selectedIDs.wrappedValue) {
+            selectedIDs.wrappedValue.subtract(identifiers)
+            selectedFavoriteIDs?.wrappedValue.subtract(identifiers)
+        } else {
+            selectedIDs.wrappedValue.formUnion(identifiers)
+            let favorites = Set(section.assets.lazy.filter(\.isFavorite).map(\.localIdentifier))
+            selectedFavoriteIDs?.wrappedValue.formUnion(favorites)
         }
     }
 
@@ -288,6 +369,18 @@ struct TimelineView: View {
         let elapsed = anniversaryTag?.anniversaryText(on: section.date)
 
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if isSelecting {
+                Button {
+                    toggleSection(section)
+                } label: {
+                    Image(systemName: isSectionSelected(section) ? "checkmark.circle.fill" : "checkmark.circle")
+                        .font(.system(size: 20))
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isSectionSelected(section) ? Text("Deselect all photos from this day") : Text("Select all photos from this day"))
+            }
             if let elapsed {
                 Text(elapsed)
                     .font(TypeScale.photoSectionTitle)
@@ -321,6 +414,7 @@ struct BucketCard: View {
     let bucket: PhotoGrouping.Bucket
     var compact: Bool = false
     var titleColumnCount: Int? = nil
+    var cover: PhotoCoverPreference? = nil
     @ScaledMetric(relativeTo: .headline) private var baseYearTitleSize: CGFloat = 17
 
     private var titleOverCover: Bool { titleColumnCount != nil }
@@ -335,8 +429,9 @@ struct BucketCard: View {
     var body: some View {
         VStack(spacing: 6) {
             ZStack(alignment: .bottomTrailing) {
-                if let coverID = bucket.coverID {
-                    CoverImage(assetID: coverID, size: compact ? 90 : 140)
+                if let coverID = cover?.assetID ?? bucket.coverID {
+                    TagCoverImage(assetID: coverID, size: compact ? 240 : 500,
+                                  framing: cover?.framing ?? .standard)
                         .aspectRatio(coverAspectRatio, contentMode: .fill)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: compact ? 10 : 12))

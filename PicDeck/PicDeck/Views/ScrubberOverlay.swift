@@ -28,10 +28,19 @@ struct ScrubIndex {
         var years: [(Int, Double)] = []
         var seen = Set<Int>()
         let calendar = PhotoGrouping.calendar
+        var lastDate: Date?
+        var lastYear = 0
 
         for anchor in anchors {
             starts.append(running)
-            let year = calendar.component(.year, from: anchor.date)
+            let year: Int
+            if let lastDate, calendar.isDate(lastDate, equalTo: anchor.date, toGranularity: .year) {
+                year = lastYear
+            } else {
+                year = calendar.component(.year, from: anchor.date)
+                lastDate = anchor.date
+                lastYear = year
+            }
             if seen.insert(year).inserted { years.append((year, running)) }
             running += max(anchor.weight, 0.0001)
         }

@@ -200,14 +200,22 @@ extension EnvironmentValues {
 
 /// 功能列的一排按鈕。寬度夠就是「圖示＋文字」橫排；小螢幕或英文文字太長就改窄版，不會被切掉。
 struct ActionBarRow<Content: View>: View {
+    var isCompact = false
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 0) { content() }
-                .environment(\.actionBarCompact, false)
-            HStack(spacing: 0) { content() }
-                .environment(\.actionBarCompact, true)
+        Group {
+            if isCompact {
+                HStack(spacing: 0) { content() }
+                    .environment(\.actionBarCompact, true)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 0) { content() }
+                        .environment(\.actionBarCompact, false)
+                    HStack(spacing: 0) { content() }
+                        .environment(\.actionBarCompact, true)
+                }
+            }
         }
     }
 }
@@ -219,6 +227,7 @@ struct ActionBarButton: View {
     let id: String
     var isActive = false
     var isDestructive = false
+    var iconOnly = false
     /// 一般狀態的顏色。深色的單張檢視用白色。
     var tint: Color = .primary
     let action: () -> Void
@@ -229,7 +238,10 @@ struct ActionBarButton: View {
         let color = isDestructive ? Color.red : (isActive ? Color.accentColor : tint)
         Button(action: action) {
             Group {
-                if compact {
+                if iconOnly && compact {
+                    Image(systemName: icon).font(.system(size: 20))
+                        .frame(minWidth: 48, minHeight: 48)
+                } else if compact {
                     VStack(spacing: 3) {
                         Image(systemName: icon).font(.callout)
                         Text(key).font(.caption2).lineLimit(1).minimumScaleFactor(0.7)
@@ -250,6 +262,7 @@ struct ActionBarButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(key))
         .accessibilityIdentifier(id)
     }
 }

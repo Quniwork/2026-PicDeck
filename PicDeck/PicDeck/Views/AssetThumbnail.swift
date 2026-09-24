@@ -10,6 +10,8 @@ struct AssetThumbnail: View {
     var fitsAspect: Bool = false
     /// 喜愛的照片右上角顯示愛心。
     var showsFavorite: Bool = false
+    /// Prevent a retained but hidden grid from requesting images in the background.
+    var isActive: Bool = true
 
     @State private var image: UIImage?
 
@@ -59,7 +61,8 @@ struct AssetThumbnail: View {
             .accessibilityValue(asset.mediaType == .video ? durationText :
                                     (asset.isFavorite ? String(localized: "Favorite") : ""))
             .accessibilityIdentifier("thumb.\(asset.localIdentifier)")
-            .task(id: "\(asset.localIdentifier)-\(fitsAspect)-\(Int(size.rounded()))") {
+            .task(id: "\(asset.localIdentifier)-\(fitsAspect)-\(Int(size.rounded()))-\(isActive)") {
+                guard isActive else { return }
                 image = await ThumbnailLoader.shared.image(for: asset, size: size, fitsAspect: fitsAspect)
         }
     }
@@ -106,32 +109,96 @@ final class ThumbnailLoader {
             : size
         let target = CGSize(width: size * scale, height: aspectHeight * scale)
 
-        return await withCheckedContinuation { continuation in
-            let box = ThumbnailResumeBox()
-            manager.requestImage(for: asset,
-                                 targetSize: target,
-                                 contentMode: fitsAspect ? .aspectFit : .aspectFill,
-                                 options: options) { image, info in
-                // opportunistic 會先回低解析度再回高解析度，只接受最終那次。
-                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
-                if isDegraded { return }
-                guard box.tryResume() else { return }
-                continuation.resume(returning: image)
+        let request = ThumbnailRequest(manager: manager)
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                request.install(continuation)
+                let id = manager.requestImage(for: asset,
+                                              targetSize: target,
+                                              contentMode: fitsAspect ? .aspectFit : .aspectFill,
+                                              options: options) { image, info in
+                    let cancelled = (info?[PHImageCancelledKey] as? Bool) ?? false
+                    let error = info?[PHImageErrorKey] as? Error
+                    let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                    if cancelled || error != nil {
+                        request.finishUsingDegradedImage()
+                    } else if isDegraded {
+                        request.storeDegradedImage(image)
+                    } else {
+                        request.finish(returning: image)
+                    }
+                }
+                request.setRequestID(id)
             }
+        } onCancel: {
+            request.cancel()
         }
     }
 }
 
-private final class ThumbnailResumeBox: @unchecked Sendable {
+private final class ThumbnailRequest: @unchecked Sendable {
     private let lock = NSLock()
-    private var resumed = false
+    private let manager: PHCachingImageManager
+    private var requestID: PHImageRequestID?
+    private var continuation: CheckedContinuation<UIImage?, Never>?
+    private var degradedImage: UIImage?
+    private var completed = false
+    private var cancelled = false
 
-    func tryResume() -> Bool {
+    init(manager: PHCachingImageManager) { self.manager = manager }
+
+    func install(_ continuation: CheckedContinuation<UIImage?, Never>) {
         lock.lock()
-        defer { lock.unlock() }
-        if resumed { return false }
-        resumed = true
-        return true
+        let shouldResume = cancelled || completed
+        if !shouldResume { self.continuation = continuation }
+        lock.unlock()
+        if shouldResume { continuation.resume(returning: nil) }
+    }
+
+    func setRequestID(_ id: PHImageRequestID) {
+        lock.lock()
+        let shouldCancel = cancelled
+        if !shouldCancel && !completed { requestID = id }
+        lock.unlock()
+        if shouldCancel { manager.cancelImageRequest(id) }
+    }
+
+    func finish(returning image: UIImage?) {
+        lock.lock()
+        guard !completed else { lock.unlock(); return }
+        completed = true
+        let continuation = self.continuation
+        self.continuation = nil
+        lock.unlock()
+        continuation?.resume(returning: image)
+    }
+
+    func storeDegradedImage(_ image: UIImage?) {
+        guard let image else { return }
+        lock.lock()
+        if !completed { degradedImage = image }
+        lock.unlock()
+    }
+
+    func finishUsingDegradedImage() {
+        lock.lock()
+        guard !completed else { lock.unlock(); return }
+        completed = true
+        let image = degradedImage
+        let continuation = self.continuation
+        self.continuation = nil
+        lock.unlock()
+        continuation?.resume(returning: image)
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        let id = requestID
+        requestID = nil
+        lock.unlock()
+        if let id { manager.cancelImageRequest(id) }
+        finish(returning: nil)
     }
 }
 

@@ -27,6 +27,16 @@
         }
       }
     },
+    "%@, %@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，%2$@"
+          }
+        }
+      }
+    },
     "%@（%lld）" : {
       "localizations" : {
         "en" : {
@@ -214,16 +224,6 @@
         }
       }
     },
-    "%@, %@" : {
-      "localizations" : {
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@，%2$@"
-          }
-        }
-      }
-    },
     "%lld results" : {
       "localizations" : {
         "zh-Hant" : {
@@ -235,6 +235,7 @@
       }
     },
     "%lld selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -896,6 +897,7 @@
       }
     },
     "Capture Date" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1408,6 +1410,7 @@
       }
     },
     "Date Added" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1602,6 +1605,7 @@
       }
     },
     "Deselect All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1610,6 +1614,9 @@
           }
         }
       }
+    },
+    "Deselect all photos from this day" : {
+
     },
     "Developer" : {
       "localizations" : {
@@ -2273,6 +2280,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日記可以有自己的分類，跟照片標籤是兩回事。刪除分類不會連帶刪除日記，那些日記會變成沒有分類。"
+          }
+        }
+      }
+    },
+    "Grid Ratio" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格線比例"
           }
         }
       }
@@ -3133,36 +3150,6 @@
         }
       }
     },
-    "Photo dates: %@" : {
-      "localizations" : {
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "有照片的日期：%@"
-          }
-        }
-      }
-    },
-    "Selected" : {
-      "localizations" : {
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已選取"
-          }
-        }
-      }
-    },
-    "Not selected" : {
-      "localizations" : {
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未選取"
-          }
-        }
-      }
-    },
     "No photos on this day." : {
       "localizations" : {
         "zh-Hant" : {
@@ -3174,7 +3161,6 @@
       }
     },
     "No tags" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3232,6 +3218,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未連結"
+          }
+        }
+      }
+    },
+    "Not selected" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選取"
           }
         }
       }
@@ -3454,6 +3450,16 @@
         }
       }
     },
+    "Original Ratio" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始比例"
+          }
+        }
+      }
+    },
     "Other" : {
       "localizations" : {
         "zh-Hant" : {
@@ -3522,6 +3528,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "人物與身體"
+          }
+        }
+      }
+    },
+    "Photo dates: %@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有照片的日期：%@"
           }
         }
       }
@@ -4036,6 +4052,7 @@
       }
     },
     "Select All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4045,6 +4062,9 @@
         }
       }
     },
+    "Select all photos from this day" : {
+
+    },
     "Select photos to continue." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4052,6 +4072,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請先選取照片。"
+          }
+        }
+      }
+    },
+    "Selected" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取"
           }
         }
       }
@@ -4355,6 +4385,16 @@
         }
       }
     },
+    "Square (1:1)" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正方形（1:1）"
+          }
+        }
+      }
+    },
     "Start 30-day free trial" : {
       "localizations" : {
         "zh-Hant" : {
@@ -4519,6 +4559,7 @@
       }
     },
     "Switch tag" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4581,6 +4622,16 @@
         }
       }
     },
+    "Tag Filter" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤篩選"
+          }
+        }
+      }
+    },
     "Tag name" : {
       "localizations" : {
         "zh-Hant" : {
@@ -4607,16 +4658,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "標籤"
-          }
-        }
-      }
-    },
-    "Tag Filter" : {
-      "localizations" : {
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "標籤篩選"
           }
         }
       }

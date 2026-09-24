@@ -16,6 +16,8 @@ final class AppModel: ObservableObject {
     @Published var selectedTab = 0
     /// 照片分頁是否正在多選；用來隱藏 TabView 的照片檢視配件。
     @Published var isSelectingPhotos = false
+    /// Timeline scrolling compacts the photo scale picker when the tab view doesn't report inline placement.
+    @Published var isTimelineScalePickerCompact = false
     /// 別的分頁（例如首頁的標籤卡片）要求照片分頁切到某個篩選。照片分頁套用後會清掉。
     @Published var requestedSelection: PhotoSelection?
     /// 桌面小工具點進來時，照片分頁要切到哪個子分頁（例如時間軸）。
@@ -51,12 +53,15 @@ final class AppModel: ObservableObject {
     /// 顯示方式（每列幾張、是否依原比例）。全部、時間軸、日記各自獨立設定。
     @Published private(set) var gridColumnsByScale: [String: Int] = [:]
     @Published private(set) var gridFitsByScale: [String: Bool] = [:]
+    @Published private(set) var monthCovers: [String: PhotoCoverPreference] = [:]
+    @Published private(set) var yearCovers: [String: PhotoCoverPreference] = [:]
     static let gridColumnRange = 2...8
     static let yearGridColumnRange = 1...4
     static let defaultGridColumns = 4
 
     func gridColumns(for scale: GridContext) -> Int {
-        gridColumnsByScale[scale.rawValue] ?? (scale == .year ? 3 : scale == .all ? 5 : Self.defaultGridColumns)
+        if scale == .month { return gridColumnsByScale[scale.rawValue] ?? 2 }
+        return gridColumnsByScale[scale.rawValue] ?? (scale == .year ? 3 : scale == .all ? 5 : Self.defaultGridColumns)
     }
 
     func gridFitsAspect(for scale: GridContext) -> Bool {
@@ -64,7 +69,7 @@ final class AppModel: ObservableObject {
     }
 
     static func columnRange(for scale: GridContext) -> ClosedRange<Int> {
-        scale == .year ? yearGridColumnRange : gridColumnRange
+        scale == .year ? yearGridColumnRange : (scale == .month ? 2...3 : gridColumnRange)
     }
 
     /// 放大＝每列變少，縮小＝每列變多。
@@ -78,6 +83,29 @@ final class AppModel: ObservableObject {
     func setGridFitsAspect(_ value: Bool, for scale: GridContext) {
         gridFitsByScale[scale.rawValue] = value
         defaults.set(value, forKey: Key.gridFitsAspect + "." + scale.rawValue)
+    }
+
+    func monthCover(for year: Int, month: Int) -> PhotoCoverPreference? {
+        monthCovers["\(year)-\(month)"]
+    }
+
+    func setMonthCover(_ cover: PhotoCoverPreference?, year: Int, month: Int) {
+        let key = "\(year)-\(month)"
+        monthCovers[key] = cover
+        if let data = try? JSONEncoder().encode(monthCovers) {
+            defaults.set(data, forKey: Key.monthCovers)
+        }
+    }
+
+    func yearCover(for year: Int) -> PhotoCoverPreference? {
+        yearCovers[String(year)]
+    }
+
+    func setYearCover(_ cover: PhotoCoverPreference?, year: Int) {
+        yearCovers[String(year)] = cover
+        if let data = try? JSONEncoder().encode(yearCovers) {
+            defaults.set(data, forKey: Key.yearCovers)
+        }
     }
 
 
@@ -143,6 +171,8 @@ final class AppModel: ObservableObject {
         static let journalNewestFirst = "picdeck.journalNewestFirst"
         static let gridColumns = "picdeck.gridColumns"
         static let gridFitsAspect = "picdeck.gridFitsAspect"
+        static let monthCovers = "picdeck.monthCovers"
+        static let yearCovers = "picdeck.yearCovers"
 
         static let sortsByAdded = "picdeck.sortsByAdded"
         static let showsScreenshots = "picdeck.showsScreenshots"
@@ -207,12 +237,20 @@ final class AppModel: ObservableObject {
         if defaults.object(forKey: Key.journalNewestFirst) != nil {
             _journalNewestFirst = Published(initialValue: defaults.bool(forKey: Key.journalNewestFirst))
         }
-        for scale in [GridContext.year, .all, .timeline, .journal, .collection] {
+        for scale in [GridContext.year, .month, .all, .timeline, .journal, .collection] {
             let columns = defaults.integer(forKey: Key.gridColumns + "." + scale.rawValue)
             if Self.columnRange(for: scale).contains(columns) { gridColumnsByScale[scale.rawValue] = columns }
             if defaults.object(forKey: Key.gridFitsAspect + "." + scale.rawValue) != nil {
                 gridFitsByScale[scale.rawValue] = defaults.bool(forKey: Key.gridFitsAspect + "." + scale.rawValue)
             }
+        }
+        if let data = defaults.data(forKey: Key.monthCovers),
+           let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
+            _monthCovers = Published(initialValue: saved)
+        }
+        if let data = defaults.data(forKey: Key.yearCovers),
+           let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
+            _yearCovers = Published(initialValue: saved)
         }
         if defaults.object(forKey: Key.showsScreenshots) != nil {
             _showsScreenshots = Published(initialValue: defaults.bool(forKey: Key.showsScreenshots))

@@ -1,6 +1,11 @@
 import SwiftUI
 import Photos
 
+@MainActor
+final class PhotosSelectionAccessory: ObservableObject {
+    @Published var content: AnyView?
+}
+
 struct RootView: View {
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var model: AppModel
@@ -23,25 +28,38 @@ struct RootView: View {
 struct MainTabView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var model: AppModel
+    @StateObject private var selectionAccessory = PhotosSelectionAccessory()
 
     @ViewBuilder
     var body: some View {
         if #available(iOS 26.1, *) {
             tabs
+                .environmentObject(selectionAccessory)
                 .tabBarMinimizeBehavior(.onScrollDown)
-                .tabViewBottomAccessory(isEnabled: model.selectedTab == 2 && !model.isSelectingPhotos) {
-                    PhotosTabAccessory(appColorScheme: colorScheme)
+                .tabViewBottomAccessory(isEnabled: model.selectedTab == 2) {
+                    photoBottomAccessory
                 }
         } else if #available(iOS 26.0, *) {
             tabs
+                .environmentObject(selectionAccessory)
                 .tabBarMinimizeBehavior(.onScrollDown)
                 .tabViewBottomAccessory {
-                    if model.selectedTab == 2 && !model.isSelectingPhotos {
-                        PhotosTabAccessory(appColorScheme: colorScheme)
+                    if model.selectedTab == 2 {
+                        photoBottomAccessory
                     }
                 }
         } else {
-            tabs
+            tabs.environmentObject(selectionAccessory)
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var photoBottomAccessory: some View {
+        if model.isSelectingPhotos, let selectionContent = selectionAccessory.content {
+            selectionContent
+        } else {
+            PhotosTabAccessory(appColorScheme: colorScheme)
         }
     }
 

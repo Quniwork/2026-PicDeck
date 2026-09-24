@@ -1457,6 +1457,28 @@ final class PicDeckSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 10), "切回來之後照片分頁是空的")
     }
 
+    /// 實機大量照片時，快速來回切照片分頁、再進出背景，不能卡住主執行緒被 watchdog 終止。
+    func testRepeatedPhotosTabSwitch() throws {
+        let app = XCUIApplication()
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 2).waitForExistence(timeout: 30), "沒有分頁列")
+
+        for round in 0..<5 {
+            app.tabBars.buttons.element(boundBy: 2).tap()
+            XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 10), "第 \(round + 1) 次切到照片沒有出現")
+            app.tabBars.buttons.element(boundBy: 1).tap()
+            sleep(1)
+        }
+
+        app.tabBars.buttons.element(boundBy: 2).tap()
+        XCUIDevice.shared.press(.home)
+        sleep(3)
+        app.activate()
+        XCTAssertTrue(app.buttons["scale.all"].waitForExistence(timeout: 10), "從背景回來照片分頁不見了")
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
     /// 從首頁開始，第一次進每個分頁時內容有沒有畫出來。
     /// 曾經因為照片分頁掛了七個獨立的 .sheet，在「首頁之後才第一次建立」時整頁空白，這個測試就是防止再發生。
     func testFirstVisitOfEachTab() throws {

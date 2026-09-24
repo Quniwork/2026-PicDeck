@@ -14,11 +14,17 @@ final class PhotoLibraryService: ObservableObject {
     /// 畫面看到它變了，就重新取最新的照片狀態。
     @Published private(set) var libraryChangeCount = 0
 
+    /// 同一個 PhotoKit 查詢在同一次 App 執行期間重用結果，避免切回照片頁又掃描整個圖庫。
+    private var assetCache: [PhotoFilter: [PHAsset]] = [:]
+
     private let changeObserver = LibraryChangeObserver()
 
     init() {
         changeObserver.onChange = { [weak self] in
-            Task { @MainActor in self?.libraryChangeCount += 1 }
+            Task { @MainActor in
+                self?.assetCache.removeAll()
+                self?.libraryChangeCount += 1
+            }
         }
         PHPhotoLibrary.shared().register(changeObserver)
     }
@@ -37,6 +43,7 @@ final class PhotoLibraryService: ObservableObject {
     func attempt(_ failureText: String, _ operation: () async throws -> Void) async -> Bool {
         do {
             try await operation()
+            assetCache.removeAll()
             return true
         } catch {
             // 使用者自己按了取消（例如系統的刪除確認），不算失敗，也不用提示。
@@ -280,7 +287,9 @@ extension PhotoLibraryService {
 
     /// 依篩選條件取得照片。
     func assets(matching filter: PhotoFilter) async -> [PHAsset] {
-        await Task.detached(priority: .userInitiated) {
+        if let cached = assetCache[filter] { return cached }
+
+        let fetched = await Task.detached(priority: .userInitiated) {
             let options = PHFetchOptions()
             options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
 
@@ -309,6 +318,8 @@ extension PhotoLibraryService {
                     .filter { !inAlbums.contains($0.localIdentifier) }
             }
         }.value
+        assetCache[filter] = fetched
+        return fetched
     }
 
     /// 依「加入照片庫的時間」由新到舊排的名次。

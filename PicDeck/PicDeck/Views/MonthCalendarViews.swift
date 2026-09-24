@@ -8,14 +8,16 @@ struct MonthCalendarGridView: View {
     /// 指定要捲到哪一年，之後仍可上下滑動看其他年。
     var focusYearID: String? = nil
     var onScrollOffsetChange: ((CGFloat) -> Void)? = nil
+    var columnsPerRow: Int = 2
+    var coverForMonth: (PhotoGrouping.MonthCalendar) -> PhotoCoverPreference? = { _ in nil }
+    var onEditCover: (PhotoGrouping.MonthCalendar) -> Void = { _ in }
     let onSelect: (PhotoGrouping.MonthCalendar) -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var columns: [GridItem] {
-        // 月曆日期在輔助使用字級下需要足夠的欄寬；改成單欄卡片，日期不會擠在 7 個窄格裡。
-        let minimum: CGFloat = dynamicTypeSize.isAccessibilitySize ? 216 : (dynamicTypeSize >= .xxLarge ? 168 : 148)
-        return [GridItem(.adaptive(minimum: minimum), spacing: 10, alignment: .top)]
+        let count = dynamicTypeSize.isAccessibilitySize ? 1 : min(max(columnsPerRow, 2), 3)
+        return Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: count)
     }
 
     var body: some View {
@@ -33,9 +35,18 @@ struct MonthCalendarGridView: View {
                                 Button {
                                     onSelect(month)
                                 } label: {
-                                    MonthCalendarCard(month: month)
+                                    MonthCalendarCard(month: month,
+                                                      cover: coverForMonth(month),
+                                                      compactDateText: columnsPerRow == 3)
                                 }
                                 .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button {
+                                        onEditCover(month)
+                                    } label: {
+                                        Label("Set cover", systemImage: "photo.badge.plus")
+                                    }
+                                }
                                 .accessibilityLabel(Text(month.title))
                                 .accessibilityValue(Text("\(month.count) photos"))
                                 .accessibilityIdentifier("bucket.m\(month.year)-\(month.month)")
@@ -55,6 +66,8 @@ struct MonthCalendarGridView: View {
 /// 單一月份的卡片：月份名稱、封面、張數、小月曆。
 struct MonthCalendarCard: View {
     let month: PhotoGrouping.MonthCalendar
+    var cover: PhotoCoverPreference? = nil
+    var compactDateText = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -66,8 +79,9 @@ struct MonthCalendarCard: View {
                 Color.clear
                     .aspectRatio(4 / 3, contentMode: .fit)
                     .overlay {
-                        if let coverID = month.coverID {
-                            CoverImage(assetID: coverID, size: 160)
+                        if let coverID = cover?.assetID ?? month.coverID {
+                            TagCoverImage(assetID: coverID, size: 400,
+                                          framing: cover?.framing ?? .standard)
                         } else {
                             Rectangle().fill(Color(.secondarySystemBackground))
                         }
@@ -81,7 +95,7 @@ struct MonthCalendarCard: View {
                     .padding(4)
             }
 
-            MiniMonthCalendar(month: month)
+            MiniMonthCalendar(month: month, compactDateText: compactDateText)
         }
     }
 }
@@ -89,7 +103,10 @@ struct MonthCalendarCard: View {
 /// 小月曆：七欄，有照片的日期亮起，沒有的變淡，今天標紅。
 struct MiniMonthCalendar: View {
     let month: PhotoGrouping.MonthCalendar
+    var compactDateText = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .caption2) private var standardDaySize: CGFloat = 11
+    @ScaledMetric(relativeTo: .caption2) private var compactDaySize: CGFloat = 10
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
     private var calendar: Calendar { PhotoGrouping.calendar }
@@ -107,12 +124,15 @@ struct MiniMonthCalendar: View {
                     ForEach(cells, id: \.id) { entry in
                         if let day = entry.day {
                             Text("\(day)")
-                                .font(.system(.caption2, design: .rounded, weight: weight(for: day)))
+                                .font(.system(size: compactDateText ? compactDaySize : standardDaySize,
+                                              weight: weight(for: day),
+                                              design: .rounded))
                                 .foregroundStyle(color(for: day))
                                 .frame(maxWidth: .infinity)
                         } else {
                             Text(" ")
-                                .font(.system(.caption2, design: .rounded))
+                                .font(.system(size: compactDateText ? compactDaySize : standardDaySize,
+                                              design: .rounded))
                                 .frame(maxWidth: .infinity)
                         }
                     }

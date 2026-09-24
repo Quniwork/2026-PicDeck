@@ -83,6 +83,11 @@ enum PhotoScale: String, CaseIterable, Identifiable, Hashable {
     var isFree: Bool { true }
 }
 
+struct PhotoCoverPreference: Codable, Hashable {
+    var assetID: String?
+    var framing: CoverFraming = .standard
+}
+
 /// 整理分頁的待整理集合。
 enum OrganizeBucket: Hashable, Identifiable {
     case allUnorganized
@@ -177,11 +182,12 @@ enum DateTitle {
 }
 
 enum GridContext: String {
-    case year, all, timeline, journal, collection
+    case year, month, all, timeline, journal, collection
 
     init?(_ scale: PhotoScale) {
         switch scale {
         case .year: self = .year
+        case .month: self = .month
         case .all: self = .all
         case .timeline: self = .timeline
         default: return nil
