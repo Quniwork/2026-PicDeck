@@ -159,6 +159,7 @@ struct LeadingTitleToolbar: ToolbarContent {
     var reservesSubtitleAlignment = false
     var titleColor: Color? = nil
     var subtitleColor: Color? = nil
+    var hasTextShadow: Bool = false
 
     private var label: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -167,12 +168,14 @@ struct LeadingTitleToolbar: ToolbarContent {
                 .foregroundStyle(titleColor ?? Color.primary)
                 .lineLimit(1)
                 .fixedSize()
+                .shadow(color: hasTextShadow ? .black.opacity(0.4) : .clear, radius: 2, y: 1)
             if let subtitle {
                 Text(subtitle)
                     .font(TypeScale.subtitle)
                     .foregroundStyle(subtitleColor ?? Color.secondary)
                     .lineLimit(1)
                     .fixedSize()
+                    .shadow(color: hasTextShadow ? .black.opacity(0.4) : .clear, radius: 2, y: 1)
             } else if reservesSubtitleAlignment {
                 // 照片的其他層級在頂端隱藏副標，仍保留與「全部」相同的高度。
                 Text(" ")

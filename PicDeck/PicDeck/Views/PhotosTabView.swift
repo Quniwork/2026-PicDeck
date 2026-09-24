@@ -24,12 +24,40 @@ private struct GridAssetRecord: @unchecked Sendable {
     let addedRank: Int?
 }
 
+private struct PhotosHeaderScrimOverlay: View {
+    @ObservedObject var dateState: PhotoVisibleDateState
+    let isDarkMode: Bool
+
+    var body: some View {
+        if isDarkMode || dateState.hasScrolled {
+            LinearGradient(
+                stops: [
+                    .init(color: Color.black.opacity(0.72), location: 0.0),
+                    .init(color: Color.black.opacity(0.48), location: 0.45),
+                    .init(color: Color.black.opacity(0.18), location: 0.75),
+                    .init(color: Color.clear, location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 140)
+            .ignoresSafeArea(edges: .top)
+            .allowsHitTesting(false)
+            .transition(.opacity)
+        }
+    }
+}
+
 private struct PhotosTitleToolbar: ToolbarContent {
     @ObservedObject var dateState: PhotoVisibleDateState
     let title: String
     let itemCount: String
     let isAllScale: Bool
     let colorScheme: ColorScheme
+
+    private var isDarkHeader: Bool {
+        colorScheme == .dark || dateState.hasScrolled
+    }
 
     private var subtitle: String? {
         if isAllScale, let range = dateState.range {
@@ -44,8 +72,9 @@ private struct PhotosTitleToolbar: ToolbarContent {
                             font: .largeTitle,
                             subtitle: subtitle,
                             reservesSubtitleAlignment: true,
-                            titleColor: colorScheme == .dark ? .white : .black,
-                            subtitleColor: colorScheme == .dark ? .white.opacity(0.62) : .black.opacity(0.55))
+                            titleColor: isDarkHeader ? .white : .black,
+                            subtitleColor: isDarkHeader ? .white.opacity(0.85) : .black.opacity(0.55),
+                            hasTextShadow: isDarkHeader)
     }
 }
 
@@ -109,6 +138,16 @@ struct PhotosTabView: View {
     @State private var anchorDayID: String?
 
     private var scale: PhotoScale { model.lastPhotoScale }
+
+    /// 滑動後上方照片穿透時，Header 啟用深色漸層遮罩。
+    private var isHeaderScrimActive: Bool {
+        visibleDateState.hasScrolled
+    }
+
+    /// 遮罩啟用或深色模式下，導覽列文字與狀態列皆轉為白色。
+    private var usesDarkHeader: Bool {
+        appColorScheme == .dark || isHeaderScrimActive
+    }
 
     /// 檢視要翻的照片清單與起點。
     struct DetailTarget: Identifiable {
@@ -204,6 +243,10 @@ struct PhotosTabView: View {
                 .pinchToZoomGrid { zoomIn in
                     if let context = GridContext(scale) { withMotion { model.zoom(context, in: zoomIn) } }
                 }
+                .overlay(alignment: .top) {
+                    PhotosHeaderScrimOverlay(dateState: visibleDateState, isDarkMode: appColorScheme == .dark)
+                        .animation(.easeInOut(duration: 0.22), value: visibleDateState.hasScrolled)
+                }
             // 選取工具固定在底部；iOS 26 的年月日切換器由 TabView 底部配件顯示。
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Group {
@@ -220,7 +263,8 @@ struct PhotosTabView: View {
             .animation(.easeInOut(duration: 0.2), value: isSelecting)
             .navigationTitle(displayTitle)
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
-            .toolbarColorScheme(appColorScheme, for: .navigationBar)
+            .toolbarColorScheme(usesDarkHeader ? .dark : appColorScheme, for: .navigationBar)
+            .toolbarBackground(usesDarkHeader ? .hidden : .automatic, for: .navigationBar)
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
                     PhotosTitleToolbar(dateState: visibleDateState,
@@ -248,8 +292,8 @@ struct PhotosTabView: View {
                 if newScale == .all { allGridScrollRequestID &+= 1 }
             }
             .onChange(of: model.requestedSelection) { _ in applyRequestedSelection() }
-            .onChange(of: model.gridColumns(for: .all)) { _, _ in rebuildAllGrid() }
-            .onChange(of: model.gridFitsAspect(for: .all)) { _, _ in rebuildAllGrid() }
+            .onChange(of: model.gridColumns(for: .all)) { _, _ in _ = rebuildAllGrid(debounce: true) }
+            .onChange(of: model.gridFitsAspect(for: .all)) { _, _ in _ = rebuildAllGrid(debounce: true) }
             // 勾選或取消勾選時輕輕震一下。
             .onChange(of: selectedIDs) { _, _ in syncSelectionAccessory() }
             .onChange(of: selectedFavoriteIDs) { _, _ in syncSelectionAccessory() }
@@ -345,6 +389,8 @@ struct PhotosTabView: View {
                 Image(systemName: "checkmark.circle")
             }
         }
+        .foregroundStyle(usesDarkHeader ? .white : .primary)
+        .shadow(color: usesDarkHeader ? .black.opacity(0.35) : .clear, radius: 2, y: 1)
         .accessibilityLabel(Text(isSelecting ? "Done selecting" : "Select"))
         .accessibilityIdentifier("photos.select")
     }
@@ -384,7 +430,8 @@ struct PhotosTabView: View {
         return ScrubIndex(anchors: anchors)
     }
 
-    private func rebuildAllGrid() {
+    @discardableResult
+    private func rebuildAllGrid(debounce: Bool = false) -> Task<Void, Never> {
         rebuildGridTask?.cancel()
         let sourceAssets = assets
         let ranks = addedRanks
@@ -392,10 +439,12 @@ struct PhotosTabView: View {
         let hasAddedRanks = !ranks.isEmpty
         let columns = max(model.gridColumns(for: .all), 1)
         let fitsAspect = model.gridFitsAspect(for: .all)
-        rebuildGridTask = Task {
-            // A pinch can update the grid settings many times per second. Wait for the
-            // gesture to settle so canceled requests don't repeatedly scan the library.
-            try? await Task.sleep(for: .milliseconds(120))
+        let task = Task {
+            if debounce {
+                // A pinch can update the grid settings many times per second. Wait for the
+                // gesture to settle so canceled requests don't repeatedly scan the library.
+                try? await Task.sleep(for: .milliseconds(120))
+            }
             guard !Task.isCancelled else { return }
             let worker = Task.detached(priority: .userInitiated) { () -> ([PHAsset], ScrubIndex)? in
                 var records: [GridAssetRecord] = []
@@ -420,6 +469,8 @@ struct PhotosTabView: View {
             guard !Task.isCancelled, let result else { return }
             allGrid = AllGridSnapshot(assets: result.0, scrub: result.1)
         }
+        rebuildGridTask = task
+        return task
     }
 
     /// 時間軸：一天一個落點。權重是這一天佔的列數加上標題。
@@ -645,7 +696,7 @@ struct PhotosTabView: View {
 
     @ViewBuilder
     private var content: some View {
-        if isLoading {
+        if isLoading || (scale == .all && allGrid.assets.isEmpty && !assets.isEmpty) {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if assets.isEmpty {
             AppEmptyState(icon: "photo.on.rectangle",
@@ -729,17 +780,23 @@ struct PhotosTabView: View {
                                 selectedFavoriteIDs: $selectedFavoriteIDs,
                                 scrub: allGrid.scrub,
                                 onVisibleDateRangeChange: { offset, start, end in
+                                    let hasScrolled = offset > 12
                                     let nextRange: ClosedRange<Date>?
                                     if offset > 24, let start, let end {
                                         nextRange = min(start, end)...max(start, end)
                                     } else {
                                         nextRange = nil
                                     }
-                                    if let old = visibleDateState.range, let nextRange,
-                                       PhotoGrouping.calendar.isDate(old.lowerBound, inSameDayAs: nextRange.lowerBound),
-                                       PhotoGrouping.calendar.isDate(old.upperBound, inSameDayAs: nextRange.upperBound) { return }
-                                    if visibleDateState.range == nil, nextRange == nil { return }
-                                    visibleDateState.range = nextRange
+                                    Task { @MainActor in
+                                        if visibleDateState.hasScrolled != hasScrolled {
+                                            visibleDateState.hasScrolled = hasScrolled
+                                        }
+                                        if let old = visibleDateState.range, let nextRange,
+                                           PhotoGrouping.calendar.isDate(old.lowerBound, inSameDayAs: nextRange.lowerBound),
+                                           PhotoGrouping.calendar.isDate(old.upperBound, inSameDayAs: nextRange.upperBound) { return }
+                                        if visibleDateState.range == nil, nextRange == nil { return }
+                                        visibleDateState.range = nextRange
+                                    }
                                 },
                                 scrollRequestID: allGridScrollRequestID,
                                 zoomNamespace: photoZoom,
@@ -834,6 +891,8 @@ struct PhotosTabView: View {
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
                 .filterIndicator(isActive: hasActiveFilter) { resetFilters() }
+                .foregroundStyle(usesDarkHeader ? .white : .primary)
+                .shadow(color: usesDarkHeader ? .black.opacity(0.35) : .clear, radius: 2, y: 1)
         }
         .accessibilityLabel(Text("Filter"))
         .accessibilityIdentifier("photos.filter")
@@ -842,7 +901,7 @@ struct PhotosTabView: View {
             visibleDateState.range = nil
             Task {
                 if newValue, addedRanks.isEmpty { addedRanks = await library.addedRanks() }
-                rebuildAllGrid()
+                _ = await rebuildAllGrid(debounce: false).value
                 preparedScales.remove(.timeline)
                 await rebuildCurrentScale()
             }
@@ -932,7 +991,7 @@ struct PhotosTabView: View {
     private func refreshAssets() async {
         replaceAssets(with: await loadAssets())
         await loadAddedRanksIfNeeded()
-        rebuildAllGrid()
+        _ = await rebuildAllGrid(debounce: false).value
         await rebuildCurrentScale()
         scheduleWarmScales()
     }
@@ -960,7 +1019,7 @@ struct PhotosTabView: View {
         anchorDayID = nil
         replaceAssets(with: await loadAssets())
         await loadAddedRanksIfNeeded()
-        rebuildAllGrid()
+        _ = await rebuildAllGrid(debounce: false).value
         await rebuildCurrentScale()
         scheduleWarmScales()
     }

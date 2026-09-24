@@ -116,12 +116,23 @@ struct DayCalendarCell: View {
     /// 當天日記的心情表情，沒有日記就是 nil。
     var mood: String? = nil
     var isToday: Bool = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var emptyCellFill: Color {
+        colorScheme == .dark
+            ? Color(.tertiarySystemBackground)
+            : Color(uiColor: .systemGray5).opacity(0.65)
+    }
 
     var body: some View {
         VStack(spacing: 4) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.tertiarySystemBackground))
+                    .fill(emptyCellFill)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(colorScheme == .dark ? Color.clear : Color.primary.opacity(0.05), lineWidth: 0.5)
+                    )
                     .aspectRatio(1, contentMode: .fit)
 
                 if let coverID = cell?.coverID {

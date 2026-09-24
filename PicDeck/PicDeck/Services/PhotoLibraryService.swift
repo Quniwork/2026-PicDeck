@@ -265,6 +265,28 @@ final class PhotoLibraryService: ObservableObject {
     func asset(withID id: String) -> PHAsset? {
         PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
     }
+
+    /// 取得單張照片所屬的使用者相簿名稱清單。
+    func albumTitles(for asset: PHAsset) -> [String] {
+        let collections = PHAssetCollection.fetchAssetCollectionsContaining(asset, with: .album, options: nil)
+        var titles: [String] = []
+        collections.enumerateObjects { collection, _, _ in
+            if let title = collection.localizedTitle, !title.isEmpty {
+                titles.append(title)
+            }
+        }
+        return titles
+    }
+
+    /// 取得單張照片所屬的使用者相簿 ID 集合。
+    func albumIDs(for asset: PHAsset) -> Set<String> {
+        let collections = PHAssetCollection.fetchAssetCollectionsContaining(asset, with: .album, options: nil)
+        var ids = Set<String>()
+        collections.enumerateObjects { collection, _, _ in
+            ids.insert(collection.localIdentifier)
+        }
+        return ids
+    }
 }
 
 /// 確保 continuation 只被 resume 一次。

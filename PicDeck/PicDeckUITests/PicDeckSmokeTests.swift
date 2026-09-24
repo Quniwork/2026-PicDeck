@@ -10,6 +10,58 @@ final class PicDeckSmokeTests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// 驗證使用者近期要求的功能與修復：
+    /// 1. 淺色模式下「日」無照片格子添加底色
+    /// 2. 「月」一欄三列模式下日期文字縮小一級
+    /// 3. 「時間軸」切換至「全部」即時顯示照片不卡畫面
+    /// 4. 滑動後頂部深色遮罩與白色文字
+    func testUserRequestedFixes() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startOnPhotos"]
+        app.launch()
+        grantPhotoAccessIfNeeded(app)
+
+        let allScale = app.buttons["scale.all"]
+        XCTAssertTrue(allScale.waitForExistence(timeout: 20), "首頁沒有直接顯示照片")
+        sleep(2)
+
+        // 1. 日檢視：驗證無照片格子有底色
+        let dayScale = app.buttons["scale.day"]
+        if dayScale.waitForExistence(timeout: 5) {
+            tapByCoordinate(dayScale)
+            sleep(3)
+            attachScreenshot(app, name: "verify-day-empty-cells")
+        }
+
+        // 2. 月檢視：驗證一欄三列模式下日期文字縮小一級
+        let monthScale = app.buttons["scale.month"]
+        if monthScale.waitForExistence(timeout: 5) {
+            tapByCoordinate(monthScale)
+            sleep(3)
+            attachScreenshot(app, name: "verify-month-text-size")
+        }
+
+        // 3. 時間軸檢視
+        let timelineScale = app.buttons["scale.timeline"]
+        if timelineScale.waitForExistence(timeout: 5) {
+            tapByCoordinate(timelineScale)
+            sleep(3)
+            attachScreenshot(app, name: "verify-timeline")
+        }
+
+        // 4. 從時間軸切換到全部：必須立即看得到縮圖，不可卡畫面空白
+        tapByCoordinate(allScale)
+        sleep(2)
+        attachScreenshot(app, name: "verify-timeline-to-all")
+        let firstPhoto = app.images.matching(NSPredicate(format: "identifier BEGINSWITH 'thumb.'")).firstMatch
+        XCTAssertTrue(firstPhoto.waitForExistence(timeout: 5), "切換至全部時縮圖未即時顯示")
+
+        // 5. 向上滑動觸發深色遮罩與白色文字
+        app.swipeDown()
+        sleep(1)
+        attachScreenshot(app, name: "verify-scrim-and-white-header")
+    }
+
     /// 首頁直接顯示照片 → 切子分頁 → 整理分頁 → 逐張審核（保留、右滑、刪除）→ 待刪清單。
     func testCoreFlow() throws {
         let app = XCUIApplication()

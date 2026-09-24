@@ -106,7 +106,7 @@ struct MiniMonthCalendar: View {
     var compactDateText = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .caption2) private var standardDaySize: CGFloat = 11
-    @ScaledMetric(relativeTo: .caption2) private var compactDaySize: CGFloat = 10
+    @ScaledMetric(relativeTo: .caption2) private var compactDaySize: CGFloat = 8.5
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
     private var calendar: Calendar { PhotoGrouping.calendar }

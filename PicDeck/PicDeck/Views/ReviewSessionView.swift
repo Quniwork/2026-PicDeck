@@ -8,9 +8,13 @@ import Photos
 struct ReviewSessionView: View {
     /// 目前看的來源。可以從頁首的選單切到其他未整理集合。
     @State private var bucket: OrganizeBucket
+    @State private var initialMonthBucket: OrganizeBucket?
 
     init(bucket: OrganizeBucket) {
         _bucket = State(initialValue: bucket)
+        if case .month = bucket {
+            _initialMonthBucket = State(initialValue: bucket)
+        }
     }
 
     /// 未整理的全部照片與截圖的識別碼，切換來源時不用重抓。
@@ -40,6 +44,14 @@ struct ReviewSessionView: View {
     @State private var showMoreAlbums = false
     @State private var isZoomed = false
     @State private var showTagPicker = false
+    /// 目前這張照片所屬的相簿名稱與 ID 清單。
+    @State private var currentAlbums: [String] = []
+    @State private var currentAlbumIDs: Set<String> = []
+
+    private var currentTags: [PhotoTag] {
+        guard let currentAsset else { return [] }
+        return tagStore.tags(for: currentAsset)
+    }
 
     private enum QuickMode { case tags, albums }
 
@@ -70,13 +82,21 @@ struct ReviewSessionView: View {
         .failureToast()
         .toolbar(.hidden, for: .tabBar)
         .task { await load() }
+        .task(id: currentAsset?.localIdentifier) {
+            await updateCurrentAssetAlbums()
+        }
         .sheet(isPresented: $showTagPicker) {
             if let asset = currentAsset {
                 TagPickerView(assets: [asset])
             }
         }
         .sheet(isPresented: $showTrash) { PendingTrashView() }
-        .sheet(isPresented: $showMoreAlbums, onDismiss: { Task { albums = await library.userAlbums() } }) {
+        .sheet(isPresented: $showMoreAlbums, onDismiss: {
+            Task {
+                albums = await library.userAlbums()
+                await updateCurrentAssetAlbums()
+            }
+        }) {
             if let asset = currentAsset {
                 AlbumPickerView(assets: [asset])
             }
@@ -207,18 +227,63 @@ struct ReviewSessionView: View {
                 SessionPhotoCard(asset: asset, isZoomed: $isZoomed)
                     .offset(dragOffset)
                     .rotationEffect(.degrees(Double(dragOffset.width / 30)))
-                    .overlay(alignment: .topTrailing) {
-                        if isFavorite(asset) {
-                            // 玻璃圓形加粉紅愛心，浮在照片右上角。
-                            Image(systemName: "heart.fill")
-                                .font(.title2)
-                                .foregroundStyle(.pink)
-                                .frame(width: 52, height: 52)
-                                .floatingGlass(in: Circle())
-                                .padding(12)
-                                .transition(.scale.combined(with: .opacity))
-                                .accessibilityIdentifier("session.favorite.badge")
+                    .overlay(alignment: .top) {
+                        HStack(alignment: .top, spacing: 8) {
+                            if !currentTags.isEmpty || !currentAlbums.isEmpty {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(currentTags) { tag in
+                                            HStack(spacing: 4) {
+                                                if !tag.symbol.isEmpty {
+                                                    IconLabel(raw: tag.symbol, size: 13)
+                                                } else {
+                                                    Image(systemName: "tag.fill")
+                                                        .font(.system(size: 11))
+                                                }
+                                                Text(tag.name)
+                                                    .font(.caption2.weight(.medium))
+                                                    .lineLimit(1)
+                                            }
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .foregroundStyle(.primary)
+                                            .floatingGlass(in: Capsule())
+                                        }
+                                        ForEach(currentAlbums, id: \.self) { albumTitle in
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "rectangle.stack.fill")
+                                                    .font(.system(size: 11))
+                                                    .foregroundStyle(Color.accentColor)
+                                                Text(albumTitle)
+                                                    .font(.caption2.weight(.medium))
+                                                    .lineLimit(1)
+                                            }
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .foregroundStyle(.primary)
+                                            .floatingGlass(in: Capsule())
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(minLength: 0)
+
+                            if isFavorite(asset) {
+                                // 玻璃圓形加粉紅愛心，浮在照片右上角。
+                                Image(systemName: "heart.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.pink)
+                                    .frame(width: 44, height: 44)
+                                    .floatingGlass(in: Circle())
+                                    .transition(.scale.combined(with: .opacity))
+                                    .accessibilityIdentifier("session.favorite.badge")
+                            }
                         }
+                        .padding(12)
+                        .allowsHitTesting(false)
+                        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: currentTags)
+                        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: currentAlbums)
                     }
                     .overlay(alignment: .center) { gestureHint }
                     .highPriorityGesture(
@@ -263,11 +328,11 @@ struct ReviewSessionView: View {
 
         // 整理畫面不寫日記。順序：標籤、相簿、喜愛（移出喜愛）、保留、刪除。
         return ActionBarRow {
-            barButton("Tags", icon: "tag", id: "session.tags", isActive: quickMode == .tags) {
+            barButton("Tags", icon: currentTags.isEmpty ? "tag" : "tag.fill", id: "session.tags", isActive: quickMode == .tags) {
                 quickMode = (quickMode == .tags) ? nil : .tags
             }
             Spacer(minLength: 4)
-            barButton("Album", icon: "rectangle.stack.badge.plus", id: "session.albums",
+            barButton("Album", icon: currentAlbums.isEmpty ? "rectangle.stack.badge.plus" : "rectangle.stack.fill", id: "session.albums",
                       isActive: quickMode == .albums) {
                 quickMode = (quickMode == .albums) ? nil : .albums
             }
@@ -312,7 +377,8 @@ struct ReviewSessionView: View {
                        moreTitle: String(localized: "More tags"),
                        id: "session.tagrow",
                        items: tagStore.tagsByRecentUse.prefix(3).map { tag in
-                           QuickItem(id: tag.id.uuidString, title: tag.name, iconRaw: tag.symbol, systemImage: nil) {
+                           let isSelected = currentAsset.map { tagStore.tagIDs(for: $0).contains(tag.id) } ?? false
+                           return QuickItem(id: tag.id.uuidString, title: tag.name, iconRaw: tag.symbol, systemImage: nil, isSelected: isSelected) {
                                fileCurrent(intoTag: tag)
                            }
                        },
@@ -322,7 +388,8 @@ struct ReviewSessionView: View {
                        moreTitle: String(localized: "More albums"),
                        id: "session.albumrow",
                        items: albums.prefix(3).map { album in
-                           QuickItem(id: album.id, title: album.title, iconRaw: nil, systemImage: "rectangle.stack") {
+                           let isSelected = currentAlbumIDs.contains(album.id)
+                           return QuickItem(id: album.id, title: album.title, iconRaw: nil, systemImage: "rectangle.stack", isSelected: isSelected) {
                                fileCurrent(into: album)
                            }
                        },
@@ -337,6 +404,7 @@ struct ReviewSessionView: View {
         let title: String
         let iconRaw: String?
         let systemImage: String?
+        var isSelected: Bool = false
         let action: () -> Void
     }
 
@@ -357,6 +425,7 @@ struct ReviewSessionView: View {
                         quickButton(title: items[slot].title,
                                     iconRaw: items[slot].iconRaw,
                                     systemImage: items[slot].systemImage,
+                                    isSelected: items[slot].isSelected,
                                     action: items[slot].action)
                     } else {
                         Color.clear.frame(maxWidth: .infinity, minHeight: 1)
@@ -378,19 +447,31 @@ struct ReviewSessionView: View {
     private func quickButton(title: String,
                              iconRaw: String?,
                              systemImage: String?,
+                             isSelected: Bool = false,
                              action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 4) {
-                Group {
-                    if let iconRaw {
-                        IconLabel(raw: iconRaw, size: 22)
-                    } else if let systemImage {
-                        Image(systemName: systemImage).font(.title3)
+                ZStack(alignment: .topTrailing) {
+                    Group {
+                        if let iconRaw {
+                            IconLabel(raw: iconRaw, size: 22)
+                        } else if let systemImage {
+                            Image(systemName: systemImage).font(.title3)
+                        }
+                    }
+                    .frame(height: 30)
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.accentColor)
+                            .offset(x: 8, y: -2)
                     }
                 }
-                .frame(height: 30)
                 Text(title)
-                    .font(.caption2)
+                    .font(.caption2.weight(isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -553,13 +634,30 @@ struct ReviewSessionView: View {
         await organized.refresh(allAssets: all)
         basePool = all.filter { !organized.isOrganized($0) }
         screenshotIDs = Set(await library.assets(matching: .screenshots).map(\.localIdentifier))
-        sourceCounts = [
+        var counts: [String: Int] = [
             OrganizeBucket.allUnorganized.id: basePool.count,
             OrganizeBucket.unorganizedPhotos.id: basePool.filter { $0.mediaType == .image }.count,
             OrganizeBucket.unorganizedVideos.id: basePool.filter { $0.mediaType == .video }.count,
             OrganizeBucket.unorganizedScreenshots.id: basePool.filter { screenshotIDs.contains($0.localIdentifier) }.count,
         ]
+        let calendar = Calendar.current
+        if case .month(let year, let month) = bucket {
+            counts[bucket.id] = basePool.filter { asset in
+                guard let date = asset.creationDate else { return false }
+                let parts = calendar.dateComponents([.year, .month], from: date)
+                return parts.year == year && parts.month == month
+            }.count
+        }
+        if let initial = initialMonthBucket, case .month(let year, let month) = initial {
+            counts[initial.id] = basePool.filter { asset in
+                guard let date = asset.creationDate else { return false }
+                let parts = calendar.dateComponents([.year, .month], from: date)
+                return parts.year == year && parts.month == month
+            }.count
+        }
+        sourceCounts = counts
         applyBucket()
+        await updateCurrentAssetAlbums()
     }
 
     /// 依目前的來源挑出要整理的照片，從第一張開始。
@@ -583,6 +681,7 @@ struct ReviewSessionView: View {
             }
         }
         assets = pool
+        sourceCounts[bucket.id] = pool.count
         index = 0
         history.removeAll()
     }
@@ -591,7 +690,8 @@ struct ReviewSessionView: View {
     private var sourceBuckets: [OrganizeBucket] {
         let all: [OrganizeBucket] = [.allUnorganized, .unorganizedPhotos, .unorganizedVideos, .unorganizedScreenshots]
         var result = all.filter { (sourceCounts[$0.id] ?? 0) > 0 || $0 == bucket }
-        if case .month = bucket { result.append(bucket) }
+        if case .month = bucket, !result.contains(bucket) { result.append(bucket) }
+        if let initial = initialMonthBucket, !result.contains(initial) { result.append(initial) }
         return result
     }
 
@@ -611,7 +711,20 @@ struct ReviewSessionView: View {
         withMotion {
             bucket = newBucket
             applyBucket()
+            Task { await updateCurrentAssetAlbums() }
         }
+    }
+
+    private func updateCurrentAssetAlbums() async {
+        guard let asset = currentAsset else {
+            currentAlbums = []
+            currentAlbumIDs = []
+            return
+        }
+        let titles = library.albumTitles(for: asset)
+        let ids = library.albumIDs(for: asset)
+        currentAlbums = titles
+        currentAlbumIDs = ids
     }
 }
 

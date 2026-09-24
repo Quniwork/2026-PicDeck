@@ -53,12 +53,17 @@ struct AnchoredScrollView<Content: View>: View {
 
             Group {
                 if #available(iOS 18.0, *) {
-                    scrollView.onScrollGeometryChange(for: ScrollVisibleMetrics.self) { geometry in
-                        ScrollVisibleMetrics(offset: geometry.contentOffset.y,
-                                             viewportHeight: geometry.containerSize.height)
-                    } action: { _, metrics in
-                        onScrollOffsetChange?(metrics.offset, metrics.viewportHeight)
-                    }
+                    scrollView
+                        .defaultScrollAnchor(scrollToAnchor == .bottom ? .bottom : nil)
+                        .onScrollGeometryChange(for: ScrollVisibleMetrics.self) { geometry in
+                            ScrollVisibleMetrics(offset: geometry.contentOffset.y,
+                                                 viewportHeight: geometry.containerSize.height)
+                        } action: { _, metrics in
+                            onScrollOffsetChange?(metrics.offset, metrics.viewportHeight)
+                        }
+                } else if #available(iOS 17.0, *) {
+                    scrollView
+                        .defaultScrollAnchor(scrollToAnchor == .bottom ? .bottom : nil)
                 } else {
                     scrollView
                 }
@@ -73,6 +78,13 @@ struct AnchoredScrollView<Content: View>: View {
             }
             .task(id: "\(anchorID ?? "")-\(isReady)-\(scrollRequestID)") {
                 guard let anchorID, isReady else {
+                    isPositioned = true
+                    return
+                }
+                if #available(iOS 17.0, *), scrollToAnchor == .bottom {
+                    // iOS 17+ 原生 defaultScrollAnchor(.bottom) 已負責精確錨定底部，
+                    // 避免手動 scrollTo 破壞 LazyVGrid 的初始排版導致畫面空白卡住。
+                    positionedKey = "\(anchorID)-\(scrollToAnchor)-\(scrollRequestID)"
                     isPositioned = true
                     return
                 }
@@ -163,7 +175,7 @@ struct CompactGridView: View {
         GeometryReader { proxy in
             let safeColumns = max(columns, 1)
             let cellWidth = max(1, (proxy.size.width - CGFloat(safeColumns - 1) * 2) / CGFloat(safeColumns))
-            AnchoredScrollView(anchorID: assets.last?.localIdentifier, isReady: !assets.isEmpty, scrub: scrub,
+            AnchoredScrollView(anchorID: assets.isEmpty ? nil : "compact-grid-bottom-anchor", isReady: !assets.isEmpty, scrub: scrub,
                                scrubTopInset: 160,
                                scrollRequestID: scrollRequestID,
                                onScrollOffsetChange: { offset, viewportHeight in
@@ -177,38 +189,44 @@ struct CompactGridView: View {
                 let lastDate = assets.indices.contains(lastIndex) ? assets[lastIndex].creationDate : nil
                 onVisibleDateRangeChange?(offset, firstDate, lastDate)
             }, scrollToAnchor: .bottom) {
-                Group {
-                    if fitsAspect {
-                        let rowCount = (assets.count + safeColumns - 1) / safeColumns
-                        LazyVStack(alignment: .leading, spacing: 2) {
-                            ForEach(0..<rowCount, id: \.self) { rowIndex in
-                                let start = rowIndex * safeColumns
-                                let end = min(start + safeColumns, assets.count)
-                                let rowAssets = Array(assets[start..<end])
-                                let rowHeight = rowAssets.map { asset in
-                                    asset.pixelWidth > 0 && asset.pixelHeight > 0
-                                        ? cellWidth * CGFloat(asset.pixelHeight) / CGFloat(asset.pixelWidth)
-                                        : cellWidth
-                                }.max() ?? cellWidth
+                VStack(spacing: 0) {
+                    Group {
+                        if fitsAspect {
+                            let rowCount = (assets.count + safeColumns - 1) / safeColumns
+                            LazyVStack(alignment: .leading, spacing: 2) {
+                                ForEach(0..<rowCount, id: \.self) { rowIndex in
+                                    let start = rowIndex * safeColumns
+                                    let end = min(start + safeColumns, assets.count)
+                                    let rowAssets = Array(assets[start..<end])
+                                    let rowHeight = rowAssets.map { asset in
+                                        asset.pixelWidth > 0 && asset.pixelHeight > 0
+                                            ? cellWidth * CGFloat(asset.pixelHeight) / CGFloat(asset.pixelWidth)
+                                            : cellWidth
+                                    }.max() ?? cellWidth
 
-                                HStack(spacing: 2) {
-                                    ForEach(rowAssets, id: \.localIdentifier) { asset in
-                                        thumbnail(asset, size: cellWidth)
-                                            .frame(width: cellWidth, height: rowHeight, alignment: .center)
-                                            .background(Color(.secondarySystemBackground))
+                                    HStack(spacing: 2) {
+                                        ForEach(rowAssets, id: \.localIdentifier) { asset in
+                                            thumbnail(asset, size: cellWidth)
+                                                .frame(width: cellWidth, height: rowHeight, alignment: .center)
+                                                .background(Color(.secondarySystemBackground))
+                                        }
                                     }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                        }
-                    } else {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: safeColumns),
-                                  spacing: 2) {
-                            ForEach(assets, id: \.localIdentifier) { asset in
-                                thumbnail(asset, size: cellWidth)
+                        } else {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: safeColumns),
+                                      spacing: 2) {
+                                ForEach(assets, id: \.localIdentifier) { asset in
+                                    thumbnail(asset, size: cellWidth)
+                                }
                             }
                         }
                     }
+
+                    Color.clear
+                        .frame(height: 1)
+                        .id("compact-grid-bottom-anchor")
                 }
                 .padding(.top, assets.count > max(columns, 1) * 4 ? 0 : 12)
             }
