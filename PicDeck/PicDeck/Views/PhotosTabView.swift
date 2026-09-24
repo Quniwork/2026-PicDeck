@@ -92,7 +92,6 @@ struct PhotosTabView: View {
     @State private var dayIndex = ScrubIndex(anchors: [])
     @State private var timelineIndex = ScrubIndex(anchors: [])
     @State private var preparedScales: Set<PhotoScale> = []
-    @State private var preparingScales: Set<PhotoScale> = []
     @State private var assetRevision = 0
     @State private var warmTask: Task<Void, Never>?
     /// 目前這份照片是哪個篩選、哪一版圖庫載入的。切回分頁時沒變就沿用，不重建整個格線。
@@ -644,12 +643,12 @@ struct PhotosTabView: View {
                           title: String(localized: "No photos"),
                           message: String(localized: "This filter has nothing to show."))
         } else {
-            ZStack {
-                if scale != .all { otherScaleContent }
-                allGridContent
-                    .opacity(scale == .all ? 1 : 0)
-                    .allowsHitTesting(scale == .all)
-                    .accessibilityHidden(scale != .all)
+            Group {
+                if scale == .all {
+                    allGridContent
+                } else {
+                    otherScaleContent
+                }
             }
         }
     }
@@ -836,7 +835,6 @@ struct PhotosTabView: View {
                 if newValue, addedRanks.isEmpty { addedRanks = await library.addedRanks() }
                 rebuildAllGrid()
                 preparedScales.remove(.timeline)
-                preparingScales.remove(.timeline)
                 await rebuildCurrentScale()
             }
         }
@@ -964,7 +962,6 @@ struct PhotosTabView: View {
         warmTask?.cancel()
         assetRevision &+= 1
         preparedScales.removeAll()
-        preparingScales.removeAll()
         assets = loaded
     }
 
@@ -1009,23 +1006,13 @@ struct PhotosTabView: View {
 
     private func prepareScale(_ requestedScale: PhotoScale, priority: TaskPriority) async {
         guard !assets.isEmpty else { return }
-        while preparingScales.contains(requestedScale) {
-            guard !Task.isCancelled else { return }
-            if preparedScales.contains(requestedScale) { return }
-            try? await Task.sleep(for: .milliseconds(16))
-        }
-        guard !preparedScales.contains(requestedScale), !Task.isCancelled else { return }
-        preparingScales.insert(requestedScale)
+        if preparedScales.contains(requestedScale) { return }
+        guard !Task.isCancelled else { return }
+
         let revision = assetRevision
         let source = assets
         let sortsByAdded = model.sortsByAdded
         let ranks = addedRanks
-        defer {
-            if revision == assetRevision &&
-                (requestedScale != .timeline || sortsByAdded == model.sortsByAdded) {
-                preparingScales.remove(requestedScale)
-            }
-        }
 
         switch requestedScale {
         case .year:

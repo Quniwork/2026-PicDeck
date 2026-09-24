@@ -310,12 +310,18 @@ enum PhotoGrouping {
                 map[parts, default: []].append(asset)
             }
 
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateStyle = .long
-            dateFormatter.timeStyle = .none
+            let dateFormatter: DateFormatter = {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .long
+                formatter.timeStyle = .none
+                return formatter
+            }()
 
-            let weekdayFormatter = DateFormatter()
-            weekdayFormatter.setLocalizedDateFormatFromTemplate("EEEE")
+            let weekdayFormatter: DateFormatter = {
+                let formatter = DateFormatter()
+                formatter.setLocalizedDateFormatFromTemplate("EEEE")
+                return formatter
+            }()
 
             var sections = map
                 .compactMap { parts, items -> (DaySection, Date)? in

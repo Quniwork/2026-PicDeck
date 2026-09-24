@@ -120,20 +120,28 @@ struct MiniMonthCalendar: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("month.accessibilitySummary")
             } else {
-                LazyVGrid(columns: columns, spacing: 2) {
-                    ForEach(cells, id: \.id) { entry in
-                        if let day = entry.day {
-                            Text("\(day)")
-                                .font(.system(size: compactDateText ? compactDaySize : standardDaySize,
-                                              weight: weight(for: day),
-                                              design: .rounded))
-                                .foregroundStyle(color(for: day))
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Text(" ")
-                                .font(.system(size: compactDateText ? compactDaySize : standardDaySize,
-                                              design: .rounded))
-                                .frame(maxWidth: .infinity)
+                let allCells = cells
+                let rows = stride(from: 0, to: allCells.count, by: 7).map {
+                    Array(allCells[$0..<min($0 + 7, allCells.count)])
+                }
+                Grid(horizontalSpacing: 1, verticalSpacing: 2) {
+                    ForEach(0..<rows.count, id: \.self) { rowIndex in
+                        GridRow {
+                            ForEach(rows[rowIndex], id: \.id) { entry in
+                                if let day = entry.day {
+                                    Text("\(day)")
+                                        .font(.system(size: compactDateText ? compactDaySize : standardDaySize,
+                                                      weight: weight(for: day),
+                                                      design: .rounded))
+                                        .foregroundStyle(color(for: day))
+                                        .frame(maxWidth: .infinity)
+                                } else {
+                                    Text(" ")
+                                        .font(.system(size: compactDateText ? compactDaySize : standardDaySize,
+                                                      design: .rounded))
+                                        .frame(maxWidth: .infinity)
+                                }
+                            }
                         }
                     }
                 }

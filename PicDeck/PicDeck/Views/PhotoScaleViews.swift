@@ -66,39 +66,24 @@ struct AnchoredScrollView<Content: View>: View {
             .onPreferenceChange(ScrollContentMinYKey.self) { minY in
                 if #unavailable(iOS 18.0) { onScrollOffsetChange?(-minY, 0) }
             }
-            .opacity(isHidden ? 0 : 1)
-            .overlay {
-                if isHidden { ProgressView() }
-            }
             .overlay(alignment: .trailing) {
-                if let scrub, scrub.isUsable, !isHidden {
+                if let scrub, scrub.isUsable {
                     ScrubberOverlay(index: scrub, controller: scrubController, topInset: scrubTopInset)
                 }
             }
             .task(id: "\(anchorID ?? "")-\(isReady)-\(scrollRequestID)") {
-                guard let anchorID else {
+                guard let anchorID, isReady else {
                     isPositioned = true
                     return
                 }
-                guard isReady else { return }
                 let key = "\(anchorID)-\(scrollToAnchor)-\(scrollRequestID)"
                 if positionedKey == key { isPositioned = true; return }
 
-                let wasAlreadyPositioned = isPositioned
-                if !wasAlreadyPositioned {
-                    isPositioned = false
-                    // 首次定位時讓延遲載入的版面先排好。
-                    await Task.yield()
-                    try? await Task.sleep(nanoseconds: 120_000_000)
-                    guard !Task.isCancelled else { return }
-                }
+                await Task.yield()
+                guard !Task.isCancelled else { return }
                 proxy.scrollTo(anchorID, anchor: scrollToAnchor)
                 positionedKey = key
-                if !wasAlreadyPositioned {
-                    try? await Task.sleep(nanoseconds: 80_000_000)
-                    guard !Task.isCancelled else { return }
-                    withMotion(.easeIn(duration: 0.12)) { isPositioned = true }
-                }
+                isPositioned = true
             }
         }
     }
