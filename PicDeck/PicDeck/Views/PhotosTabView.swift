@@ -251,8 +251,8 @@ struct PhotosTabView: View {
             .onChange(of: model.gridColumns(for: .all)) { _, _ in rebuildAllGrid() }
             .onChange(of: model.gridFitsAspect(for: .all)) { _, _ in rebuildAllGrid() }
             // 勾選或取消勾選時輕輕震一下。
-            .sensoryFeedback(.selection, trigger: selectedIDs.count)
-            .onChange(of: selectedIDs) { _, _ in refreshSelectionAccessory() }
+            .onChange(of: selectedIDs) { _, _ in syncSelectionAccessory() }
+            .onChange(of: selectedFavoriteIDs) { _, _ in syncSelectionAccessory() }
             // 系統相簿有變動（例如在別處改了喜愛）就重取，長按選單才不會拿到舊狀態。
             .onChange(of: library.libraryChangeCount) { _ in
                 Task { await refreshAssets() }
@@ -331,10 +331,11 @@ struct PhotosTabView: View {
                 model.isSelectingPhotos = isSelecting
                 timelineScrollTracker.previousOffset = nil
                 model.isTimelineScalePickerCompact = false
-                selectionAccessory.content = isSelecting ? AnyView(selectionBar) : nil
+                setupSelectionAccessory()
                 if !isSelecting {
                     selectedIDs.removeAll()
                     selectedFavoriteIDs.removeAll()
+                    syncSelectionAccessory()
                 }
             }
         } label: {
@@ -531,17 +532,25 @@ struct PhotosTabView: View {
         withMotion {
             isSelecting = false
             model.isSelectingPhotos = false
-            selectionAccessory.content = nil
             timelineScrollTracker.previousOffset = nil
             model.isTimelineScalePickerCompact = false
             selectedIDs.removeAll()
             selectedFavoriteIDs.removeAll()
+            syncSelectionAccessory()
         }
     }
 
-    private func refreshSelectionAccessory() {
-        guard isSelecting else { return }
-        selectionAccessory.content = AnyView(selectionBar)
+    private func setupSelectionAccessory() {
+        selectionAccessory.onTags = { showBatchTagPicker = true }
+        selectionAccessory.onAlbum = { showAlbumPicker = true }
+        selectionAccessory.onFavorite = { favoriteSelected() }
+        selectionAccessory.onDelete = { deleteSelected() }
+        syncSelectionAccessory()
+    }
+
+    private func syncSelectionAccessory() {
+        selectionAccessory.selectedCount = selectedIDs.count
+        selectionAccessory.allAreFavorites = allSelectedAreFavorites
     }
 
     /// 長按照片的操作，與整理的審核畫面一致。
@@ -1110,7 +1119,7 @@ private struct LegacyPhotoScaleGlass: ViewModifier {
     }
 }
 
-private struct SelectionBarSurface: ViewModifier {
+struct SelectionBarSurface: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content

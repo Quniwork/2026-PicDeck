@@ -71,6 +71,17 @@ enum PhotoGrouping {
         let date: Date
         let count: Int
         let assets: [PHAsset]
+        let assetIDs: Set<String>
+
+        init(id: String, title: String, weekday: String, date: Date, count: Int, assets: [PHAsset]) {
+            self.id = id
+            self.title = title
+            self.weekday = weekday
+            self.date = date
+            self.count = count
+            self.assets = assets
+            self.assetIDs = Set(assets.map(\.localIdentifier))
+        }
     }
 
     /// 一週從週日開始。

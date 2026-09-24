@@ -247,13 +247,18 @@ struct CompactGridView: View {
 }
 
 extension View {
-    /// 長按照片跳出操作選單，內容由呼叫端決定。
+    /// 長按照片跳出操作選單，內容由呼叫端決定。選取模式下完全不掛載 contextMenu，消除長按手勢延遲。
+    @ViewBuilder
     func photoActions<Menu: View>(isEnabled: Bool = true,
                                   @ViewBuilder _ menu: @escaping () -> Menu?) -> some View {
-        self.contextMenu {
-            if isEnabled, let content = menu() {
-                content
+        if isEnabled {
+            self.contextMenu {
+                if let content = menu() {
+                    content
+                }
             }
+        } else {
+            self
         }
     }
 }
@@ -331,13 +336,13 @@ struct TimelineView: View {
     }
 
     private func isSectionSelected(_ section: PhotoGrouping.DaySection) -> Bool {
-        guard let selectedIDs, !section.assets.isEmpty else { return false }
-        return section.assets.allSatisfy { selectedIDs.wrappedValue.contains($0.localIdentifier) }
+        guard let selectedIDs, !section.assetIDs.isEmpty else { return false }
+        return section.assetIDs.isSubset(of: selectedIDs.wrappedValue)
     }
 
     private func toggleSection(_ section: PhotoGrouping.DaySection) {
         guard let selectedIDs else { return }
-        let identifiers = Set(section.assets.map(\.localIdentifier))
+        let identifiers = section.assetIDs
         if identifiers.isSubset(of: selectedIDs.wrappedValue) {
             selectedIDs.wrappedValue.subtract(identifiers)
             selectedFavoriteIDs?.wrappedValue.subtract(identifiers)

@@ -3,7 +3,44 @@ import Photos
 
 @MainActor
 final class PhotosSelectionAccessory: ObservableObject {
-    @Published var content: AnyView?
+    @Published var selectedCount = 0
+    @Published var allAreFavorites = false
+    var onTags: (() -> Void)?
+    var onAlbum: (() -> Void)?
+    var onFavorite: (() -> Void)?
+    var onDelete: (() -> Void)?
+}
+
+struct PhotosSelectionAccessoryBar: View {
+    @ObservedObject var accessory: PhotosSelectionAccessory
+
+    var body: some View {
+        ActionBarRow {
+            ActionBarButton(key: "Tags", icon: "tag", id: "batch.tags", iconOnly: false) {
+                accessory.onTags?()
+            }
+            Spacer(minLength: 4)
+            ActionBarButton(key: "Album", icon: "rectangle.stack.badge.plus", id: "batch.album", iconOnly: false) {
+                accessory.onAlbum?()
+            }
+            Spacer(minLength: 4)
+            ActionBarButton(key: accessory.allAreFavorites ? "Remove from favorites" : "Favorite",
+                            icon: accessory.allAreFavorites ? "heart.slash" : "heart",
+                            id: "batch.favorite", iconOnly: false) {
+                accessory.onFavorite?()
+            }
+            Spacer(minLength: 4)
+            ActionBarButton(key: "Delete", icon: "xmark", id: "batch.delete", isDestructive: true, iconOnly: false) {
+                accessory.onDelete?()
+            }
+        }
+        .disabled(accessory.selectedCount == 0)
+        .padding(.vertical, 8)
+        .modifier(SelectionBarSurface())
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.horizontal, PageMetrics.edge)
+        .padding(.vertical, 6)
+    }
 }
 
 struct RootView: View {
@@ -56,8 +93,8 @@ struct MainTabView: View {
     @available(iOS 26.0, *)
     @ViewBuilder
     private var photoBottomAccessory: some View {
-        if model.isSelectingPhotos, let selectionContent = selectionAccessory.content {
-            selectionContent
+        if model.isSelectingPhotos {
+            PhotosSelectionAccessoryBar(accessory: selectionAccessory)
         } else {
             PhotosTabAccessory(appColorScheme: colorScheme)
         }
