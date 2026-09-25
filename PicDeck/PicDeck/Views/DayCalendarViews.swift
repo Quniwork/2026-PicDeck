@@ -15,6 +15,8 @@ struct DayCalendarGridView: View {
     /// 右側拖拉軸。
     var scrub: ScrubIndex? = nil
     var onScrollOffsetChange: ((CGFloat) -> Void)? = nil
+    var coverForDay: (Int, Int, Int) -> PhotoCoverPreference? = { _, _, _ in nil }
+    var onEditCover: ((Int, Int, Int) -> Void)? = nil
 
     var body: some View {
         AnchoredScrollView(anchorID: focusMonthID, isReady: !months.isEmpty, scrub: scrub,
@@ -41,12 +43,22 @@ struct DayCalendarGridView: View {
                                                             mood: journalStore.mood(year: month.year,
                                                                                     month: month.month,
                                                                                     day: day),
+                                                            cover: coverForDay(month.year, month.month, day),
                                                             isToday: isToday(year: month.year,
                                                                              month: month.month,
                                                                              day: day))
                                         }
                                         .buttonStyle(.plain)
                                         .disabled(month.cells[day] == nil)
+                                        .contextMenu {
+                                            if month.cells[day] != nil, let onEditCover {
+                                                Button {
+                                                    onEditCover(month.year, month.month, day)
+                                                } label: {
+                                                    Label(String(localized: "Set cover"), systemImage: "photo.badge.plus")
+                                                }
+                                            }
+                                        }
                                         .accessibilityLabel(dayAccessibilityLabel(year: month.year,
                                                                                  month: month.month,
                                                                                  day: day))
@@ -115,6 +127,7 @@ struct DayCalendarCell: View {
     let cell: PhotoGrouping.DayCell?
     /// 當天日記的心情表情，沒有日記就是 nil。
     var mood: String? = nil
+    var cover: PhotoCoverPreference? = nil
     var isToday: Bool = false
     @Environment(\.colorScheme) private var colorScheme
 
@@ -135,7 +148,11 @@ struct DayCalendarCell: View {
                     )
                     .aspectRatio(1, contentMode: .fit)
 
-                if let coverID = cell?.coverID {
+                if let customID = cover?.assetID {
+                    CoverImage(assetID: customID, size: 120)
+                        .aspectRatio(1, contentMode: .fill)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                } else if let coverID = cell?.coverID {
                     CoverImage(assetID: coverID, size: 120)
                         .aspectRatio(1, contentMode: .fill)
                         .clipShape(RoundedRectangle(cornerRadius: 10))

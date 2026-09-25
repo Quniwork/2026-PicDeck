@@ -86,11 +86,11 @@ struct JournalTabView: View {
                 Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
                     .accessibilityHidden(true)
             }
-            .navigationTitle(String(localized: "Journal"))
+            .navigationTitle("日記")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
-                    LeadingTitleToolbar(title: String(localized: "Journal"), font: .largeTitle)
+                    LeadingTitleToolbar(title: "日記", font: .largeTitle)
                 }
                 ToolbarItem(placement: .topBarTrailing) { filterMenu }
                 if #available(iOS 26.0, *) {
@@ -102,7 +102,7 @@ struct JournalTabView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel(Text("New journal entry"))
+                    .accessibilityLabel(Text("新增日記"))
                     .accessibilityIdentifier("journal.add")
                 }
             }
@@ -210,7 +210,7 @@ struct JournalTabView: View {
 
                 Toggle(isOn: Binding(get: { model.gridFitsAspect(for: .journal) },
                                      set: { model.setGridFitsAspect($0, for: .journal) })) {
-                    Label(String(localized: "Aspect Ratio Grid"),
+                    Label("原始比例網格",
                           systemImage: "rectangle.arrowtriangle.2.outward")
                 }
             }
@@ -218,7 +218,7 @@ struct JournalTabView: View {
             Image(systemName: "line.3.horizontal.decrease")
                 .filterIndicator(isActive: isFilterActive, reset: resetFilters)
         }
-        .accessibilityLabel(Text("Filter"))
+        .accessibilityLabel(Text("篩選"))
         .accessibilityIdentifier("journal.filter")
     }
 

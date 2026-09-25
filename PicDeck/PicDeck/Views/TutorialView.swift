@@ -8,24 +8,24 @@ struct TutorialView: View {
 
     private let pages: [TutorialPage] = [
         TutorialPage(systemImage: "arrow.left",
-                     title: "Swipe left to keep",
-                     detail: "Marks the photo as organized so it stops showing up in your unorganized list.",
+                     title: "向左滑動：保留相片",
+                     detail: "標記為已整理，未來不再出現在待整理列表中。",
                      tint: .green),
         TutorialPage(systemImage: "arrow.up",
-                     title: "Swipe up to delete",
-                     detail: "It only marks the photo. Nothing is deleted until you confirm in Trash.",
+                     title: "向上滑動：標記刪除",
+                     detail: "僅先移至待刪除清單，在垃圾桶確認之前不會真正刪除照片。",
                      tint: .red),
         TutorialPage(systemImage: "arrow.down",
-                     title: "Pull down to favorite",
-                     detail: "Syncs straight to the Favorites album in iOS Photos.",
+                     title: "向下滑動：加入喜愛",
+                     detail: "直接同步加入至 iOS 系統內建的「喜好項目」相簿。",
                      tint: .pink),
         TutorialPage(systemImage: "arrow.right",
-                     title: "Swipe right to go back",
-                     detail: "Changed your mind? Swipe right to undo the last action and return to the previous photo.",
+                     title: "向右滑動：返回上張",
+                     detail: "改變主意了嗎？向右滑動即可復原上個動作並回到上一張照片。",
                      tint: .accentColor),
         TutorialPage(systemImage: "folder",
-                     title: "Tap an album to file it",
-                     detail: "Filing a photo into an album also marks it as organized.",
+                     title: "點擊相簿：快速歸檔",
+                     detail: "將照片直接加入指定相簿，同時自動標記為已整理完成。",
                      tint: .accentColor)
     ]
 
@@ -63,13 +63,13 @@ struct TutorialView: View {
                         onFinish()
                     }
                 } label: {
-                    Text(page < pages.count - 1 ? "Next" : "Start organizing")
+                    Text(page < pages.count - 1 ? "下一步" : "開始整理照片")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
 
-                Button("Skip") { onFinish() }
+                Button("略過教學") { onFinish() }
                     .font(.footnote)
             }
             .padding(24)

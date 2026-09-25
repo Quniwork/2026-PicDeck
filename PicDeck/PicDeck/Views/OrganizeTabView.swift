@@ -26,12 +26,12 @@ struct OrganizeTabView: View {
                 Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
                     .accessibilityHidden(true)
             }
-            .navigationTitle("Organize")
+            .navigationTitle("整理")
             .failureToast()
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
-                    LeadingTitleToolbar(title: String(localized: "Organize"), font: .largeTitle)
+                    LeadingTitleToolbar(title: "整理", font: .largeTitle)
                 }
             }
             // 只有照片子層需要載入，而且不能掛在會消失又出現的清單上，不然會一直重載。
@@ -68,7 +68,7 @@ struct OrganizeTabView: View {
                                   title: month.title)
                     }
                 } header: {
-                    Text("By month")
+                    Text("依月份整理")
                 }
             }
             .pageList()

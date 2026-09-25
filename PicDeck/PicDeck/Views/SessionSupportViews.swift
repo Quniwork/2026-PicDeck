@@ -98,13 +98,13 @@ struct HelpSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showTutorial = false
 
-    private let lines: [LocalizedStringKey] = [
-        "Swipe left to keep",
-        "Swipe right to go back to the previous photo",
-        "Swipe up to delete",
-        "Pull down to mark as favorite",
-        "Tap an album to file it",
-        "Double tap to zoom in"
+    private let lines: [String] = [
+        "向左滑動：保留相片",
+        "向右滑動：返回上一張相片",
+        "向上滑動：標記刪除",
+        "向下滑動：加入喜愛",
+        "點擊相簿：快速歸檔",
+        "點擊兩下：放大檢視"
     ]
 
     var body: some View {
@@ -114,11 +114,11 @@ struct HelpSheet: View {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.headline)
                 }
-                .accessibilityLabel(Text("Close"))
+                .accessibilityLabel(Text("關閉"))
                 .accessibilityIdentifier("help.close")
             }
 
-            Text("How to use")
+            Text("手勢教學指南")
                 .font(.title2.weight(.bold))
 
             VStack(spacing: 14) {
@@ -133,7 +133,7 @@ struct HelpSheet: View {
             Button {
                 showTutorial = true
             } label: {
-                Text("Start tutorial").frame(maxWidth: .infinity)
+                Text("開始教學").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -165,8 +165,8 @@ struct PendingTrashView: View {
             Group {
                 if model.trashedAssetIDs.isEmpty {
                     AppEmptyState(icon: "trash",
-                                  title: String(localized: "Trash is empty"),
-                                  message: String(localized: "Photos you swipe up land here first. Nothing is deleted until you confirm."))
+                                  title: "待刪除清單是空的",
+                                  message: "向上滑動的照片會先移至此處。在確認刪除前不會真正移除。")
                 } else {
                     ScrollView {
                         LazyVGrid(columns: columns, spacing: 4) {
@@ -191,7 +191,7 @@ struct PendingTrashView: View {
                     }
                     .safeAreaInset(edge: .bottom) {
                         VStack(spacing: 8) {
-                            Text("\(model.trashedAssetIDs.count) marked")
+                            Text("已標記 \(model.trashedAssetIDs.count) 張")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
 
@@ -201,7 +201,7 @@ struct PendingTrashView: View {
                                 if isDeleting {
                                     ProgressView().frame(maxWidth: .infinity)
                                 } else {
-                                    Text("Delete permanently").frame(maxWidth: .infinity)
+                                    Text("移至垃圾桶刪除").frame(maxWidth: .infinity)
                                 }
                             }
                             .buttonStyle(.borderedProminent)
@@ -215,20 +215,20 @@ struct PendingTrashView: View {
                     }
                 }
             }
-            .navigationTitle("Trash")
+            .navigationTitle("待刪除清單")
             .failureToast()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("關閉") { dismiss() }
                 }
             }
             .task { await reload() }
-            .alert("Delete \(model.trashedAssetIDs.count) photos?", isPresented: $showConfirm) {
-                Button("Cancel", role: .cancel) {}
-                Button("Delete", role: .destructive) { performDelete() }
+            .alert("確定要刪除這 \(model.trashedAssetIDs.count) 張照片嗎？", isPresented: $showConfirm) {
+                Button("取消", role: .cancel) {}
+                Button("刪除", role: .destructive) { performDelete() }
             } message: {
-                Text("They go to the iOS Recently Deleted album and can be recovered within 30 days.")
+                Text("照片將移至系統「最近刪除」相簿，可在 30 天內隨時復原。")
             }
         }
     }
@@ -290,11 +290,11 @@ struct AlbumQuickPicker: View {
                     }
                 }
             }
-            .navigationTitle("File into album…")
+            .navigationTitle("歸檔至相簿…")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("取消") { dismiss() }
                 }
             }
         }

@@ -217,7 +217,7 @@ struct TagCollectionView: View {
             Divider()
 
             if !subTags.isEmpty {
-                Menu(String(localized: "Tag Filter")) {
+                Menu("標籤篩選") {
                     ForEach(subTags) { sub in
                         Toggle(isOn: Binding(get: { selectedSubTags.contains(sub.id) },
                                              set: { on in
@@ -229,23 +229,23 @@ struct TagCollectionView: View {
                 }
             }
 
-            Section(String(localized: "Display")) {
+            Section("顯示方式") {
                 Toggle(isOn: Binding(get: { mode == .single }, set: { _ in modeRaw = DisplayMode.single.rawValue })) {
-                    Label(String(localized: "Single view"), systemImage: "rectangle.grid.1x2")
+                    Label("單圖檢視", systemImage: "rectangle.grid.1x2")
                 }
                 Toggle(isOn: Binding(get: { mode == .grid }, set: { _ in modeRaw = DisplayMode.grid.rawValue })) {
-                    Label(String(localized: "Grid view"), systemImage: "square.grid.2x2")
+                    Label("網格檢視", systemImage: "square.grid.2x2")
                 }
             }
 
             if mode == .grid {
-                Menu(String(localized: "View Options")) {
+                Menu("顯示選項") {
                     Button { model.zoom(.collection, in: true) } label: {
-                        Label(String(localized: "Zoom In"), systemImage: "plus.magnifyingglass")
+                        Label("放大檢視", systemImage: "plus.magnifyingglass")
                     }
                     .disabled(model.gridColumns(for: .collection) <= AppModel.gridColumnRange.lowerBound)
                     Button { model.zoom(.collection, in: false) } label: {
-                        Label(String(localized: "Zoom Out"), systemImage: "minus.magnifyingglass")
+                        Label("縮小檢視", systemImage: "minus.magnifyingglass")
                     }
                     .disabled(model.gridColumns(for: .collection) >= AppModel.gridColumnRange.upperBound)
                 }
@@ -392,7 +392,7 @@ struct CollectionSearchView: View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField(String(localized: "Search notes and tags"), text: $query)
+                TextField("搜尋備註與標籤", text: $query)
                     .focused($focused)
                     .submitLabel(.search)
                     .onSubmit { rememberQuery() }

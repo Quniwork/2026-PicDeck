@@ -31,7 +31,7 @@ struct AlbumManagerList: View {
                 if isLoading {
                     ProgressView().frame(maxWidth: .infinity)
                 } else if tree.isEmpty {
-                    Text("No albums yet.")
+                    Text("尚未建立任何相簿")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -44,14 +44,14 @@ struct AlbumManagerList: View {
                                     Button(role: .destructive) {
                                         deleting = row.node
                                     } label: {
-                                        Label("Delete", systemImage: "trash")
+                                        Label("刪除", systemImage: "trash")
                                     }
                                 }
                                 Button {
                                     renaming = row.node
                                     renameText = row.node.title
                                 } label: {
-                                    Label("Rename", systemImage: "pencil")
+                                    Label("重新命名", systemImage: "pencil")
                                 }
                                 .tint(.blue)
                             }
@@ -65,7 +65,7 @@ struct AlbumManagerList: View {
                 }
             } header: {
                 HStack {
-                    Text("Folders and albums")
+                    Text("檔案夾與相簿")
                     Spacer()
                     if !tree.isEmpty {
                         EditButton()
@@ -75,7 +75,7 @@ struct AlbumManagerList: View {
                     }
                 }
             } footer: {
-                Text("Deleting an album keeps its photos in your library. A folder can only be deleted after everything inside it is removed.")
+                Text("刪除相簿時，其中的照片仍會完整保留在相片庫中。檔案夾需在內部項目清空後方可刪除。")
             }
         }
         .pageList()
@@ -85,22 +85,21 @@ struct AlbumManagerList: View {
         .navigationDestination(item: $openedAlbum) { album in
             AlbumDetailView(album: album)
         }
-        .alert(String(localized: "Rename"),
+        .alert("重新命名",
                isPresented: Binding(get: { renaming != nil },
                                     set: { if !$0 { renaming = nil } })) {
-            TextField(String(localized: "Name"), text: $renameText)
-            Button("Cancel", role: .cancel) { renaming = nil }
-            Button("Save") { rename() }
+            TextField("名稱", text: $renameText)
+            Button("取消", role: .cancel) { renaming = nil }
+            Button("儲存") { rename() }
         }
-        .alert(deleting?.isFolder == true ? String(localized: "Delete this folder?")
-                                          : String(localized: "Delete this album?"),
+        .alert(deleting?.isFolder == true ? "刪除此檔案夾？" : "刪除此相簿？",
                isPresented: Binding(get: { deleting != nil },
                                     set: { if !$0 { deleting = nil } })) {
-            Button("Cancel", role: .cancel) { deleting = nil }
-            Button("Delete", role: .destructive) { delete() }
+            Button("取消", role: .cancel) { deleting = nil }
+            Button("刪除", role: .destructive) { delete() }
         } message: {
             if deleting?.isFolder != true {
-                Text("The photos stay in your library.")
+                Text("相片仍會保留在相片庫中。")
             }
         }
     }
@@ -207,7 +206,7 @@ struct TagManagerList: View {
 
             Section {
                 if tagStore.tags.isEmpty {
-                    Text("No tags yet.")
+                    Text("尚未建立任何標籤")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -231,7 +230,7 @@ struct TagManagerList: View {
                 }
             } header: {
                 HStack {
-                    Text("Tags")
+                    Text("標籤列表")
                     Spacer()
                     if tagStore.tags.count > 1 {
                         EditButton()
@@ -241,7 +240,7 @@ struct TagManagerList: View {
                     }
                 }
             } footer: {
-                Text("Open a tag to change its icon or give it a start date. Tap Edit to drag them into the order you want.")
+                Text("點擊標籤可更換圖示或設定紀念日起算日。點擊「編輯」可拖曳調整排列順序。")
             }
         }
         .pageList()

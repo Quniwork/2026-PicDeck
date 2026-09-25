@@ -122,6 +122,9 @@ struct PhotoDetailView: View {
                             }
                     )
 
+                    // 3. 更多圖片預覽區（多張圖片時顯示水平縮圖列）
+                    filmstrip
+
                     if isInspectorExpanded, let currentAsset = current {
                         PhotoInspectorPanelView(asset: currentAsset) {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
@@ -206,7 +209,7 @@ struct PhotoDetailView: View {
             GlassCircleButton { dismiss() } label: {
                 Image(systemName: "xmark")
             }
-            .accessibilityLabel(Text("Close"))
+            .accessibilityLabel(Text("關閉"))
             .accessibilityIdentifier("detail.close")
 
             Spacer()
@@ -239,7 +242,7 @@ struct PhotoDetailView: View {
                                 .allowsHitTesting(false)
                         }
                     }
-                    .accessibilityLabel(Text("Pending deletion"))
+                    .accessibilityLabel(Text("待刪除清單"))
                     .accessibilityIdentifier("detail.trash")
                 }
             }
@@ -247,6 +250,59 @@ struct PhotoDetailView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 8)
+    }
+
+    // MARK: - 更多圖片預覽區
+
+    @ViewBuilder
+    private var filmstrip: some View {
+        if assets.count > 1 {
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 2.5) {
+                        ForEach(assets, id: \.localIdentifier) { asset in
+                            let isSelected = asset.localIdentifier == currentID
+
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                                    currentID = asset.localIdentifier
+                                }
+                            } label: {
+                                AssetThumbnail(asset: asset, size: 100, showsDuration: false)
+                                    .frame(width: 28, height: 40)
+                                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    .opacity(isSelected ? 1.0 : 0.45)
+                                    .animation(.spring(response: 0.28, dampingFraction: 0.82), value: isSelected)
+                            }
+                            .buttonStyle(.plain)
+                            .id(asset.localIdentifier)
+                            .accessibilityIdentifier("detail.filmstrip.\(asset.localIdentifier)")
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 4)
+                }
+                .frame(height: 48)
+                // 2. 最左邊跟最右邊的漸層淡化設計
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black, location: 0.08),
+                            .init(color: .black, location: 0.92),
+                            .init(color: .clear, location: 1.0)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .onChange(of: currentID, initial: true) { _, newID in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        proxy.scrollTo(newID, anchor: .center)
+                    }
+                }
+            }
+        }
     }
 
     /// 沒有功能按鈕時，這張有備註就顯示在底下。
@@ -285,18 +341,18 @@ struct PhotoDetailView: View {
 
     private var tagsButtonKey: LocalizedStringKey {
         if tagsCount == 0 {
-            return "Tags"
+            return "標籤"
         } else {
-            return "\(String(localized: "Tags"))(\(tagsCount))"
+            return "標籤(\(tagsCount))"
         }
     }
 
     private var albumsButtonKey: LocalizedStringKey {
         let count = currentAlbumIDs.count
         if count == 0 {
-            return "Album"
+            return "相簿"
         } else {
-            return "\(String(localized: "Album"))(\(count))"
+            return "相簿(\(count))"
         }
     }
 
@@ -326,12 +382,12 @@ struct PhotoDetailView: View {
                 }
             }
             Spacer(minLength: 4)
-            barButton(favorite ? "Remove from favorites" : "Favorite",
+            barButton(favorite ? "取消喜愛" : "喜愛",
                       icon: favorite ? "heart.slash" : "heart", id: "detail.favorite") {
                 toggleFavorite()
             }
             Spacer(minLength: 4)
-            barButton("Delete", icon: "xmark", id: "detail.delete", isDestructive: true) {
+            barButton("刪除", icon: "xmark", id: "detail.delete", isDestructive: true) {
                 deleteCurrent()
             }
         }
@@ -356,10 +412,10 @@ struct PhotoDetailView: View {
     private var undoBanner: some View {
         if let undoItem {
             HStack(spacing: 14) {
-                Label(String(localized: "Moved to pending deletion"), systemImage: "trash.fill")
+                Label("已移至待刪除清單", systemImage: "trash.fill")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.white)
-                Button(String(localized: "Undo")) { undoDelete(undoItem) }
+                Button("復原") { undoDelete(undoItem) }
                     .font(.footnote.weight(.bold))
                     .accessibilityIdentifier("detail.undo")
             }

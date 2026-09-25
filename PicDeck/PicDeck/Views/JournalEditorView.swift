@@ -107,24 +107,24 @@ struct JournalEditorView: View {
                                          size: 44,
                                          removedValue: "",
                                          identifier: "journal.mood")
-                        Text(mood.isEmpty ? "Tap to pick a mood" : "Tap to change")
+                        Text(mood.isEmpty ? "點擊選擇心情" : "點擊更換心情")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         Spacer()
                     }
                     .padding(.vertical, 2)
                 } header: {
-                    Text("Mood")
+                    Text("心情")
                 }
 
                 Section {
                     categoryChips
                 } header: {
-                    Text("Category")
+                    Text("分類")
                 }
 
-                Section(String(localized: "Journal")) {
-                    TextField(String(localized: "What happened today?"),
+                Section("日記內文") {
+                    TextField("今天發生了什麼事？",
                               text: $text, axis: .vertical)
                         .lineLimit(4...10)
                         .accessibilityIdentifier("journal.text")
@@ -146,22 +146,21 @@ struct JournalEditorView: View {
                         Button {
                             editorSheet = .picker
                         } label: {
-                            Label(dayAssets.isEmpty ? String(localized: "Add photos")
-                                                    : String(localized: "Add more photos"),
+                            Label(dayAssets.isEmpty ? "加入照片" : "加入更多照片",
                                   systemImage: "photo.badge.plus")
                                 .frame(maxWidth: .infinity)
                         }
                         .accessibilityIdentifier("journal.addPhotos")
                     }
                 } header: {
-                    Text("Photos  (\(selectedIDs.count))")
+                    Text("照片 (\(selectedIDs.count))")
                 } footer: {
-                    Text(dayAssets.isEmpty ? "No photos on this day." : "Pick the photos to show with this entry.")
+                    Text(dayAssets.isEmpty ? "這一天沒有照片。" : "挑選這篇日記要呈現的照片。")
                 }
 
                 if existingEntry != nil {
                     Section {
-                        DestructiveRowButton(title: String(localized: "Delete entry"),
+                        DestructiveRowButton(title: "刪除日記",
                                              identifier: "journal.delete") {
                             if let id = existingEntry?.id { journalStore.delete(id: id) }
                             dismiss()
@@ -171,14 +170,14 @@ struct JournalEditorView: View {
             }
             // 新增時標題是「新增日記」；編輯既有的顯示那篇的日期。
             .appCanvas()
-            .navigationTitle(existingEntry == nil ? String(localized: "New journal entry") : dateTitle)
+            .navigationTitle(existingEntry == nil ? "新增日記" : dateTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("取消") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
+                    Button("儲存") { save() }
                     .accessibilityIdentifier("journal.save")
                 }
             }
@@ -190,11 +189,11 @@ struct JournalEditorView: View {
                 case .categories: JournalCategoryManagerView()
                 }
             }
-            .alert(String(localized: "Free plan: 1 new journal entry per day"), isPresented: $showLimitAlert) {
-                Button("Unlock PicDeck") { editorSheet = .paywall }
-                Button("Cancel", role: .cancel) {}
+            .alert("免費版：每日可新增 1 篇日記", isPresented: $showLimitAlert) {
+                Button("解鎖完整版") { editorSheet = .paywall }
+                Button("取消", role: .cancel) {}
             } message: {
-                Text("Subscribe for unlimited journal entries. You can still edit existing entries.")
+                Text("訂閱解鎖即可無限制記錄生活日記，您仍可隨時編輯既有日記。")
             }
             .onChange(of: selectedIDs) { _ in refreshOthers() }
             .onChange(of: date) { _ in
@@ -209,12 +208,12 @@ struct JournalEditorView: View {
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                categoryChip(nil, name: String(localized: "None"), symbol: nil)
+                categoryChip(nil, name: "無分類", symbol: nil)
                 ForEach(journalStore.categories) { category in
                     categoryChip(category.id, name: category.name, symbol: category.symbol)
                 }
                 Button { editorSheet = .categories } label: {
-                    Label("Manage", systemImage: "slider.horizontal.3")
+                    Label("管理", systemImage: "slider.horizontal.3")
                         .font(.subheadline.weight(.medium))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
@@ -366,26 +365,26 @@ struct PhotoActionsMenu: View {
             Button {
                 onJournal(asset)
             } label: {
-                Label("Write journal", systemImage: "book.closed")
+                Label("撰寫日記", systemImage: "book.closed")
             }
         }
 
         Button {
             onNote(asset)
         } label: {
-            Label("Write note", systemImage: "note.text")
+            Label("相片備註", systemImage: "note.text")
         }
 
         Button {
             onTag(asset)
         } label: {
-            Label("Add tag", systemImage: "tag")
+            Label("加入標籤", systemImage: "tag")
         }
 
         Button {
             onFavorite(asset)
         } label: {
-            Label(asset.isFavorite ? "Remove from favorites" : "Add to favorites",
+            Label(asset.isFavorite ? "取消喜愛" : "加入喜愛",
                   systemImage: asset.isFavorite ? "heart.slash" : "heart")
         }
 
@@ -393,7 +392,7 @@ struct PhotoActionsMenu: View {
         Button {
             onAddToAlbum(asset)
         } label: {
-            Label("Add to album", systemImage: "rectangle.stack.badge.plus")
+            Label("加入相簿", systemImage: "rectangle.stack.badge.plus")
         }
 
         Divider()
@@ -402,7 +401,7 @@ struct PhotoActionsMenu: View {
         Button(role: .destructive) {
             onDelete(asset)
         } label: {
-            Label("Delete", systemImage: "xmark")
+            Label("刪除", systemImage: "xmark")
         }
     }
 }
@@ -419,7 +418,7 @@ struct JournalPhotoPicker: View {
         case timeline, all
         var id: String { rawValue }
         var title: String {
-            self == .timeline ? String(localized: "Timeline") : String(localized: "All")
+            self == .timeline ? "時間軸" : "全部"
         }
     }
 
@@ -447,7 +446,7 @@ struct JournalPhotoPicker: View {
             .toolbar {
                 // 已選張數靠左。
                 ToolbarItem(placement: .topBarLeading) {
-                    Text(String(format: String(localized: "Selected %lld"), selectedIDs.count))
+                    Text(String(format: "已選擇 %lld 張", selectedIDs.count))
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                         .fixedSize()
@@ -460,7 +459,7 @@ struct JournalPhotoPicker: View {
                     ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("完成") { dismiss() }
                         .accessibilityIdentifier("journal.picker.done")
                 }
             }
@@ -502,7 +501,7 @@ struct JournalPhotoPicker: View {
         if isLoading {
             ProgressView().frame(maxHeight: .infinity)
         } else if assets.isEmpty {
-            Text("This filter has nothing to show.")
+            Text("此篩選條件下沒有任何照片")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxHeight: .infinity)
@@ -547,7 +546,7 @@ struct JournalPhotoPicker: View {
                     }
                 }
         }
-        .accessibilityLabel(Text("Filter"))
+        .accessibilityLabel(Text("篩選"))
         .accessibilityIdentifier("journal.picker.filter")
     }
 

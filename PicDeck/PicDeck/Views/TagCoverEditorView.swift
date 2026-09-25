@@ -55,14 +55,14 @@ struct TagCoverEditorView: View {
                     .frame(maxWidth: .infinity)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
-                Picker("Preview shape", selection: $shape) {
-                    Text("Square").tag(Shape.square)
-                    Text("Wide").tag(Shape.wide)
+                Picker("預覽比例", selection: $shape) {
+                    Text("正方形").tag(Shape.square)
+                    Text("寬版").tag(Shape.wide)
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("cover.shape")
             } footer: {
-                Text("Drag the photo to move it, and use the slider to zoom.")
+                Text("拖曳照片以調整位置，滑動拉桿進行縮放。")
             }
 
             Section {
@@ -72,7 +72,7 @@ struct TagCoverEditorView: View {
                         .accessibilityIdentifier("cover.zoom")
                     Image(systemName: "plus.magnifyingglass").foregroundStyle(.secondary)
                 }
-                Button("Reset position") { framing = .standard }
+                Button("重設位置") { framing = .standard }
                     .disabled(framing.isDefault)
             }
 
@@ -83,7 +83,7 @@ struct TagCoverEditorView: View {
                     image = nil
                 } label: {
                     HStack {
-                        Label("Automatic (newest photo)", systemImage: "sparkles")
+                        Label("自動選取（最新照片）", systemImage: "sparkles")
                         Spacer()
                         if selectedID == nil { Image(systemName: "checkmark").foregroundStyle(.tint) }
                     }
@@ -104,21 +104,21 @@ struct TagCoverEditorView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(asset.accessibilitySummary)
-                        .accessibilityValue(Text(selectedID == asset.localIdentifier ? "Selected" : "Not selected"))
+                        .accessibilityValue(Text(selectedID == asset.localIdentifier ? "已選取" : "未選取"))
                         .accessibilityIdentifier("cover.photo")
                     }
                 }
             } header: {
-                Text("Choose a photo")
+                Text("挑選封面照片")
             }
         }
         .appCanvas()
-        .navigationTitle("Cover")
+        .navigationTitle("自訂封面")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
+                Button("儲存") {
                     tagStore.setCover(tagID, assetID: selectedID, framing: framing)
                     dismiss()
                 }

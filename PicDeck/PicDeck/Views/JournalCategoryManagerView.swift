@@ -14,7 +14,7 @@ struct JournalCategoryManagerView: View {
             List {
                 Section {
                     if journalStore.categories.isEmpty {
-                        Text("No categories yet.")
+                        Text("尚未建立任何分類")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .pageRowInsets(vertical: 6)
@@ -45,7 +45,7 @@ struct JournalCategoryManagerView: View {
                     }
                 } header: {
                     HStack {
-                        Text("Categories")
+                        Text("分類清單")
                         Spacer()
                         if journalStore.categories.count > 1 {
                             EditButton()
@@ -55,15 +55,15 @@ struct JournalCategoryManagerView: View {
                         }
                     }
                 } footer: {
-                    Text("Give journal entries their own category, separate from photo tags. Deleting a category leaves its entries without one.")
+                    Text("為生活日記設定專屬分類，與相片標籤獨立運作。刪除分類不會刪除日記內文。")
                 }
             }
             .pageList(firstSectionHasHeader: true)
-            .navigationTitle("Journal categories")
+            .navigationTitle("管理日記分類")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("完成") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showCreate = true } label: { Image(systemName: "plus") }
@@ -108,14 +108,14 @@ struct JournalCategoryFormView: View {
                 Section {
                     HStack(spacing: 10) {
                         IconPickerButton(raw: $symbol, removedValue: "sf:tag", identifier: "journal.category.icon")
-                        TextField(String(localized: "Category name"), text: $name)
+                        TextField("分類名稱", text: $name)
                             .accessibilityIdentifier("journal.category.name")
                     }
                 }
 
                 if let editingCategory {
                     Section {
-                        DestructiveRowButton(title: String(localized: "Delete category"),
+                        DestructiveRowButton(title: "刪除分類",
                                              identifier: "journal.category.delete") {
                             journalStore.deleteCategory(id: editingCategory.id)
                             dismiss()
@@ -124,14 +124,14 @@ struct JournalCategoryFormView: View {
                 }
             }
             .appCanvas()
-            .navigationTitle(editingCategory == nil ? String(localized: "New category") : String(localized: "Edit category"))
+            .navigationTitle(editingCategory == nil ? "新增分類" : "編輯分類")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("取消") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button("儲存") {
                         if let editingCategory {
                             journalStore.renameCategory(id: editingCategory.id, to: trimmedName, symbol: symbol)
                         } else {

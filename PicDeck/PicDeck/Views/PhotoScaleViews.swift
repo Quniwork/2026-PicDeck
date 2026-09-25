@@ -387,7 +387,7 @@ struct TimelineView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isSectionSelected(section) ? Text("Deselect all photos from this day") : Text("Select all photos from this day"))
+                .accessibilityLabel(isSectionSelected(section) ? Text("取消全選當日照片") : Text("選取當日所有照片"))
             }
             if let elapsed {
                 Text(elapsed)

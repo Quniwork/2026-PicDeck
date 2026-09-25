@@ -34,7 +34,7 @@ struct PaywallView: View {
             .background(Color(.systemBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("關閉") { dismiss() }
                 }
             }
         }
@@ -44,13 +44,13 @@ struct PaywallView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Unlock PicDeck")
+            Text("解鎖 PicDeck 完整功能")
                 .font(.largeTitle.weight(.bold))
             Text(model.isTrialActive
-                 ? String(format: String(localized: "Free trial: %lld days left"), model.trialDaysLeft)
+                 ? String(format: "免費試用：剩餘 %lld 天", model.trialDaysLeft)
                  : (Self.freeDuringDevelopment
-                    ? String(localized: "Free during development. We'll announce when pricing starts.")
-                    : String(localized: "One subscription unlocks everything.")))
+                    ? "開發測試期間完全免費體驗，正式定價上架時將另行公告。"
+                    : "一次訂閱，解鎖所有強大照片整理與生活紀錄功能。"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -59,35 +59,35 @@ struct PaywallView: View {
     private var benefits: some View {
         card {
             benefitRow(systemImage: "infinity",
-                       title: "No daily limit",
-                       detail: "The free plan handles 30 photos a day.")
+                       title: "無每日整理上限",
+                       detail: "免費版每天可整理 30 張照片，解鎖後享無限張數。")
             benefitRow(systemImage: "line.3.horizontal.decrease.circle",
-                       title: "All filters",
-                       detail: "Favorites, Photos, Videos and Screenshots.")
+                       title: "全功能進階篩選",
+                       detail: "喜好項目、相片、影片與截圖等完整篩選維度。")
             benefitRow(systemImage: "tag",
-                       title: "Filter by your tags",
-                       detail: "Tagging stays free; filtering by tag needs the unlock.")
+                       title: "依個人標籤篩選照片",
+                       detail: "標籤建立完全免費，解鎖後可直接按自訂標籤過濾瀏覽。")
             benefitRow(systemImage: "calendar",
-                       title: "Tags with dates",
-                       detail: "Free: 1 tag with a date. Subscribe for unlimited.")
+                       title: "紀念日起算日標籤",
+                       detail: "免費版提供 1 個紀念日標籤，解鎖後可建立無限多個。")
             benefitRow(systemImage: "book.closed",
-                       title: "Journal",
-                       detail: "Free: 1 new entry a day. Subscribe for unlimited.")
+                       title: "生活日記記錄",
+                       detail: "免費版每日可建立 1 篇日記，解鎖後無篇數限制。")
         }
     }
 
     private var plans: some View {
         VStack(spacing: 10) {
             planRow(.monthly,
-                    title: String(localized: "Monthly"),
+                    title: "每月訂閱",
                     detail: Self.freeDuringDevelopment
-                        ? String(localized: "Free during development. Pricing will be announced later.")
-                        : String(localized: "About the price of a coffee. Cancel anytime."),
-                    price: (Self.freeDuringDevelopment ? "NT$0" : Self.monthlyPrice) + String(localized: "/month"))
+                        ? "開發測試期間免費，正式收費標準另行公告。"
+                        : "一杯咖啡的價格，隨時可在設定中取消。",
+                    price: (Self.freeDuringDevelopment ? "NT$0" : Self.monthlyPrice) + " / 月")
             if Self.showsLifetime {
                 planRow(.lifetime,
-                        title: String(localized: "Lifetime"),
-                        detail: String(localized: "Pay once, keep it forever."),
+                        title: "買斷終生版",
+                        detail: "一次購買，終生享用所有現在與未來更新功能。",
                         price: Self.lifetimePrice)
             }
         }
@@ -100,7 +100,7 @@ struct PaywallView: View {
                     model.startTrial()
                     dismiss()
                 } label: {
-                    Text("Start 30-day free trial").frame(maxWidth: .infinity)
+                    Text("開始 30 天免費試用").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -127,7 +127,7 @@ struct PaywallView: View {
                 .accessibilityIdentifier("paywall.buy")
             }
 
-            Text("Development build: buttons unlock locally and do not charge anything.")
+            Text("開發測試環境：點擊按鈕僅於本機模擬解鎖，不會產生任何實際扣款。")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -136,10 +136,10 @@ struct PaywallView: View {
     }
 
     private var buyTitle: String {
-        if Self.freeDuringDevelopment { return String(localized: "Subscribe (free during development)") }
+        if Self.freeDuringDevelopment { return "立即訂閱（開發階段免費）" }
         return selected == .monthly
-            ? String(format: String(localized: "Subscribe %@ / month"), Self.monthlyPrice)
-            : String(format: String(localized: "Buy once for %@"), Self.lifetimePrice)
+            ? String(format: "立即訂閱 %@ / 月", Self.monthlyPrice)
+            : String(format: "一次買斷 %@", Self.lifetimePrice)
     }
 
     // MARK: - 元件

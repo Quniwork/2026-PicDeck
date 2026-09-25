@@ -130,7 +130,15 @@ struct PhotosTabView: View {
     @State private var showPaywall = false
     @State private var monthCoverMonth: PhotoGrouping.MonthCalendar?
     @State private var yearCoverBucket: PhotoGrouping.Bucket?
+    @State private var dayCoverTarget: DayCoverTarget?
     @State private var timelineScrollTracker = SelectionScrollDirectionTracker()
+
+    struct DayCoverTarget: Identifiable {
+        let year: Int
+        let month: Int
+        let day: Int
+        var id: String { "\(year)-\(month)-\(day)" }
+    }
 
     /// 從上一層點進來時要捲到的位置，手動切子分頁時會清掉。
     @State private var anchorYearID: String?
@@ -172,6 +180,7 @@ struct PhotosTabView: View {
         case note(PHAsset)
         case monthCover(PhotoGrouping.MonthCalendar)
         case yearCover(PhotoGrouping.Bucket)
+        case dayCover(DayCoverTarget)
 
         var id: String {
             switch self {
@@ -185,6 +194,7 @@ struct PhotosTabView: View {
             case .note(let asset): return "note-\(asset.localIdentifier)"
             case .monthCover(let month): return "month-cover-\(month.id)"
             case .yearCover(let bucket): return "year-cover-\(bucket.id)"
+            case .dayCover(let target): return "day-cover-\(target.id)"
             }
         }
     }
@@ -203,6 +213,7 @@ struct PhotosTabView: View {
                 if let asset = noteAsset { return .note(asset) }
                 if let month = monthCoverMonth { return .monthCover(month) }
                 if let bucket = yearCoverBucket { return .yearCover(bucket) }
+                if let target = dayCoverTarget { return .dayCover(target) }
                 return nil
             },
             set: { newValue in
@@ -217,6 +228,7 @@ struct PhotosTabView: View {
                 noteAsset = nil
                 monthCoverMonth = nil
                 yearCoverBucket = nil
+                dayCoverTarget = nil
             }
         )
     }
@@ -344,6 +356,16 @@ struct PhotosTabView: View {
                             model.setYearCover(cover, year: bucket.year)
                         }
                     }
+                case .dayCover(let target):
+                    let dateTitle = DateTitle.dayMedium(year: target.year, month: target.month, day: target.day)
+                    NavigationStack {
+                        PhotoCoverEditorView(title: dateTitle,
+                                             candidates: assets(inYear: target.year, month: target.month, day: target.day),
+                                             aspectRatio: 1,
+                                             initial: model.dayCover(for: target.year, month: target.month, day: target.day)) { cover in
+                            model.setDayCover(cover, year: target.year, month: target.month, day: target.day)
+                        }
+                    }
                 }
             }
         }
@@ -384,7 +406,7 @@ struct PhotosTabView: View {
             }
         } label: {
             if isSelecting {
-                Text("Cancel")
+                Text("取消")
             } else {
                 Image(systemName: "checkmark.circle")
             }
@@ -703,10 +725,14 @@ struct PhotosTabView: View {
                           title: String(localized: "No photos"),
                           message: String(localized: "This filter has nothing to show."))
         } else {
-            Group {
-                if scale == .all {
-                    allGridContent
-                } else {
+            ZStack {
+                // allGridContent 始終保留在 hierarchy（不隨 scale 切換而銷毀），
+                // 避免 LazyVGrid + defaultScrollAnchor(.bottom) 在重建時出現黑畫面。
+                allGridContent
+                    .opacity(scale == .all ? 1 : 0)
+                    .allowsHitTesting(scale == .all)
+
+                if scale != .all {
                     otherScaleContent
                 }
             }
@@ -747,7 +773,11 @@ struct PhotosTabView: View {
                                         switchScale(to: .timeline, keepAnchors: true)
                                     },
                                     scrub: dayIndex,
-                                    onScrollOffsetChange: updateCountVisibility)
+                                    onScrollOffsetChange: updateCountVisibility,
+                                    coverForDay: { model.dayCover(for: $0, month: $1, day: $2) },
+                                    onEditCover: { year, month, day in
+                                        dayCoverTarget = DayCoverTarget(year: year, month: month, day: day)
+                                    })
 
             case .timeline:
                 TimelineView(sections: sections,
@@ -837,15 +867,15 @@ struct PhotosTabView: View {
                 Divider()
             }
 
-            Menu(String(localized: "Tag Filter")) {
+            Menu("標籤篩選") {
                 if tagStore.tags.isEmpty {
-                    Text(String(localized: "No tags"))
+                    Text("尚未建立標籤")
                 } else {
                     ForEach(tagStore.tags) { tag in tagButton(tag) }
                 }
             }
 
-            Menu(String(localized: "Filter Criteria")) {
+            Menu("篩選條件") {
                 PhotoFilterMenuSection(isSelected: { selection == .filter($0) },
                                        onSelect: { choose(.filter($0)) },
                                        showsSectionTitle: false)
@@ -854,33 +884,33 @@ struct PhotosTabView: View {
             // 跟系統照片一樣，這個子選單的標題沒有圖示。
             // 年、月、全部、時間軸都有顯示方式；排序只在全部與時間軸提供。
             if let context = GridContext(scale) {
-                Menu(String(localized: "View Options")) {
+                Menu("顯示選項") {
                     Button {
                         model.zoom(context, in: true)
                     } label: {
-                        Label(String(localized: "Zoom In"), systemImage: "plus.magnifyingglass")
+                        Label("放大檢視", systemImage: "plus.magnifyingglass")
                     }
                     .disabled(model.gridColumns(for: context) <= AppModel.columnRange(for: context).lowerBound)
 
                     Button {
                         model.zoom(context, in: false)
                     } label: {
-                        Label(String(localized: "Zoom Out"), systemImage: "minus.magnifyingglass")
+                        Label("縮小檢視", systemImage: "minus.magnifyingglass")
                     }
                     .disabled(model.gridColumns(for: context) >= AppModel.columnRange(for: context).upperBound)
 
                     if context == .all || context == .timeline {
-                        Picker(String(localized: "Grid Ratio"), selection: Binding(
+                        Picker("網格比例", selection: Binding(
                             get: { model.gridFitsAspect(for: context) },
                             set: { model.setGridFitsAspect($0, for: context) }
                         )) {
-                            Text("Square (1:1)").tag(false)
-                            Text("Original Ratio").tag(true)
+                            Text("正方形 (1:1)").tag(false)
+                            Text("原始比例").tag(true)
                         }
                     }
-                    Section(String(localized: "Show:")) {
+                    Section("顯示項目：") {
                         Toggle(isOn: $model.showsScreenshots) {
-                            Label(String(localized: "Screenshots"), systemImage: "camera.viewfinder")
+                            Label("螢幕截圖", systemImage: "camera.viewfinder")
                         }
                     }
                 }
@@ -920,6 +950,14 @@ struct PhotosTabView: View {
         assets.filter { asset in
             guard let date = asset.creationDate else { return false }
             return PhotoGrouping.calendar.component(.year, from: date) == bucket.year
+        }
+    }
+
+    private func assets(inYear year: Int, month: Int, day: Int) -> [PHAsset] {
+        assets.filter { asset in
+            guard let date = asset.creationDate else { return false }
+            let parts = PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: date)
+            return parts.year == year && parts.month == month && parts.day == day
         }
     }
 

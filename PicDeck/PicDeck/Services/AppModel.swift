@@ -55,6 +55,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var gridFitsByScale: [String: Bool] = [:]
     @Published private(set) var monthCovers: [String: PhotoCoverPreference] = [:]
     @Published private(set) var yearCovers: [String: PhotoCoverPreference] = [:]
+    @Published private(set) var dayCovers: [String: PhotoCoverPreference] = [:]
     /// 整理分頁各來源（各年月、所有未整理等）最後瀏覽/整理到的照片 ID，用來接續進度。
     @Published private(set) var lastReviewedAssetIDs: [String: String] = [:]
     static let gridColumnRange = 2...8
@@ -96,6 +97,7 @@ final class AppModel: ObservableObject {
         monthCovers[key] = cover
         if let data = try? JSONEncoder().encode(monthCovers) {
             defaults.set(data, forKey: Key.monthCovers)
+            CloudSyncService.shared.syncDataToCloudKV(key: Key.monthCovers, data: data)
         }
     }
 
@@ -107,6 +109,20 @@ final class AppModel: ObservableObject {
         yearCovers[String(year)] = cover
         if let data = try? JSONEncoder().encode(yearCovers) {
             defaults.set(data, forKey: Key.yearCovers)
+            CloudSyncService.shared.syncDataToCloudKV(key: Key.yearCovers, data: data)
+        }
+    }
+
+    func dayCover(for year: Int, month: Int, day: Int) -> PhotoCoverPreference? {
+        dayCovers["\(year)-\(month)-\(day)"]
+    }
+
+    func setDayCover(_ cover: PhotoCoverPreference?, year: Int, month: Int, day: Int) {
+        let key = "\(year)-\(month)-\(day)"
+        dayCovers[key] = cover
+        if let data = try? JSONEncoder().encode(dayCovers) {
+            defaults.set(data, forKey: Key.dayCovers)
+            CloudSyncService.shared.syncDataToCloudKV(key: Key.dayCovers, data: data)
         }
     }
 
@@ -130,7 +146,10 @@ final class AppModel: ObservableObject {
     /// 選集頁上的區塊。使用者自己建立、命名、排序；每個區塊有自己的標籤與顯示方式。
     @Published var homeBlocks: [HomeBlock] = HomeBlock.defaults {
         didSet {
-            if let data = try? JSONEncoder().encode(homeBlocks) { defaults.set(data, forKey: Key.homeBlocks) }
+            if let data = try? JSONEncoder().encode(homeBlocks) {
+                defaults.set(data, forKey: Key.homeBlocks)
+                CloudSyncService.shared.syncDataToCloudKV(key: Key.homeBlocks, data: data)
+            }
         }
     }
 
@@ -175,6 +194,7 @@ final class AppModel: ObservableObject {
         static let gridFitsAspect = "picdeck.gridFitsAspect"
         static let monthCovers = "picdeck.monthCovers"
         static let yearCovers = "picdeck.yearCovers"
+        static let dayCovers = "picdeck.dayCovers"
 
         static let sortsByAdded = "picdeck.sortsByAdded"
         static let showsScreenshots = "picdeck.showsScreenshots"
@@ -197,6 +217,7 @@ final class AppModel: ObservableObject {
         load()
         // UI 測試用：帶 -startOnPhotos 啟動時直接停在照片分頁。
         if ProcessInfo.processInfo.arguments.contains("-startOnPhotos") { selectedTab = 2 }
+        if ProcessInfo.processInfo.arguments.contains("-startOnMore") { selectedTab = 4 }
         // UI 測試用：帶 -resetUnlock 啟動時回到未解鎖、沒試用過的狀態。
         if ProcessInfo.processInfo.arguments.contains("-resetUnlock") { resetUnlockForTesting() }
         // UI 測試用：帶 -subscribeForTesting 啟動時直接變成已訂閱（測完還原使用者的狀態用）。
@@ -211,7 +232,8 @@ final class AppModel: ObservableObject {
         _sortsByAdded = Published(initialValue: defaults.bool(forKey: Key.sortsByAdded))
         if let raw = defaults.string(forKey: Key.cardPosition), let v = CardTextPosition(rawValue: raw) { _cardTextPosition = Published(initialValue: v) }
         if let raw = defaults.string(forKey: Key.cardStyle), let v = CardTextStyle(rawValue: raw) { _cardTextStyle = Published(initialValue: v) }
-        if let data = defaults.data(forKey: Key.homeBlocks),
+        let homeBlocksData = defaults.data(forKey: Key.homeBlocks) ?? CloudSyncService.shared.readDataFromCloudKV(key: Key.homeBlocks)
+        if let data = homeBlocksData,
            let saved = try? JSONDecoder().decode([HomeBlock].self, from: data), !saved.isEmpty {
             _homeBlocks = Published(initialValue: saved)
         } else if let data = defaults.data(forKey: Key.homeSections),
@@ -247,13 +269,20 @@ final class AppModel: ObservableObject {
                 gridFitsByScale[scale.rawValue] = defaults.bool(forKey: Key.gridFitsAspect + "." + scale.rawValue)
             }
         }
-        if let data = defaults.data(forKey: Key.monthCovers),
+        let monthData = defaults.data(forKey: Key.monthCovers) ?? CloudSyncService.shared.readDataFromCloudKV(key: Key.monthCovers)
+        if let data = monthData,
            let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
             _monthCovers = Published(initialValue: saved)
         }
-        if let data = defaults.data(forKey: Key.yearCovers),
+        let yearData = defaults.data(forKey: Key.yearCovers) ?? CloudSyncService.shared.readDataFromCloudKV(key: Key.yearCovers)
+        if let data = yearData,
            let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
             _yearCovers = Published(initialValue: saved)
+        }
+        let dayData = defaults.data(forKey: Key.dayCovers) ?? CloudSyncService.shared.readDataFromCloudKV(key: Key.dayCovers)
+        if let data = dayData,
+           let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
+            _dayCovers = Published(initialValue: saved)
         }
         if defaults.object(forKey: Key.showsScreenshots) != nil {
             _showsScreenshots = Published(initialValue: defaults.bool(forKey: Key.showsScreenshots))
@@ -262,6 +291,29 @@ final class AppModel: ObservableObject {
            let saved = AppAppearance(rawValue: raw) {
             // 直接寫底層值，不觸發 didSet；視窗在畫面出現時才套用。
             _appearance = Published(initialValue: saved)
+        }
+
+        NotificationCenter.default.addObserver(forName: CloudSyncService.didSyncFromCloudNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.reloadFromCloudKV()
+        }
+    }
+
+    private func reloadFromCloudKV() {
+        if let data = CloudSyncService.shared.readDataFromCloudKV(key: Key.homeBlocks),
+           let saved = try? JSONDecoder().decode([HomeBlock].self, from: data), !saved.isEmpty {
+            homeBlocks = saved
+        }
+        if let data = CloudSyncService.shared.readDataFromCloudKV(key: Key.monthCovers),
+           let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
+            monthCovers = saved
+        }
+        if let data = CloudSyncService.shared.readDataFromCloudKV(key: Key.yearCovers),
+           let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
+            yearCovers = saved
+        }
+        if let data = CloudSyncService.shared.readDataFromCloudKV(key: Key.dayCovers),
+           let saved = try? JSONDecoder().decode([String: PhotoCoverPreference].self, from: data) {
+            dayCovers = saved
         }
     }
 
@@ -517,9 +569,9 @@ enum OrganizeSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .photos: return String(localized: "Photos")
-        case .tags: return String(localized: "Tags")
-        case .albums: return String(localized: "Folders and albums")
+        case .photos: return "相片"
+        case .tags: return "標籤"
+        case .albums: return "相簿"
         }
     }
 }
@@ -532,9 +584,9 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .system: return String(localized: "Automatic")
-        case .light: return String(localized: "Light")
-        case .dark: return String(localized: "Dark")
+        case .system: return "系統預設"
+        case .light: return "淺色模式"
+        case .dark: return "深色模式"
         }
     }
 

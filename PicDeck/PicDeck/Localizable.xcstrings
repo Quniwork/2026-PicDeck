@@ -7,7 +7,11 @@
     " " : {
 
     },
+    "【全自動防刪除保護】已在 iPhone「檔案」App 中建立專屬「PicDeck」資料夾。每次新增標籤、日記記錄或相片備註時，系統皆會全自動即時同步備份至該目錄，完全無需任何手動操作。刪除 App 重新安裝時亦會自動為您偵測還原。" : {
+
+    },
     "/month" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -91,6 +95,7 @@
 
     },
     "%lld / %lld entries" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -112,6 +117,7 @@
       }
     },
     "%lld / %lld photos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -133,11 +139,22 @@
       }
     },
     "%lld / %lld tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld / %lld 個"
+          }
+        }
+      }
+    },
+    "%lld × %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld × %2$lld"
           }
         }
       }
@@ -205,6 +222,7 @@
       }
     },
     "%lld marked" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -257,6 +275,7 @@
       }
     },
     "%lld years ago" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -265,6 +284,18 @@
           }
         }
       }
+    },
+    "%lld 年前" : {
+
+    },
+    "%lld 年前的今天" : {
+
+    },
+    "%lld年" : {
+
+    },
+    "•" : {
+
     },
     "+%lld" : {
 
@@ -325,6 +356,7 @@
       }
     },
     "About the price of a coffee. Cancel anytime." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -419,6 +451,7 @@
       }
     },
     "Add more photos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -429,6 +462,7 @@
       }
     },
     "Add photos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -439,6 +473,7 @@
       }
     },
     "Add tag" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -449,6 +484,7 @@
       }
     },
     "Add tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -480,6 +516,7 @@
       }
     },
     "Add to favorites" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -550,6 +587,7 @@
       }
     },
     "All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -580,6 +618,7 @@
       }
     },
     "All filters" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -622,6 +661,7 @@
       }
     },
     "All unorganized" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -632,6 +672,7 @@
       }
     },
     "Allow Photo Access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -694,6 +735,7 @@
       }
     },
     "Appearance" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -755,6 +797,7 @@
       }
     },
     "Aspect Ratio Grid" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -786,6 +829,7 @@
       }
     },
     "Automatic (newest photo)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -857,6 +901,7 @@
       }
     },
     "Buy once for %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -867,6 +912,7 @@
       }
     },
     "By month" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -968,6 +1014,7 @@
       }
     },
     "Categories" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -988,6 +1035,7 @@
       }
     },
     "Category name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -998,6 +1046,7 @@
       }
     },
     "Changed your mind? Swipe right to undo the last action and return to the previous photo." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1021,6 +1070,7 @@
       }
     },
     "Choose a photo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1081,6 +1131,7 @@
       }
     },
     "Collections" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1091,6 +1142,7 @@
       }
     },
     "Color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1153,10 +1205,17 @@
       }
     },
     "Couldn't add to the album" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "無法加入相簿"
+          }
+        },
         "zh-Hant" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "無法加到相簿"
           }
         }
@@ -1198,6 +1257,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法刪除"
+          }
+        }
+      }
+    },
+    "Couldn't remove from the album" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "無法從相簿移除"
           }
         }
       }
@@ -1327,6 +1397,7 @@
       }
     },
     "Custom" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1337,6 +1408,7 @@
       }
     },
     "Customize" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1390,6 +1462,7 @@
       }
     },
     "Dark" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1421,6 +1494,7 @@
       }
     },
     "Day" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1473,6 +1547,7 @@
       }
     },
     "Delete %lld photos?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1493,6 +1568,7 @@
       }
     },
     "Delete category" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1534,6 +1610,7 @@
       }
     },
     "Delete permanently" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1554,6 +1631,7 @@
       }
     },
     "Delete this album?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1574,6 +1652,7 @@
       }
     },
     "Delete this folder?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1595,6 +1674,7 @@
       }
     },
     "Deleting an album keeps its photos in your library. A folder can only be deleted after everything inside it is removed." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1615,10 +1695,8 @@
         }
       }
     },
-    "Deselect all photos from this day" : {
-
-    },
     "Developer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1629,6 +1707,7 @@
       }
     },
     "Development build: buttons unlock locally and do not charge anything." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1671,6 +1750,7 @@
       }
     },
     "Display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1691,6 +1771,7 @@
       }
     },
     "Done editing tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1711,6 +1792,7 @@
       }
     },
     "Double tap to zoom in" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1721,6 +1803,7 @@
       }
     },
     "Drag the photo to move it, and use the slider to zoom." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1784,6 +1867,7 @@
       }
     },
     "Edit category" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1815,6 +1899,7 @@
       }
     },
     "Edit tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1825,6 +1910,7 @@
       }
     },
     "Edited" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1855,6 +1941,7 @@
       }
     },
     "Emoji" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1876,6 +1963,7 @@
       }
     },
     "Everything happens on your device. PicDeck never uploads your photos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1886,6 +1974,7 @@
       }
     },
     "Expires on" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1906,6 +1995,7 @@
       }
     },
     "Favorites" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1927,6 +2017,7 @@
       }
     },
     "Favorites, Photos, Videos and Screenshots." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1948,6 +2039,7 @@
       }
     },
     "File into album…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1958,6 +2050,7 @@
       }
     },
     "File into tag…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -1979,6 +2072,7 @@
       }
     },
     "Filed into %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2000,6 +2094,7 @@
       }
     },
     "Filing a photo into an album also marks it as organized." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2020,6 +2115,7 @@
       }
     },
     "Filter by your tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2030,6 +2126,7 @@
       }
     },
     "Filter by:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2040,6 +2137,7 @@
       }
     },
     "Filter Criteria" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2050,6 +2148,7 @@
       }
     },
     "Filter…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2060,6 +2159,7 @@
       }
     },
     "Filtered" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2121,6 +2221,7 @@
       }
     },
     "Folders and albums" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2174,6 +2275,7 @@
       }
     },
     "Free" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2184,6 +2286,7 @@
       }
     },
     "Free during development. Pricing will be announced later." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2194,6 +2297,7 @@
       }
     },
     "Free during development. We'll announce when pricing starts." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2215,6 +2319,7 @@
       }
     },
     "Free plan: 1 new journal entry per day" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2235,6 +2340,7 @@
       }
     },
     "Free trial: %lld days left" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2245,6 +2351,7 @@
       }
     },
     "Free: 1 new entry a day. Subscribe for unlimited." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2255,6 +2362,7 @@
       }
     },
     "Free: 1 tag with a date. Subscribe for unlimited." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2274,7 +2382,11 @@
         }
       }
     },
+    "GIF 動圖" : {
+
+    },
     "Give journal entries their own category, separate from photo tags. Deleting a category leaves its entries without one." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2285,6 +2397,7 @@
       }
     },
     "Grid Ratio" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2295,6 +2408,7 @@
       }
     },
     "Grid view" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2315,6 +2429,7 @@
       }
     },
     "Help" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2345,6 +2460,7 @@
       }
     },
     "How to use" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2364,7 +2480,14 @@
         }
       }
     },
+    "iCloud 連線診斷" : {
+
+    },
+    "iCloud 雲端鏡像" : {
+
+    },
     "Icons" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2385,6 +2508,7 @@
       }
     },
     "Interface" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2395,6 +2519,7 @@
       }
     },
     "It only marks the photo. Nothing is deleted until you confirm in Trash." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2405,6 +2530,7 @@
       }
     },
     "Journal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2415,6 +2541,7 @@
       }
     },
     "Journal (daily)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2425,6 +2552,7 @@
       }
     },
     "Journal categories" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2466,6 +2594,7 @@
       }
     },
     "Kept" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2538,6 +2667,7 @@
       }
     },
     "Lifetime" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2548,6 +2678,7 @@
       }
     },
     "Light" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2611,6 +2742,7 @@
       }
     },
     "Manage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2632,6 +2764,7 @@
       }
     },
     "Manage blocks" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2652,6 +2785,7 @@
       }
     },
     "Manage subscription" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2725,6 +2859,7 @@
       }
     },
     "Marks the photo as organized so it stops showing up in your unorganized list." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2755,6 +2890,7 @@
       }
     },
     "Media Types" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2785,6 +2921,7 @@
       }
     },
     "Month" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2805,6 +2942,7 @@
       }
     },
     "Monthly" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2815,6 +2953,7 @@
       }
     },
     "Monthly subscription" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2835,6 +2974,7 @@
       }
     },
     "Mood" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2855,6 +2995,7 @@
       }
     },
     "More albums" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2865,6 +3006,7 @@
       }
     },
     "More tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2875,6 +3017,7 @@
       }
     },
     "Moved to pending deletion" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2885,6 +3028,7 @@
       }
     },
     "Name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2957,6 +3101,7 @@
       }
     },
     "New category" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -2998,6 +3143,7 @@
       }
     },
     "New journal entry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3039,6 +3185,7 @@
       }
     },
     "Next" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3069,6 +3216,7 @@
       }
     },
     "No categories yet." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3079,6 +3227,7 @@
       }
     },
     "No daily limit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3120,6 +3269,7 @@
       }
     },
     "No matches." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3151,6 +3301,7 @@
       }
     },
     "No photos on this day." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3161,6 +3312,7 @@
       }
     },
     "No tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3182,6 +3334,7 @@
       }
     },
     "No tags yet." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3192,6 +3345,7 @@
       }
     },
     "None" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3202,6 +3356,7 @@
       }
     },
     "Not in an album" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3379,6 +3534,7 @@
       }
     },
     "One subscription unlocks everything." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3400,6 +3556,7 @@
       }
     },
     "Open a tag to change its icon or give it a start date. Tap Edit to drag them into the order you want." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3410,6 +3567,7 @@
       }
     },
     "Open Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3420,6 +3578,7 @@
       }
     },
     "Organize" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3430,6 +3589,7 @@
       }
     },
     "Organize (daily)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3451,6 +3611,7 @@
       }
     },
     "Original Ratio" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3492,6 +3653,7 @@
       }
     },
     "Pay once, keep it forever." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3502,6 +3664,7 @@
       }
     },
     "Pending deletion" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3553,6 +3716,7 @@
       }
     },
     "Photos  (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3583,6 +3747,7 @@
       }
     },
     "Photos you swipe up land here first. Nothing is deleted until you confirm." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3593,6 +3758,7 @@
       }
     },
     "PicDeck needs photo access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3603,6 +3769,7 @@
       }
     },
     "PicDeck works entirely on your device. Photos are never uploaded to any server." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3611,6 +3778,12 @@
           }
         }
       }
+    },
+    "PicDeck 完全在您的本機裝置上運作。您的相片永遠不會上傳至任何第三方伺服器，雲端同步僅限於您個人專屬的私人 iCloud 容器。" : {
+
+    },
+    "PicDeck 需要存取您的照片庫" : {
+
     },
     "Pick a source" : {
       "extractionState" : "stale",
@@ -3624,6 +3797,7 @@
       }
     },
     "Pick the photos to show with this entry." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3666,6 +3840,7 @@
       }
     },
     "Plan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3696,6 +3871,7 @@
       }
     },
     "Preview shape" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3727,6 +3903,7 @@
       }
     },
     "Privacy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3747,6 +3924,7 @@
       }
     },
     "Pull down to favorite" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3757,6 +3935,7 @@
       }
     },
     "Pull down to mark as favorite" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3767,6 +3946,7 @@
       }
     },
     "Random" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3788,6 +3968,7 @@
       }
     },
     "Recent" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3829,6 +4010,7 @@
       }
     },
     "Remove" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3848,6 +4030,17 @@
         }
       }
     },
+    "Remove from pending deletion" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "移出待刪除"
+          }
+        }
+      }
+    },
     "Removed from favorites" : {
       "localizations" : {
         "zh-Hant" : {
@@ -3858,7 +4051,19 @@
         }
       }
     },
+    "Removed from pending deletion" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "已移出待刪除"
+          }
+        }
+      }
+    },
     "Rename" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3880,6 +4085,7 @@
       }
     },
     "Replay gesture tutorial" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3890,6 +4096,7 @@
       }
     },
     "Reset filters" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3900,6 +4107,7 @@
       }
     },
     "Reset journal (testing)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3910,6 +4118,7 @@
       }
     },
     "Reset kept records (testing)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3920,6 +4129,7 @@
       }
     },
     "Reset position" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3930,6 +4140,7 @@
       }
     },
     "Reset tags (testing)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3940,6 +4151,7 @@
       }
     },
     "Reset unlock (testing)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -3980,6 +4192,7 @@
       }
     },
     "Screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4021,6 +4234,7 @@
       }
     },
     "Search notes and tags" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4062,9 +4276,6 @@
         }
       }
     },
-    "Select all photos from this day" : {
-
-    },
     "Select photos to continue." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4087,6 +4298,7 @@
       }
     },
     "Selected %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4211,6 +4423,7 @@
       }
     },
     "Show:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4242,6 +4455,7 @@
       }
     },
     "Single view" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4252,6 +4466,7 @@
       }
     },
     "Skip" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4345,6 +4560,7 @@
       }
     },
     "Sort by Date Captured" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4355,6 +4571,7 @@
       }
     },
     "Sort by Recently Added" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4376,6 +4593,7 @@
       }
     },
     "Square" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4386,6 +4604,7 @@
       }
     },
     "Square (1:1)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4396,6 +4615,7 @@
       }
     },
     "Start 30-day free trial" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4416,6 +4636,7 @@
       }
     },
     "Start organizing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4426,6 +4647,7 @@
       }
     },
     "Start tutorial" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4447,6 +4669,7 @@
       }
     },
     "Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4457,6 +4680,7 @@
       }
     },
     "Subscribe (free during development)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4467,6 +4691,7 @@
       }
     },
     "Subscribe %@ / month" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4477,6 +4702,7 @@
       }
     },
     "Subscribe for unlimited journal entries. You can still edit existing entries." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4497,6 +4723,7 @@
       }
     },
     "Swipe left to keep" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4518,6 +4745,7 @@
       }
     },
     "Swipe right to go back" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4528,6 +4756,7 @@
       }
     },
     "Swipe right to go back to the previous photo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4538,6 +4767,7 @@
       }
     },
     "Swipe up to delete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4580,6 +4810,7 @@
       }
     },
     "Syncs straight to the Favorites album in iOS Photos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4623,6 +4854,7 @@
       }
     },
     "Tag Filter" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4643,6 +4875,7 @@
       }
     },
     "Tagging stays free; filtering by tag needs the unlock." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4663,6 +4896,7 @@
       }
     },
     "Tags are free. Filtering by tag needs the paid unlock." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4673,6 +4907,7 @@
       }
     },
     "Tags with dates" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4694,6 +4929,7 @@
       }
     },
     "Tap an album to file it" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4704,6 +4940,7 @@
       }
     },
     "Tap to change" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4714,6 +4951,7 @@
       }
     },
     "Tap to pick a mood" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4765,6 +5003,7 @@
       }
     },
     "The free plan handles 30 photos a day." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4817,6 +5056,7 @@
       }
     },
     "The photos stay in your library." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4858,6 +5098,7 @@
       }
     },
     "They go to the iOS Recently Deleted album and can be recovered within 30 days." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -4950,6 +5191,7 @@
       }
     },
     "Timeline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5032,6 +5274,7 @@
       }
     },
     "Trash" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5042,6 +5285,7 @@
       }
     },
     "Trash is empty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5095,6 +5339,7 @@
       }
     },
     "Undo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5105,6 +5350,7 @@
       }
     },
     "Undone" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5115,6 +5361,7 @@
       }
     },
     "Unlimited" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5157,6 +5404,7 @@
       }
     },
     "Unorganized photos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5167,6 +5415,7 @@
       }
     },
     "Unorganized screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5177,6 +5426,7 @@
       }
     },
     "Unorganized videos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5187,6 +5437,7 @@
       }
     },
     "Use this color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5197,6 +5448,7 @@
       }
     },
     "Version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5257,6 +5509,7 @@
       }
     },
     "What happened today?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5288,6 +5541,7 @@
       }
     },
     "Wide" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5319,6 +5573,7 @@
       }
     },
     "Write journal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5329,6 +5584,7 @@
       }
     },
     "Write note" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5339,6 +5595,7 @@
       }
     },
     "Year" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
@@ -5408,6 +5665,615 @@
           }
         }
       }
+    },
+    "上次自動備份" : {
+
+    },
+    "下一步" : {
+
+    },
+    "了解" : {
+
+    },
+    "今天發生了什麼事？" : {
+
+    },
+    "介面外觀" : {
+
+    },
+    "使用幫助" : {
+
+    },
+    "使用此顏色" : {
+
+    },
+    "依個人標籤篩選照片" : {
+
+    },
+    "依月份" : {
+
+    },
+    "依月份整理" : {
+
+    },
+    "保留" : {
+
+    },
+    "備份存放位置" : {
+
+    },
+    "備份管理（進階）" : {
+
+    },
+    "備註" : {
+
+    },
+    "僅先移至待刪除清單，在垃圾桶確認之前不會真正刪除照片。" : {
+
+    },
+    "儲存" : {
+
+    },
+    "允許相片存取權限" : {
+
+    },
+    "免費版：每日可新增 1 篇日記" : {
+
+    },
+    "免費版提供 1 個紀念日標籤，解鎖後可建立無限多個。" : {
+
+    },
+    "免費版每天可整理 30 張照片，解鎖後享無限張數。" : {
+
+    },
+    "免費版每日可建立 1 篇日記，解鎖後無篇數限制。" : {
+
+    },
+    "全功能進階篩選" : {
+
+    },
+    "全自動背景同步中" : {
+
+    },
+    "分類" : {
+
+    },
+    "分類名稱" : {
+
+    },
+    "分類清單" : {
+
+    },
+    "刪除" : {
+
+    },
+    "刪除此檔案夾？" : {
+
+    },
+    "刪除此相簿？" : {
+
+    },
+    "刪除相簿時，其中的照片仍會完整保留在相片庫中。檔案夾需在內部項目清空後方可刪除。" : {
+
+    },
+    "到期日" : {
+
+    },
+    "前往「設定」開啟權限" : {
+
+    },
+    "加入備註…" : {
+
+    },
+    "加入喜愛" : {
+
+    },
+    "加入更多照片" : {
+
+    },
+    "加入標籤" : {
+
+    },
+    "加入照片" : {
+
+    },
+    "加入相簿" : {
+
+    },
+    "卡片樣式" : {
+
+    },
+    "原始比例" : {
+
+    },
+    "原始比例網格" : {
+
+    },
+    "取消" : {
+
+    },
+    "取消全選當日照片" : {
+
+    },
+    "取消喜愛" : {
+
+    },
+    "另存備份檔案複本" : {
+
+    },
+    "同步狀態" : {
+
+    },
+    "名稱" : {
+
+    },
+    "向上滑動：標記刪除" : {
+
+    },
+    "向下滑動：加入喜愛" : {
+
+    },
+    "向右滑動：返回上張" : {
+
+    },
+    "向左滑動：保留相片" : {
+
+    },
+    "喜好項目、相片、影片與截圖等完整篩選維度。" : {
+
+    },
+    "喜愛" : {
+
+    },
+    "單圖檢視" : {
+
+    },
+    "外觀模式" : {
+
+    },
+    "媒體類型" : {
+
+    },
+    "完成" : {
+
+    },
+    "完成編輯標籤" : {
+
+    },
+    "寬版" : {
+
+    },
+    "將照片直接加入指定相簿，同時自動標記為已整理完成。" : {
+
+    },
+    "尚未加入任何日記" : {
+
+    },
+    "尚未加入標籤" : {
+
+    },
+    "尚未建立任何分類" : {
+
+    },
+    "尚未建立任何標籤" : {
+
+    },
+    "尚未建立任何相簿" : {
+
+    },
+    "尚未建立標籤" : {
+
+    },
+    "已標記 %lld 張" : {
+
+    },
+    "已移至待刪除清單" : {
+
+    },
+    "已篩選" : {
+
+    },
+    "已連線" : {
+
+    },
+    "已選取" : {
+
+    },
+    "影片" : {
+
+    },
+    "待刪除清單" : {
+
+    },
+    "從外部檔案手動還原" : {
+
+    },
+    "復原" : {
+
+    },
+    "心情" : {
+
+    },
+    "我的 iPhone > PicDeck" : {
+
+    },
+    "所有操作均在本機端完成，PicDeck 絕不會上傳您的任何照片。" : {
+
+    },
+    "手勢教學指南" : {
+
+    },
+    "拖曳照片以調整位置，滑動拉桿進行縮放。" : {
+
+    },
+    "按最近加入排序" : {
+
+    },
+    "按拍攝日期排序" : {
+
+    },
+    "挑選封面照片" : {
+
+    },
+    "挑選這篇日記要呈現的照片。" : {
+
+    },
+    "搜尋備註與標籤" : {
+
+    },
+    "搜尋圖示…" : {
+
+    },
+    "撰寫日記" : {
+
+    },
+    "撰寫這天的日記" : {
+
+    },
+    "收起詳細資訊" : {
+
+    },
+    "改變主意了嗎？向右滑動即可復原上個動作並回到上一張照片。" : {
+
+    },
+    "放大檢視" : {
+
+    },
+    "整理" : {
+
+    },
+    "新增備註…" : {
+
+    },
+    "新增分類" : {
+
+    },
+    "新增日記" : {
+
+    },
+    "新增至另一天的日記" : {
+
+    },
+    "方案狀態" : {
+
+    },
+    "日記" : {
+
+    },
+    "日記內文" : {
+
+    },
+    "更多" : {
+
+    },
+    "未加入任何相簿" : {
+
+    },
+    "未選取" : {
+
+    },
+    "查無符合圖示" : {
+
+    },
+    "標籤" : {
+
+    },
+    "標籤(%lld)" : {
+
+    },
+    "標籤列表" : {
+
+    },
+    "標籤功能" : {
+
+    },
+    "標籤建立完全免費，依標籤篩選照片為進階解鎖功能。" : {
+
+    },
+    "標籤建立完全免費，解鎖後可直接按自訂標籤過濾瀏覽。" : {
+
+    },
+    "標籤篩選" : {
+
+    },
+    "標記為已整理，未來不再出現在待整理列表中。" : {
+
+    },
+    "檔案夾與相簿" : {
+
+    },
+    "正式上架自動啟用" : {
+
+    },
+    "正方形" : {
+
+    },
+    "正方形 (1:1)" : {
+
+    },
+    "此篩選條件下沒有任何照片" : {
+
+    },
+    "歸檔至相簿…" : {
+
+    },
+    "每日整理額度" : {
+
+    },
+    "每日日記額度" : {
+
+    },
+    "添加在哪些天的日記" : {
+
+    },
+    "清除" : {
+
+    },
+    "為生活日記設定專屬分類，與相片標籤獨立運作。刪除分類不會刪除日記內文。" : {
+
+    },
+    "無每日整理上限" : {
+
+    },
+    "照片" : {
+
+    },
+    "照片 (%lld)" : {
+
+    },
+    "照片將移至系統「最近刪除」相簿，可在 30 天內隨時復原。" : {
+
+    },
+    "版本號碼" : {
+
+    },
+    "生活日記記錄" : {
+
+    },
+    "略過教學" : {
+
+    },
+    "目前方案" : {
+
+    },
+    "直接同步加入至 iOS 系統內建的「喜好項目」相簿。" : {
+
+    },
+    "相片仍會保留在相片庫中。" : {
+
+    },
+    "相片備註" : {
+
+    },
+    "相簿" : {
+
+    },
+    "相簿(%lld)" : {
+
+    },
+    "確定" : {
+
+    },
+    "確定要刪除這 %lld 張照片嗎？" : {
+
+    },
+    "移至垃圾桶刪除" : {
+
+    },
+    "移除圖示" : {
+
+    },
+    "管理" : {
+
+    },
+    "管理區塊" : {
+
+    },
+    "管理日記分類" : {
+
+    },
+    "管理標籤" : {
+
+    },
+    "管理相簿" : {
+
+    },
+    "管理訂閱項目" : {
+
+    },
+    "篩選" : {
+
+    },
+    "篩選方式：" : {
+
+    },
+    "篩選條件" : {
+
+    },
+    "紀念日標籤" : {
+
+    },
+    "紀念日起算日標籤" : {
+
+    },
+    "網格檢視" : {
+
+    },
+    "網格比例" : {
+
+    },
+    "編輯備註" : {
+
+    },
+    "編輯分類" : {
+
+    },
+    "編輯標籤" : {
+
+    },
+    "縮小檢視" : {
+
+    },
+    "自動選取" : {
+
+    },
+    "自動選取（最新照片）" : {
+
+    },
+    "自訂封面" : {
+
+    },
+    "自訂版面" : {
+
+    },
+    "自訂顏色" : {
+
+    },
+    "螢幕截圖" : {
+
+    },
+    "解鎖 PicDeck 完整功能" : {
+
+    },
+    "解鎖完整版" : {
+
+    },
+    "訂閱解鎖即可無限制記錄生活日記，您仍可隨時編輯既有日記。" : {
+
+    },
+    "設定封面" : {
+
+    },
+    "詳細資訊" : {
+
+    },
+    "資料自動備份與同步" : {
+
+    },
+    "資料還原" : {
+
+    },
+    "資訊" : {
+
+    },
+    "返回" : {
+
+    },
+    "這一天沒有照片。" : {
+
+    },
+    "選取當日所有照片" : {
+
+    },
+    "選單" : {
+
+    },
+    "選擇圖示" : {
+
+    },
+    "選集" : {
+
+    },
+    "重新命名" : {
+
+    },
+    "重新播放手勢教學" : {
+
+    },
+    "重置保留記錄（測試）" : {
+
+    },
+    "重置日記記錄（測試）" : {
+
+    },
+    "重置標籤記錄（測試）" : {
+
+    },
+    "重置解鎖狀態（測試）" : {
+
+    },
+    "重設位置" : {
+
+    },
+    "重設篩選" : {
+
+    },
+    "重設篩選條件" : {
+
+    },
+    "開始 30 天免費試用" : {
+
+    },
+    "開始教學" : {
+
+    },
+    "開始整理照片" : {
+
+    },
+    "開啟日記" : {
+
+    },
+    "開發測試環境：點擊按鈕僅於本機模擬解鎖，不會產生任何實際扣款。" : {
+
+    },
+    "開發者測試" : {
+
+    },
+    "關閉" : {
+
+    },
+    "隨機" : {
+
+    },
+    "隱私保護" : {
+
+    },
+    "預覽比例" : {
+
+    },
+    "顏色" : {
+
+    },
+    "顯示方式" : {
+
+    },
+    "顯示選項" : {
+
+    },
+    "顯示項目：" : {
+
+    },
+    "點擊更換心情" : {
+
+    },
+    "點擊標籤可更換圖示或設定紀念日起算日。點擊「編輯」可拖曳調整排列順序。" : {
+
+    },
+    "點擊相簿：快速歸檔" : {
+
+    },
+    "點擊選擇心情" : {
+
     }
   },
   "version" : "1.0"

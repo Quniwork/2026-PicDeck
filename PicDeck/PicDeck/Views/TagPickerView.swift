@@ -44,18 +44,18 @@ struct TagPickerView: View {
 
                 if tagStore.tags.isEmpty {
                     Section {
-                        Text("Tags are free. Filtering by tag needs the paid unlock.")
+                        Text("標籤建立完全免費，依標籤篩選照片為進階解鎖功能。")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
             .pageList()
-            .navigationTitle("Add tags")
+            .navigationTitle("加入標籤")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("完成") { dismiss() }
                         .accessibilityIdentifier("tagpicker.done")
                 }
             }

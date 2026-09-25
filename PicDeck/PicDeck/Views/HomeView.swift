@@ -35,19 +35,11 @@ struct HomeView: View {
     @State private var contentWidth: CGFloat = 390
     @State private var covers: [UUID: PHAsset] = [:]
     @State private var counts: [UUID: Int] = [:]
-    @State private var onThisDay: [OnThisDayItem] = []
-    /// 點那年今天的照片打開放大檢視，可以左右滑看其他張。
-    @State private var onThisDayViewer: String?
+    @State private var onThisDay: [OnThisDayGroup] = []
+    /// 點選某個年份群組時，進入該日照片集合頁面（圖 1）。
+    @State private var selectedOnThisDayGroup: OnThisDayGroup?
     /// 點那年今天的照片打開檢視時，從縮圖位置展開。
     @Namespace private var photoZoom
-
-    private struct OnThisDayItem: Identifiable {
-        let asset: PHAsset
-        let yearsAgo: Int
-        var id: String { asset.localIdentifier }
-    }
-
-    private struct ViewerStart: Identifiable { let id: String }
 
     private func tags(of block: HomeBlock) -> [PhotoTag] {
         block.tagIDs.compactMap { tagStore.tag(withID: $0) }
@@ -111,38 +103,36 @@ struct HomeView: View {
             }
             .onChange(of: tagStore.tags) { _, _ in reconcileSections() }
             .onChange(of: model.requestedCollectionTagID) { _, _ in openRequestedCollection() }
-            .navigationTitle("Collections")
+            .navigationTitle("選集")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
-                    LeadingTitleToolbar(title: String(localized: "Collections"), font: .largeTitle)
+                    LeadingTitleToolbar(title: "選集", font: .largeTitle)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { sheet = .cardStyle } label: {
-                            Label(String(localized: "Card style"), systemImage: "slider.horizontal.3")
+                            Label("卡片樣式", systemImage: "slider.horizontal.3")
                         }
                         .accessibilityIdentifier("home.cardStyle")
                         Button { sheet = .arrange } label: {
-                            Label(String(localized: "Manage blocks"), systemImage: "square.stack.3d.up")
+                            Label("管理區塊", systemImage: "square.stack.3d.up")
                         }
                         .accessibilityIdentifier("home.arrange")
                         Button { withMotion { isEditingTags.toggle() } } label: {
-                            Label(isEditingTags ? String(localized: "Done editing tags") : String(localized: "Edit tags"),
+                            Label(isEditingTags ? "完成編輯標籤" : "編輯標籤",
                                   systemImage: isEditingTags ? "checkmark" : "pencil")
                         }
                         .accessibilityIdentifier("home.editTags")
                     } label: {
                         Image(systemName: "slider.horizontal.3")
                     }
-                    .accessibilityLabel(Text("Customize"))
+                    .accessibilityLabel(Text("自訂版面"))
                     .accessibilityIdentifier("home.cardSettings")
                 }
             }
-            .fullScreenCover(item: Binding(get: { onThisDayViewer.map(ViewerStart.init) },
-                                           set: { onThisDayViewer = $0?.id })) { start in
-                PhotoDetailView(assets: onThisDay.map(\.asset), startID: start.id)
-                    .zoomDestination(id: start.id, in: photoZoom)
+            .fullScreenCover(item: $selectedOnThisDayGroup) { group in
+                OnThisDayDetailView(group: group)
             }
             .sheet(item: $sheet) { which in
                 switch which {
@@ -313,21 +303,45 @@ struct HomeView: View {
             sectionTitle(title(for: block))
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(onThisDay) { item in
-                        Button { onThisDayViewer = item.asset.localIdentifier } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            AssetThumbnail(asset: item.asset, size: 160, showsDuration: false)
-                                .frame(width: 120, height: 120)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                .zoomSource(id: item.asset.localIdentifier, in: photoZoom)
-                            Text("\(item.yearsAgo) years ago")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                HStack(spacing: 12) {
+                    ForEach(onThisDay) { group in
+                        Button {
+                            selectedOnThisDayGroup = group
+                        } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ZStack(alignment: .bottomLeading) {
+                                    if let cover = group.assets.first {
+                                        AssetThumbnail(asset: cover, size: 240, showsDuration: false)
+                                            .frame(width: 140, height: 140)
+                                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .fill(Color(.tertiarySystemFill))
+                                            .frame(width: 140, height: 140)
+                                    }
+
+                                    Text("\(group.yearsAgo) 年前")
+                                        .font(.caption2.weight(.bold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(.ultraThinMaterial, in: Capsule())
+                                        .padding(8)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(group.year)年")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+
+                                    Text(String(format: String(localized: "%lld photos"), group.assets.count))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
                         .buttonStyle(.plain)
-                        .accessibilityIdentifier("home.onthisday.photo")
+                        .accessibilityIdentifier("home.onthisday.group.\(group.id)")
                     }
                 }
                 .padding(.horizontal, PageMetrics.edge)
@@ -394,10 +408,10 @@ struct HomeView: View {
     @ViewBuilder
     private func editMenu(_ tag: PhotoTag) -> some View {
         Button { sheet = .editTag(tag) } label: {
-            Label(String(localized: "Edit tag"), systemImage: "pencil")
+            Label("編輯標籤", systemImage: "pencil")
         }
         Button { sheet = .editCover(tag) } label: {
-            Label(String(localized: "Set cover"), systemImage: "photo")
+            Label("設定封面", systemImage: "photo")
         }
     }
 
@@ -430,25 +444,39 @@ struct HomeView: View {
         counts = newCounts
     }
 
-    /// 往年的今天拍的照片，最多十二張，越近的年份越前面。
+    /// 往年的今天拍的照片，依年份集合在同一天，越近的年份越前面。
     private func loadOnThisDay() async {
         let all = await library.assets(matching: .all)
         let calendar = PhotoGrouping.calendar
         let today = calendar.dateComponents([.year, .month, .day], from: Date())
 
-        let found = await Task.detached(priority: .utility) { () -> [(PHAsset, Int)] in
-            var output: [(PHAsset, Int)] = []
+        let groups = await Task.detached(priority: .utility) { () -> [OnThisDayGroup] in
+            var byYear: [Int: [PHAsset]] = [:]
             for asset in all {
                 guard let date = asset.creationDate else { continue }
                 let parts = calendar.dateComponents([.year, .month, .day], from: date)
                 guard parts.month == today.month, parts.day == today.day,
                       let year = parts.year, let thisYear = today.year, year < thisYear else { continue }
-                output.append((asset, thisYear - year))
+                byYear[year, default: []].append(asset)
             }
-            return output.sorted { $0.1 < $1.1 }
+            guard let thisYear = today.year, let todayMonth = today.month, let todayDay = today.day else { return [] }
+            return byYear.keys.sorted(by: >).compactMap { year -> OnThisDayGroup? in
+                guard let items = byYear[year], !items.isEmpty else { return nil }
+                var comp = DateComponents()
+                comp.year = year
+                comp.month = todayMonth
+                comp.day = todayDay
+                let date = calendar.date(from: comp) ?? Date()
+                return OnThisDayGroup(year: year,
+                                     month: todayMonth,
+                                     day: todayDay,
+                                     yearsAgo: thisYear - year,
+                                     date: date,
+                                     assets: items)
+            }
         }.value
 
-        onThisDay = found.prefix(12).map { OnThisDayItem(asset: $0.0, yearsAgo: $0.1) }
+        onThisDay = groups
     }
 }
 
@@ -468,5 +496,121 @@ private extension View {
         } else {
             self
         }
+    }
+}
+
+// MARK: - 那年今天群組與單日集合頁面（圖 1）
+
+struct OnThisDayGroup: Identifiable {
+    let year: Int
+    let month: Int
+    let day: Int
+    let yearsAgo: Int
+    let date: Date
+    let assets: [PHAsset]
+    var id: String { "\(year)-\(month)-\(day)" }
+}
+
+struct OnThisDayDetailView: View {
+    let group: OnThisDayGroup
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var detailAssetID: String?
+    @Namespace private var photoZoom
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 2),
+        GridItem(.flexible(), spacing: 2),
+        GridItem(.flexible(), spacing: 2)
+    ]
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                header
+
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 2) {
+                        ForEach(group.assets, id: \.localIdentifier) { asset in
+                            Button {
+                                detailAssetID = asset.localIdentifier
+                            } label: {
+                                AssetThumbnail(asset: asset, size: 240, showsDuration: true)
+                                    .aspectRatio(1, contentMode: .fill)
+                                    .clipped()
+                                    .zoomSource(id: asset.localIdentifier, in: photoZoom)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("onthisday.detail.photo.\(asset.localIdentifier)")
+                        }
+                    }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .navigationBarBackButtonHidden(true)
+        .fullScreenCover(item: Binding(get: { detailAssetID.map { DetailViewerItem(id: $0) } },
+                                      set: { detailAssetID = $0?.id })) { item in
+            PhotoDetailView(assets: group.assets, startID: item.id)
+                .zoomDestination(id: item.id, in: photoZoom)
+        }
+    }
+
+    private struct DetailViewerItem: Identifiable {
+        let id: String
+    }
+
+    // MARK: - 頁首導覽列（圖 1）
+
+    private var header: some View {
+        HStack {
+            GlassCircleButton {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.body.weight(.semibold))
+            }
+            .accessibilityLabel(Text("返回"))
+            .accessibilityIdentifier("onthisday.detail.back")
+
+            Spacer()
+
+            VStack(spacing: 2) {
+                Text(dateTitle)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                Text(String(format: "%lld 張照片", group.assets.count))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityIdentifier("onthisday.detail.title")
+
+            Spacer()
+
+            Menu {
+                Text("\(group.yearsAgo) 年前的今天")
+                Text(dateTitle)
+            } label: {
+                GlassCircleButton {} label: {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.body.weight(.semibold))
+                }
+            }
+            .accessibilityLabel(Text("選單"))
+            .accessibilityIdentifier("onthisday.detail.menu")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+
+    private var dateTitle: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter.string(from: group.date)
     }
 }

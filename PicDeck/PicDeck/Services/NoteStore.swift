@@ -21,12 +21,18 @@ final class NoteStore: ObservableObject {
 
     private var fingerprintIndex: [String: String] = [:]
     private let fileURL: URL
+    private let filename: String
     private var saveTask: Task<Void, Never>?
 
     init(filename: String = "notes.json") {
+        self.filename = filename
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.fileURL = documents.appendingPathComponent(filename)
         load()
+
+        NotificationCenter.default.addObserver(forName: CloudSyncService.didSyncFromCloudNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.load()
+        }
     }
 
     // MARK: - 查詢
@@ -89,7 +95,7 @@ final class NoteStore: ObservableObject {
     // MARK: - 持久化
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL),
+        guard let data = CloudSyncService.shared.readData(filename: filename) ?? (try? Data(contentsOf: fileURL)),
               let decoded = try? JSONDecoder().decode([PhotoNote].self, from: data) else { return }
         notes = Dictionary(decoded.map { ($0.id, $0) }) { first, _ in first }
         fingerprintIndex = Dictionary(decoded.map { ($0.fingerprint, $0.id) }) { first, _ in first }
@@ -106,10 +112,12 @@ final class NoteStore: ObservableObject {
 
     private func save() {
         let snapshot = Array(notes.values)
-        let url = fileURL
+        let filename = self.filename
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(snapshot) else { return }
-            try? data.write(to: url, options: .atomic)
+            await MainActor.run {
+                CloudSyncService.shared.writeData(data, filename: filename)
+            }
         }
     }
 

@@ -18,13 +18,13 @@ enum PhotoFilter: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .all: return String(localized: "All Items")
-        case .favorites: return String(localized: "Favorites")
-        case .photos: return String(localized: "Photos")
-        case .videos: return String(localized: "Videos")
-        case .screenshots: return String(localized: "Screenshots")
-        case .edited: return String(localized: "Edited")
-        case .notInAlbum: return String(localized: "Not in an album")
+        case .all: return "全部項目"
+        case .favorites: return "喜好項目"
+        case .photos: return "相片"
+        case .videos: return "影片"
+        case .screenshots: return "螢幕截圖"
+        case .edited: return "已編輯"
+        case .notInAlbum: return "未加入相簿"
         }
     }
 
@@ -72,11 +72,11 @@ enum PhotoScale: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .year: return String(localized: "Year")
-        case .month: return String(localized: "Month")
-        case .day: return String(localized: "Day")
-        case .timeline: return String(localized: "Timeline")
-        case .all: return String(localized: "All")
+        case .year: return "年"
+        case .month: return "月"
+        case .day: return "日"
+        case .timeline: return "時間軸"
+        case .all: return "全部"
         }
     }
 
@@ -108,10 +108,10 @@ enum OrganizeBucket: Hashable, Identifiable {
 
     var title: String {
         switch self {
-        case .allUnorganized: return String(localized: "All unorganized")
-        case .unorganizedPhotos: return String(localized: "Unorganized photos")
-        case .unorganizedVideos: return String(localized: "Unorganized videos")
-        case .unorganizedScreenshots: return String(localized: "Unorganized screenshots")
+        case .allUnorganized: return "所有待整理"
+        case .unorganizedPhotos: return "待整理相片"
+        case .unorganizedVideos: return "待整理影片"
+        case .unorganizedScreenshots: return "待整理截圖"
         case .month(let year, let month):
             return DateTitle.month(year: year, month: month)
         }

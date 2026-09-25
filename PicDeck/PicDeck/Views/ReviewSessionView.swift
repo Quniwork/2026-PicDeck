@@ -172,7 +172,7 @@ struct ReviewSessionView: View {
                     GlassCircleButton { dismiss() } label: {
                         Image(systemName: "xmark")
                     }
-                    .accessibilityLabel(Text("Close"))
+                    .accessibilityLabel(Text("關閉"))
                     .accessibilityIdentifier("session.close")
 
                     Spacer()
@@ -211,7 +211,7 @@ struct ReviewSessionView: View {
                                 }
                             } label: {
                                 Label {
-                                    Text(String(localized: "By month"))
+                                    Text("依月份")
                                 } icon: {
                                     if case .month = bucket {
                                         Image(systemName: "calendar.badge.checkmark")
@@ -238,7 +238,7 @@ struct ReviewSessionView: View {
                     GlassCircleButton { showTrash = true } label: {
                         Image(systemName: "trash")
                     }
-                    .accessibilityLabel(Text("Pending deletion"))
+                    .accessibilityLabel(Text("待刪除清單"))
                     .accessibilityIdentifier("session.trash")
                 }
             }
@@ -467,17 +467,17 @@ struct ReviewSessionView: View {
 
     private var tagsButtonKey: LocalizedStringKey {
         if currentTags.isEmpty {
-            return "Tags"
+            return "標籤"
         } else {
-            return "\(String(localized: "Tags"))(\(currentTags.count))"
+            return "標籤(\(currentTags.count))"
         }
     }
 
     private var albumsButtonKey: LocalizedStringKey {
         if currentAlbums.isEmpty {
-            return "Album"
+            return "相簿"
         } else {
-            return "\(String(localized: "Album"))(\(currentAlbums.count))"
+            return "相簿(\(currentAlbums.count))"
         }
     }
 
@@ -504,17 +504,17 @@ struct ReviewSessionView: View {
                 quickMode = (quickMode == .albums) ? nil : .albums
             }
             Spacer(minLength: 4)
-            barButton(favorite ? "Remove from favorites" : "Favorite",
+            barButton(favorite ? "取消喜愛" : "喜愛",
                       icon: favorite ? "heart.slash" : "heart",
                       id: "session.favorite") {
                 toggleFavoriteCurrent()
             }
             Spacer(minLength: 4)
-            barButton("Keep", icon: "checkmark", id: "session.keep") {
+            barButton("保留", icon: "checkmark", id: "session.keep") {
                 keepCurrent()
             }
             Spacer(minLength: 4)
-            barButton("Delete", icon: "xmark", id: "session.delete", isDestructive: true) {
+            barButton("刪除", icon: "xmark", id: "session.delete", isDestructive: true) {
                 deleteCurrent()
             }
         }

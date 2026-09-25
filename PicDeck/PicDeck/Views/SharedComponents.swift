@@ -150,7 +150,7 @@ struct PhotoFilterMenuSection: View {
     @ViewBuilder
     var body: some View {
         if showsSectionTitle {
-            Section(String(localized: "Filter by:")) { rows }
+            Section("篩選方式：") { rows }
         } else {
             rows
         }
@@ -162,7 +162,7 @@ struct PhotoFilterMenuSection: View {
         Menu {
             ForEach([PhotoFilter.photos, .videos, .screenshots]) { row($0) }
         } label: {
-            Label(String(localized: "Media Types"), systemImage: "photo.on.rectangle.angled")
+            Label("媒體類型", systemImage: "photo.on.rectangle.angled")
         }
     }
 
@@ -179,10 +179,10 @@ struct PhotoSortMenuSection: View {
 
     var body: some View {
         Toggle(isOn: Binding(get: { sortsByAdded }, set: { sortsByAdded = $0 })) {
-            Label(String(localized: "Sort by Recently Added"), systemImage: "clock")
+            Label("按最近加入排序", systemImage: "clock")
         }
         Toggle(isOn: Binding(get: { !sortsByAdded }, set: { sortsByAdded = !$0 })) {
-            Label(String(localized: "Sort by Date Captured"), systemImage: "camera")
+            Label("按拍攝日期排序", systemImage: "camera")
         }
     }
 }
@@ -365,8 +365,8 @@ extension View {
                     .accessibilityHidden(true)
             }
         }
-        .accessibilityValue(isActive ? Text("Filtered") : Text(""))
-        .accessibilityAction(named: Text("Reset filters")) { if isActive { reset() } }
+        .accessibilityValue(isActive ? Text("已篩選") : Text(""))
+        .accessibilityAction(named: Text("重設篩選")) { if isActive { reset() } }
     }
 }
 
@@ -380,7 +380,7 @@ struct ResetFiltersButton: View {
             Button(role: .destructive) {
                 withMotion { reset() }
             } label: {
-                Label(String(localized: "Reset filters"), systemImage: "arrow.counterclockwise")
+                Label("重設篩選條件", systemImage: "arrow.counterclockwise")
             }
             .accessibilityIdentifier("filter.reset")
             Divider()

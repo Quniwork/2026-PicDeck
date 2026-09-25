@@ -63,6 +63,8 @@ final class JournalStore: ObservableObject {
 
     private let fileURL: URL
     private let categoriesFileURL: URL
+    private let filename: String
+    private let categoriesFilename: String
     private var saveTask: Task<Void, Never>?
     private var saveCategoriesTask: Task<Void, Never>?
 
@@ -70,11 +72,18 @@ final class JournalStore: ObservableObject {
     nonisolated static let moods = ["😀", "🙂", "😐", "😔", "😭", "😡", "🥰", "🤒", "🎉", "💡"]
 
     init(filename: String = "journal.json", categoriesFilename: String = "journal-categories.json") {
+        self.filename = filename
+        self.categoriesFilename = categoriesFilename
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.fileURL = documents.appendingPathComponent(filename)
         self.categoriesFileURL = documents.appendingPathComponent(categoriesFilename)
         load()
         loadCategories()
+
+        NotificationCenter.default.addObserver(forName: CloudSyncService.didSyncFromCloudNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.load()
+            self?.loadCategories()
+        }
     }
 
     // MARK: - 日期鍵
@@ -229,13 +238,13 @@ final class JournalStore: ObservableObject {
     // MARK: - 持久化
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL),
+        guard let data = CloudSyncService.shared.readData(filename: filename) ?? (try? Data(contentsOf: fileURL)),
               let decoded = try? JSONDecoder().decode([JournalEntry].self, from: data) else { return }
         entries = Dictionary(decoded.map { ($0.id, $0) }) { first, _ in first }
     }
 
     private func loadCategories() {
-        guard let data = try? Data(contentsOf: categoriesFileURL),
+        guard let data = CloudSyncService.shared.readData(filename: categoriesFilename) ?? (try? Data(contentsOf: categoriesFileURL)),
               let decoded = try? JSONDecoder().decode([JournalCategory].self, from: data) else { return }
         categories = decoded
     }
@@ -251,10 +260,12 @@ final class JournalStore: ObservableObject {
 
     private func save() {
         let snapshot = Array(entries.values)
-        let url = fileURL
+        let filename = self.filename
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(snapshot) else { return }
-            try? data.write(to: url, options: .atomic)
+            await MainActor.run {
+                CloudSyncService.shared.writeData(data, filename: filename)
+            }
         }
     }
 
@@ -269,10 +280,12 @@ final class JournalStore: ObservableObject {
 
     private func saveCategories() {
         let snapshot = categories
-        let url = categoriesFileURL
+        let filename = self.categoriesFilename
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(snapshot) else { return }
-            try? data.write(to: url, options: .atomic)
+            await MainActor.run {
+                CloudSyncService.shared.writeData(data, filename: filename)
+            }
         }
     }
 

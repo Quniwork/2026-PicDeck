@@ -16,21 +16,21 @@ struct PhotosSelectionAccessoryBar: View {
 
     var body: some View {
         ActionBarRow {
-            ActionBarButton(key: "Tags", icon: "tag", id: "batch.tags", iconOnly: false) {
+            ActionBarButton(key: "標籤", icon: "tag", id: "batch.tags", iconOnly: false) {
                 accessory.onTags?()
             }
             Spacer(minLength: 4)
-            ActionBarButton(key: "Album", icon: "rectangle.stack.badge.plus", id: "batch.album", iconOnly: false) {
+            ActionBarButton(key: "相簿", icon: "rectangle.stack.badge.plus", id: "batch.album", iconOnly: false) {
                 accessory.onAlbum?()
             }
             Spacer(minLength: 4)
-            ActionBarButton(key: accessory.allAreFavorites ? "Remove from favorites" : "Favorite",
+            ActionBarButton(key: accessory.allAreFavorites ? "取消喜愛" : "喜愛",
                             icon: accessory.allAreFavorites ? "heart.slash" : "heart",
                             id: "batch.favorite", iconOnly: false) {
                 accessory.onFavorite?()
             }
             Spacer(minLength: 4)
-            ActionBarButton(key: "Delete", icon: "xmark", id: "batch.delete", isDestructive: true, iconOnly: false) {
+            ActionBarButton(key: "刪除", icon: "xmark", id: "batch.delete", isDestructive: true, iconOnly: false) {
                 accessory.onDelete?()
             }
         }
@@ -104,23 +104,23 @@ struct MainTabView: View {
         // 順序：日記、選集、照片、整理、更多。預設開在日記。
         TabView(selection: $model.selectedTab) {
             JournalTabView()
-                .tabItem { Label("Journal", systemImage: "book") }
+                .tabItem { Label("日記", systemImage: "book") }
                 .tag(0)
 
             HomeView()
-                .tabItem { Label("Collections", systemImage: "photo.stack") }
+                .tabItem { Label("選集", systemImage: "photo.stack") }
                 .tag(1)
 
             PhotosTabView(appColorScheme: colorScheme)
-                .tabItem { Label("Photos", systemImage: "photo.on.rectangle") }
+                .tabItem { Label("照片", systemImage: "photo.on.rectangle") }
                 .tag(2)
 
             OrganizeTabView()
-                .tabItem { Label("Organize", systemImage: "tray.fill") }
+                .tabItem { Label("整理", systemImage: "tray.fill") }
                 .tag(3)
 
             MoreTabView()
-                .tabItem { Label("More", systemImage: "line.3.horizontal.circle.fill") }
+                .tabItem { Label("更多", systemImage: "line.3.horizontal.circle.fill") }
                 .tag(4)
         }
     }
@@ -135,24 +135,24 @@ struct PermissionView: View {
                 .font(.system(size: 64))
                 .foregroundStyle(.tint)
 
-            Text("PicDeck needs photo access")
+            Text("PicDeck 需要存取您的照片庫")
                 .font(.title2.weight(.semibold))
                 .multilineTextAlignment(.center)
 
-            Text("Everything happens on your device. PicDeck never uploads your photos.")
+            Text("所有操作均在本機端完成，PicDeck 絕不會上傳您的任何照片。")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
             if library.authorizationStatus == .denied || library.authorizationStatus == .restricted {
-                Button("Open Settings") {
+                Button("前往「設定」開啟權限") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
                 }
                 .buttonStyle(.borderedProminent)
             } else {
-                Button("Allow Photo Access") {
+                Button("允許相片存取權限") {
                     Task { await library.requestAuthorization() }
                 }
                 .buttonStyle(.borderedProminent)

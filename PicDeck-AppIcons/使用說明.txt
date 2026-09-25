@@ -1,0 +1,5 @@
+PicDeck App Icon 放大版
+
+依照手機主畫面截圖，將上一版圖案在每個 1024×1024 圖示內等比例放大 25%。一般、深色透明、透明灰階與色調灰階版本同步調整，保留圖案形狀、配色與細節。主體寬約 83%，保留四周空間讓 iOS 套用圓角。
+
+將 AppIcon.appiconset 複製到 Xcode 的 Assets.xcassets。預設是完整淺色背景；深色版是透明底的藍白圖案；色調版是灰階透明圖案。All-Appearances 另有透明淺色／深色與色調淺色／深色 PNG，可供 Icon Composer 對應外觀使用。Icon Composer .icon 專案需於 Mac 上匯出。

@@ -88,13 +88,19 @@ final class TagStore: ObservableObject {
 
     private var fingerprintIndex: [String: String] = [:]
     private let fileURL: URL
+    private let filename: String
     private var saveTask: Task<Void, Never>?
 
     init(filename: String = "tags.json") {
+        self.filename = filename
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.fileURL = documents.appendingPathComponent(filename)
         load()
         seedAnniversaryTagIfRequested()
+
+        NotificationCenter.default.addObserver(forName: CloudSyncService.didSyncFromCloudNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.load()
+        }
     }
 
     /// 給 UI 測試用。帶 -seedAnniversaryTag 啟動時放一個固定的紀念日標籤，
@@ -393,7 +399,7 @@ final class TagStore: ObservableObject {
     // MARK: - 持久化
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL),
+        guard let data = CloudSyncService.shared.readData(filename: filename) ?? (try? Data(contentsOf: fileURL)),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
 
         // 舊資料可能有重複名稱。只留最早建立的那一個，
@@ -438,10 +444,12 @@ final class TagStore: ObservableObject {
 
     private func save() {
         let payload = Payload(tags: tags, assignments: Array(assignments.values))
-        let url = fileURL
+        let filename = self.filename
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(payload) else { return }
-            try? data.write(to: url, options: .atomic)
+            await MainActor.run {
+                CloudSyncService.shared.writeData(data, filename: filename)
+            }
         }
     }
 

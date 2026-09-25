@@ -25,7 +25,7 @@ struct PhotoCoverEditorView: View {
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
             } footer: {
-                Text("Drag the photo to move it, and use the slider to zoom.")
+                Text("拖曳照片以調整位置，滑動拉桿進行縮放。")
             }
 
             Section {
@@ -34,18 +34,18 @@ struct PhotoCoverEditorView: View {
                     Slider(value: $framing.zoom, in: CoverFraming.zoomRange)
                     Image(systemName: "plus.magnifyingglass").foregroundStyle(.secondary)
                 }
-                Button("Reset position") { framing = .standard }
+                Button("重設位置") { framing = .standard }
                     .disabled(framing.isDefault)
             }
 
-            Section("Choose a photo") {
+            Section("挑選封面照片") {
                 Button {
                     selectedID = nil
                     framing = .standard
                     if let newest = candidates.first { loadImage(newest) }
                 } label: {
                     HStack {
-                        Label("Automatic (newest photo)", systemImage: "sparkles")
+                        Label("自動選取（最新照片）", systemImage: "sparkles")
                         Spacer()
                         if selectedID == nil { Image(systemName: "checkmark").foregroundStyle(.tint) }
                     }
@@ -71,9 +71,9 @@ struct PhotoCoverEditorView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
+                Button("儲存") {
                     onSave(selectedID.map { PhotoCoverPreference(assetID: $0, framing: framing.clamped()) })
                     dismiss()
                 }
@@ -102,7 +102,7 @@ struct PhotoCoverEditorView: View {
                 if let image {
                     PositionedImage(image: image, framing: framing)
                 } else {
-                    Text("Automatic").font(.footnote).foregroundStyle(.secondary)
+                    Text("自動選取").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             .frame(width: frame.width, height: frame.height)

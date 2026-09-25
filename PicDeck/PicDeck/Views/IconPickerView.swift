@@ -28,8 +28,8 @@ struct IconPickerView: View {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .emoji: return String(localized: "Emoji")
-            case .symbol: return String(localized: "Icons")
+            case .emoji: return "表情符號"
+            case .symbol: return "符號圖示"
             }
         }
     }
@@ -54,7 +54,7 @@ struct IconPickerView: View {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
                             if query.isEmpty, !recents.isEmpty {
-                                section(title: String(localized: "Recent"), items: recents, isRaw: true)
+                                section(title: "最近使用", items: recents, isRaw: true)
                                     .id("recent")
                             }
                             ForEach(visibleGroups) { group in
@@ -62,7 +62,7 @@ struct IconPickerView: View {
                                     .id(group.id)
                             }
                             if isSearching && visibleGroups.isEmpty {
-                                Text("No matches.")
+                                Text("查無符合圖示")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                     .padding(.top, 20)
@@ -80,16 +80,16 @@ struct IconPickerView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .navigationTitle("Choose icon")
+            .navigationTitle("選擇圖示")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("取消") { dismiss() }
                         .accessibilityIdentifier("icon.cancel")
                 }
                 if allowsRemove {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Remove", role: .destructive) {
+                        Button("移除圖示", role: .destructive) {
                             raw = removedValue
                             dismiss()
                         }
@@ -109,7 +109,7 @@ struct IconPickerView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                TextField(String(localized: "Filter…"), text: $query)
+                TextField("搜尋圖示…", text: $query)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("icon.search")
@@ -121,7 +121,7 @@ struct IconPickerView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Clear"))
+                    .accessibilityLabel(Text("清除"))
                 }
             }
             .padding(.horizontal, 10)
@@ -134,7 +134,7 @@ struct IconPickerView: View {
                     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text("Random"))
+            .accessibilityLabel(Text("隨機"))
             .accessibilityIdentifier("icon.shuffle")
 
             if tab == .symbol {
@@ -150,7 +150,7 @@ struct IconPickerView: View {
                                     in: RoundedRectangle(cornerRadius: 9))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Color"))
+                .accessibilityLabel(Text("顏色"))
                 .accessibilityIdentifier("icon.color")
                 .popover(isPresented: $showColorPalette) {
                     colorPalette
@@ -217,7 +217,7 @@ struct IconPickerView: View {
 
             HStack(spacing: 10) {
                 ColorPicker(selection: $customColor, supportsOpacity: false) {
-                    Text("Custom")
+                    Text("自訂顏色")
                         .font(.footnote)
                 }
                 .labelsHidden()
@@ -227,7 +227,7 @@ struct IconPickerView: View {
                     tint = IconPalette.token(for: customColor)
                     showColorPalette = false
                 } label: {
-                    Text("Use this color")
+                    Text("使用此顏色")
                         .font(.footnote.weight(.semibold))
                 }
                 .buttonStyle(.bordered)
