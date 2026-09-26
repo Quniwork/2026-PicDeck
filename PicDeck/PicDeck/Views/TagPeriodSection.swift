@@ -75,7 +75,7 @@ struct TagPeriodSection: View {
         }
         .fullScreenCover(item: $viewer) { day in
             let startID = day.assets.last?.localIdentifier ?? ""
-            PhotoDetailView(assets: day.assets, startID: startID, showsActions: false)
+            PhotoDetailView(assets: day.assets, startID: startID)
                 .zoomDestination(id: startID, in: photoZoom)
         }
         .task(id: tagStore.assignments.count) { reload() }

@@ -105,6 +105,7 @@ struct HomeView: View {
             .onChange(of: model.requestedCollectionTagID) { _, _ in openRequestedCollection() }
             .navigationTitle("選集")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
+            .borderlessHeaderScrim()
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
                     LeadingTitleToolbar(title: "選集", font: .largeTitle)
@@ -121,7 +122,7 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.arrange")
                         Button { withMotion { isEditingTags.toggle() } } label: {
                             Label(isEditingTags ? "完成編輯標籤" : "編輯標籤",
-                                  systemImage: isEditingTags ? "checkmark" : "pencil")
+                                  systemImage: isEditingTags ? "checkmark" : "square.and.pencil")
                         }
                         .accessibilityIdentifier("home.editTags")
                     } label: {
@@ -132,7 +133,11 @@ struct HomeView: View {
                 }
             }
             .fullScreenCover(item: $selectedOnThisDayGroup) { group in
-                OnThisDayDetailView(group: group)
+                NavigationStack {
+                    TagCollectionView(tag: nil,
+                                      titleOverride: DateTitle.month(year: group.year, month: group.month),
+                                      customAssets: group.assets)
+                }
             }
             .sheet(item: $sheet) { which in
                 switch which {
@@ -159,7 +164,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             sectionTitle(title(for: block))
             cardsLayout(tags(of: block), block: block) { tag, dimension in
-                Button { activate(tag, opensCollection: false) } label: {
+                Button { activate(tag, opensCollection: true) } label: {
                     coverCard(tag, dimension: dimension,
                               primary: tag.anniversaryText(on: Date()) ?? "",
                               secondary: String(format: String(localized: "%lld photos"), counts[tag.id] ?? 0))
@@ -408,7 +413,7 @@ struct HomeView: View {
     @ViewBuilder
     private func editMenu(_ tag: PhotoTag) -> some View {
         Button { sheet = .editTag(tag) } label: {
-            Label("編輯標籤", systemImage: "pencil")
+            Label("編輯標籤", systemImage: "square.and.pencil")
         }
         Button { sheet = .editCover(tag) } label: {
             Label("設定封面", systemImage: "photo")
@@ -486,7 +491,7 @@ private extension View {
     func editBadge(_ isOn: Bool) -> some View {
         if isOn {
             overlay(alignment: .topTrailing) {
-                Image(systemName: "pencil.circle.fill")
+                Image(systemName: "square.and.pencil.circle.fill")
                     .font(.title2)
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.white, Color.accentColor)
@@ -526,7 +531,7 @@ struct OnThisDayDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
@@ -549,7 +554,6 @@ struct OnThisDayDetailView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .navigationBarBackButtonHidden(true)
         .fullScreenCover(item: Binding(get: { detailAssetID.map { DetailViewerItem(id: $0) } },
                                       set: { detailAssetID = $0?.id })) { item in
@@ -580,7 +584,7 @@ struct OnThisDayDetailView: View {
             VStack(spacing: 2) {
                 Text(dateTitle)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(String(format: "%lld 張照片", group.assets.count))

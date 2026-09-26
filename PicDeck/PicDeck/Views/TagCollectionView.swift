@@ -3,26 +3,39 @@ import Photos
 
 /// 選集裡點標籤進來的頁面，當成一個收藏看。
 ///
-/// - 單張：一張照片占滿整個畫面，上下滑動換下一張。左上角回上一層、右上角篩選選單（顯示方式、標籤），
+/// - 單張：一張照片占滿整個畫面，上下滑動換下一張。頁首可回到標籤列表、切換同層標籤與檢視選項，
 ///   有備註的話備註浮在左下角。
 /// - 柵欄：3:4 直式的縮圖格狀，右上角選單多一個「顯示方式選項」（放大縮小）。
 /// - 右下角固定一顆搜尋鈕，打開跟系統相簿一樣的搜尋畫面：標籤快選、最近搜尋、搜尋列。
 /// - 點照片打開詳細資訊（只有照片與備註，沒有下面那排功能按鈕）。
 struct TagCollectionView: View {
-    let tag: PhotoTag
+    let tag: PhotoTag?
+    var titleOverride: String? = nil
+    var customAssets: [PHAsset]? = nil
+
+    init(tag: PhotoTag? = nil, titleOverride: String? = nil, customAssets: [PHAsset]? = nil) {
+        self.tag = tag
+        self.titleOverride = titleOverride
+        self.customAssets = customAssets
+        _selectedCollectionTagID = State(initialValue: tag?.id)
+    }
 
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var tagStore: TagStore
     @EnvironmentObject private var noteStore: NoteStore
     @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
 
     enum DisplayMode: String { case single, grid }
 
-    @AppStorage("picdeck.collectionMode") private var modeRaw = DisplayMode.single.rawValue
+    @AppStorage("picdeck.collectionMode") private var modeRaw = DisplayMode.grid.rawValue
+    @State private var selectedCollectionTagID: UUID?
     @State private var assets: [PHAsset] = []
     @State private var selectedSubTags: Set<UUID> = []
     @State private var search = ""
     @State private var sortsByAdded = false
+    @State private var filterType: PhotoFilter = .all
+    @State private var gridFitAspect: Bool = false
     @State private var addedRanks: [String: Int] = [:]
     @State private var editingAsset: PHAsset?
     @State private var viewer: ViewerTarget?
@@ -37,10 +50,22 @@ struct TagCollectionView: View {
         var id: String { startID }
     }
 
-    private var mode: DisplayMode { DisplayMode(rawValue: modeRaw) ?? .single }
-    private var subTags: [PhotoTag] { tagStore.coTags(of: tag.id) }
+    private var mode: DisplayMode { DisplayMode(rawValue: modeRaw) ?? .grid }
+    private var activeTag: PhotoTag? {
+        selectedCollectionTagID.flatMap { tagStore.tag(withID: $0) } ?? tag
+    }
+    private var subTags: [PhotoTag] {
+        guard let activeTag else { return [] }
+        return tagStore.coTags(of: activeTag.id)
+    }
 
-    /// 選了幾個標籤就要同時符合（交集），再套搜尋字（備註與標籤名稱）。
+    private var displayTitle: String {
+        if let titleOverride { return titleOverride }
+        if let activeTag { return activeTag.name }
+        return "選集"
+    }
+
+    /// 選了幾個標籤務必同時符合（交集），再套媒體類別與搜尋字。
     private var visible: [PHAsset] {
         let filtered = assets.filter(matches)
         guard sortsByAdded, !addedRanks.isEmpty else { return filtered }
@@ -48,8 +73,20 @@ struct TagCollectionView: View {
     }
 
     private func matches(_ asset: PHAsset) -> Bool {
-        let ids = Set(tagStore.tags(for: asset).map(\.id))
-        guard selectedSubTags.isSubset(of: ids) else { return false }
+        if let activeTag {
+            let ids = Set(tagStore.tags(for: asset).map(\.id))
+            guard ids.contains(activeTag.id), selectedSubTags.isSubset(of: ids) else { return false }
+        }
+
+        switch filterType {
+        case .all: break
+        case .photos: if asset.mediaType != .image { return false }
+        case .videos: if asset.mediaType != .video { return false }
+        case .screenshots: if !asset.mediaSubtypes.contains(.photoScreenshot) { return false }
+        case .favorites: if !asset.isFavorite { return false }
+        case .edited, .notInAlbum: break
+        }
+
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return true }
         if noteStore.note(for: asset)?.text.localizedCaseInsensitiveContains(query) == true { return true }
@@ -72,25 +109,39 @@ struct TagCollectionView: View {
             currentNote
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
 
-            // 右下角固定的搜尋鈕。
+            // 右下角固定的搜尋鈕（y 軸向下微調）。
             GlassCircleButton { showSearch = true } label: {
                 Image(systemName: "magnifyingglass")
             }
             .frame(width: 52, height: 52)
             .padding(.trailing, 16)
-            .padding(.bottom, 24)
+            .padding(.bottom, 12)
             .accessibilityLabel(Text("Search"))
             .accessibilityIdentifier("collection.search")
         }
-        .background(mode == .single ? Color.black : Color(.systemBackground))
+        .background(Color(.systemBackground))
         .navigationBarTitleDisplayMode(.inline)
-        // 內容延伸到導覽列後面，返回鈕與選單浮在照片上。
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .borderlessHeaderScrim()
         .toolbar(.hidden, for: .tabBar)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .floatingGlass(in: Circle(), interactive: true)
+                .accessibilityLabel(Text("Back"))
+                .accessibilityIdentifier("collection.back")
+            }
+            ToolbarItem(placement: .principal) { tagChipMenu }
+            ToolbarItem(placement: .topBarTrailing) { modeToggleButton }
             ToolbarItem(placement: .topBarTrailing) { optionsMenu }
         }
-        .task(id: tagStore.assignments.count) { reload() }
+        .task(id: "\(selectedCollectionTagID?.uuidString ?? "-")-\(tagStore.assignments.count)-\(tagStore.tags.count)") { reload() }
         .task(id: sortsByAdded) {
             if sortsByAdded { addedRanks = await library.addedRanks() }
         }
@@ -101,7 +152,7 @@ struct TagCollectionView: View {
             if mode == .grid { withMotion { model.zoom(.collection, in: zoomIn) } }
         }
         .fullScreenCover(item: $viewer) { target in
-            PhotoDetailView(assets: visible, startID: target.startID, showsActions: false)
+            PhotoDetailView(assets: visible, startID: target.startID)
                 .zoomDestination(id: target.startID, in: photoZoom)
         }
         .sheet(item: $editingAsset) { NoteEditorView(asset: $0) }
@@ -116,13 +167,13 @@ struct TagCollectionView: View {
         }
     }
 
-    // MARK: - 單張
+    // MARK: - 單張 (左右滑動切換，參考 IG Reels 水平切換)
 
     private var singleContent: some View {
         GeometryReader { proxy in
             let pageHeight = proxy.size.height + proxy.safeAreaInsets.top + proxy.safeAreaInsets.bottom
-            ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
                     ForEach(visible, id: \.localIdentifier) { asset in
                         singlePage(asset)
                             .frame(width: proxy.size.width, height: pageHeight)
@@ -149,26 +200,57 @@ struct TagCollectionView: View {
             .accessibilityIdentifier("collection.item")
     }
 
-    /// 左下角的備註：固定在畫面上，內容跟著目前看的那一張換；沒寫備註就不顯示。
+    /// 左下角的備註與標籤/喜愛標示：固定在畫面上，內容跟著目前看的那一張換。
     @ViewBuilder
     private var currentNote: some View {
         let id = currentPageID ?? visible.first?.localIdentifier
-        if mode == .single, let asset = visible.first(where: { $0.localIdentifier == id }),
-           let text = noteText(for: asset) {
-            Button { editingAsset = asset } label: {
-                Text(text)
-                    .font(.subheadline)
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(3)
+        if mode == .single, let asset = visible.first(where: { $0.localIdentifier == id }) {
+            let note = noteText(for: asset)
+            let assetTags = tagStore.tags(for: asset)
+            let isFavorite = asset.isFavorite
+
+            VStack(alignment: .leading, spacing: 6) {
+                if let note, !note.isEmpty {
+                    ExpandableNoteText(text: note, color: .white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .floatingGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous), interactive: true)
+                    .onTapGesture { editingAsset = asset }
+                }
+
+                if isFavorite || !assetTags.isEmpty {
+                    HStack(spacing: 6) {
+                        if isFavorite {
+                            HStack(spacing: 4) {
+                                Image(systemName: "heart.fill")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(.red)
+                                Text("喜愛")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .floatingGlass(in: Capsule())
+                        }
+
+                        ForEach(assetTags) { tag in
+                            HStack(spacing: 4) {
+                                IconLabel(raw: tag.symbol, size: 12)
+                                Text(tag.name)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .floatingGlass(in: Capsule())
+                        }
+                    }
+                }
             }
-            .buttonStyle(.plain)
             .padding(.leading, PageMetrics.edge)
-            .padding(.trailing, 84)
-            .padding(.bottom, 28)
+            .padding(.trailing, 72)
+            .padding(.bottom, 12)
             .accessibilityIdentifier("collection.note")
         }
     }
@@ -208,13 +290,74 @@ struct TagCollectionView: View {
         AppEmptyState(icon: "photo.on.rectangle", title: String(localized: "Nothing matches."))
     }
 
-    // MARK: - 右上角選單
+    // MARK: - 右上角與標頭按鈕
 
-    /// 顯示方式、標籤（篩選這個標籤裡同時帶有的其他標籤），柵欄還有顯示方式選項。
+    /// 切換單圖與柵欄檢視的快捷按鈕（44x44 獨立圓形玻璃按鈕，尺寸完全參考整理頁面）
+    private var modeToggleButton: some View {
+        Button {
+            withMotion(.easeInOut(duration: 0.2)) {
+                modeRaw = (mode == .single ? DisplayMode.grid : DisplayMode.single).rawValue
+            }
+        } label: {
+            Image(systemName: mode == .grid ? "square.grid.3x3.fill" : "rectangle.portrait.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .floatingGlass(in: Circle(), interactive: true)
+        .accessibilityLabel(mode == .single ? Text("切換至柵欄檢視") : Text("切換至單圖檢視"))
+        .accessibilityIdentifier("collection.toggleMode")
+    }
+
+    /// 標頭中央的標籤選單晶片（如圖 2、3、4 所示，就算只有一個選項也保持可下拉功能）
+    private var tagChipMenu: some View {
+        Menu {
+            if activeTag != nil {
+                Section("標籤") {
+                    ForEach(tagStore.tags) { sibling in
+                        Button {
+                            selectedCollectionTagID = sibling.id
+                            selectedSubTags.removeAll()
+                            currentPageID = nil
+                            reload()
+                        } label: {
+                            HStack {
+                                Label { Text(sibling.name) } icon: { TagMenuIcon(tag: sibling) }
+                                if sibling.id == activeTag?.id { Image(systemName: "checkmark") }
+                            }
+                        }
+                    }
+                }
+            } else {
+                Text(displayTitle)
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(displayTitle)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .padding(.horizontal, 18)
+            .frame(height: 44)
+            .floatingGlass(in: Capsule(), interactive: true)
+        }
+    }
+
+    /// 右上角篩選與顯示選項選單（44x44 獨立圓形玻璃按鈕，完整提供「照片」Tab 的篩選功能）
     private var optionsMenu: some View {
         Menu {
             PhotoSortMenuSection(sortsByAdded: $sortsByAdded)
             Divider()
+
+            Menu("篩選條件") {
+                PhotoFilterMenuSection(isSelected: { filterType == $0 },
+                                       onSelect: { filterType = $0 },
+                                       showsSectionTitle: false)
+            }
 
             if !subTags.isEmpty {
                 Menu("標籤篩選") {
@@ -229,21 +372,13 @@ struct TagCollectionView: View {
                 }
             }
 
-            Section("顯示方式") {
-                Toggle(isOn: Binding(get: { mode == .single }, set: { _ in modeRaw = DisplayMode.single.rawValue })) {
-                    Label("單圖檢視", systemImage: "rectangle.grid.1x2")
-                }
-                Toggle(isOn: Binding(get: { mode == .grid }, set: { _ in modeRaw = DisplayMode.grid.rawValue })) {
-                    Label("網格檢視", systemImage: "square.grid.2x2")
-                }
-            }
-
             if mode == .grid {
                 Menu("顯示選項") {
                     Button { model.zoom(.collection, in: true) } label: {
                         Label("放大檢視", systemImage: "plus.magnifyingglass")
                     }
                     .disabled(model.gridColumns(for: .collection) <= AppModel.gridColumnRange.lowerBound)
+
                     Button { model.zoom(.collection, in: false) } label: {
                         Label("縮小檢視", systemImage: "minus.magnifyingglass")
                     }
@@ -252,28 +387,40 @@ struct TagCollectionView: View {
             }
 
             Divider()
-            ResetFiltersButton(isActive: !selectedSubTags.isEmpty || !search.isEmpty || sortsByAdded) {
+            ResetFiltersButton(isActive: !selectedSubTags.isEmpty || !search.isEmpty || sortsByAdded || filterType != .all) {
                 selectedSubTags.removeAll()
                 search = ""
                 sortsByAdded = false
+                filterType = .all
             }
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .filterIndicator(isActive: !selectedSubTags.isEmpty || !search.isEmpty || sortsByAdded) {
+                .font(.system(size: 16, weight: .semibold))
+                .filterIndicator(isActive: !selectedSubTags.isEmpty || !search.isEmpty || sortsByAdded || filterType != .all) {
                     selectedSubTags.removeAll()
                     search = ""
                     sortsByAdded = false
+                    filterType = .all
                 }
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
         }
+        .buttonStyle(.plain)
+        .floatingGlass(in: Circle(), interactive: true)
         .accessibilityLabel(Text("Filter"))
         .accessibilityIdentifier("collection.options")
     }
 
     private func reload() {
-        let found = library.assets(withIDs: tagStore.assetIDs(withTag: tag.id))
-        assets = found.sorted { ($0.creationDate ?? .distantPast) > ($1.creationDate ?? .distantPast) }
-        // 標籤被拿掉之後，篩選裡不存在的就丟掉，免得一直空。
-        selectedSubTags = selectedSubTags.intersection(Set(subTags.map(\.id)))
+        if let customAssets {
+            assets = customAssets
+        } else if let tag {
+            let found = library.assets(withIDs: tagStore.assetIDs(withTag: tag.id))
+            assets = found.sorted { ($0.creationDate ?? .distantPast) > ($1.creationDate ?? .distantPast) }
+            selectedSubTags = selectedSubTags.intersection(Set(subTags.map(\.id)))
+        } else {
+            assets = []
+        }
     }
 }
 
@@ -284,7 +431,7 @@ struct FullBleedPhoto: View {
 
     var body: some View {
         ZStack {
-            Color.black
+            Color(.systemBackground)
             if let image {
                 Image(uiImage: image)
                     .resizable()
@@ -296,7 +443,7 @@ struct FullBleedPhoto: View {
                     .resizable()
                     .scaledToFit()
             } else {
-                ProgressView().tint(.white)
+                ProgressView()
             }
         }
         .clipped()

@@ -8,6 +8,7 @@ import Photos
 /// 資料夾與相簿的清單，照階層顯示。動到的是系統照片裡的相簿與資料夾，照片不會被刪。
 struct AlbumManagerList: View {
     @EnvironmentObject private var library: PhotoLibraryService
+    @Environment(\.editMode) private var editMode
 
     @State private var tree: [AlbumNode] = []
     @State private var collapsed: Set<String> = []
@@ -15,6 +16,7 @@ struct AlbumManagerList: View {
     @State private var renaming: AlbumNode?
     @State private var renameText = ""
     @State private var deleting: AlbumNode?
+    @State private var showCannotDeleteFolderAlert = false
     /// 點開的相簿，用來推到相簿內容畫面。
     @State private var openedAlbum: AlbumSummary?
 
@@ -45,13 +47,21 @@ struct AlbumManagerList: View {
                                         deleting = row.node
                                     } label: {
                                         Label("刪除", systemImage: "trash")
+                                            .foregroundStyle(.red)
                                     }
+                                } else if row.node.isFolder {
+                                    Button {
+                                        showCannotDeleteFolderAlert = true
+                                    } label: {
+                                        Label("刪除", systemImage: "info.circle")
+                                    }
+                                    .tint(.gray)
                                 }
                                 Button {
                                     renaming = row.node
                                     renameText = row.node.title
                                 } label: {
-                                    Label("重新命名", systemImage: "pencil")
+                                    Label("重新命名", systemImage: "square.and.pencil")
                                 }
                                 .tint(.blue)
                             }
@@ -60,12 +70,17 @@ struct AlbumManagerList: View {
                     .onDelete { offsets in
                         let rows = tree.flattened(collapsed: collapsed)
                         guard let index = offsets.first, rows.indices.contains(index) else { return }
-                        deleting = rows[index].node
+                        let node = rows[index].node
+                        if canDelete(node) {
+                            deleting = node
+                        } else if node.isFolder {
+                            showCannotDeleteFolderAlert = true
+                        }
                     }
                 }
             } header: {
                 HStack {
-                    Text("檔案夾與相簿")
+                    Text("資料夾與相簿")
                     Spacer()
                     if !tree.isEmpty {
                         EditButton()
@@ -102,11 +117,27 @@ struct AlbumManagerList: View {
                 Text("相片仍會保留在相片庫中。")
             }
         }
+        .alert("無法刪除資料夾", isPresented: $showCannotDeleteFolderAlert) {
+            Button("確定", role: .cancel) { }
+        } message: {
+            Text("要將裡面的相簿刪除內容為空的時候，才能刪除資料夾")
+        }
     }
 
     @ViewBuilder
     private func rowView(_ node: AlbumNode, depth: Int) -> some View {
         HStack(spacing: 8) {
+            if editMode?.wrappedValue.isEditing == true && node.isFolder && !canDelete(node) {
+                Button {
+                    showCannotDeleteFolderAlert = true
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Color(.systemGray3))
+                }
+                .buttonStyle(.plain)
+            }
+
             if node.isFolder {
                 Image(systemName: collapsed.contains(node.id) ? "chevron.right" : "chevron.down")
                     .font(.caption.weight(.semibold))
@@ -126,8 +157,9 @@ struct AlbumManagerList: View {
         .padding(.leading, CGFloat(depth) * 20)
         .contentShape(Rectangle())
         .onTapGesture {
-            // 資料夾點一下展開或收合；相簿點一下看裡面的照片（改名在左滑）。
-            if node.isFolder {
+            if editMode?.wrappedValue.isEditing == true && node.isFolder && !canDelete(node) {
+                showCannotDeleteFolderAlert = true
+            } else if node.isFolder {
                 if collapsed.contains(node.id) { collapsed.remove(node.id) } else { collapsed.insert(node.id) }
             } else {
                 openedAlbum = AlbumSummary(id: node.id, title: node.title, count: node.count)
@@ -167,15 +199,16 @@ struct AlbumManagerList: View {
             deleting = nil
             return
         }
+        let targetNode = node
         deleting = nil
         Task {
-            if node.isFolder {
+            if targetNode.isFolder {
                 await library.attempt(String(localized: "Couldn't delete")) {
-                    try await library.deleteFolder(id: node.id)
+                    try await library.deleteFolder(id: targetNode.id)
                 }
             } else {
                 await library.attempt(String(localized: "Couldn't delete")) {
-                    try await library.deleteAlbum(id: node.id)
+                    try await library.deleteAlbum(id: targetNode.id)
                 }
             }
             await reload()
@@ -183,8 +216,11 @@ struct AlbumManagerList: View {
     }
 
     private func reload() async {
-        tree = library.albumTree()
-        isLoading = false
+        let newTree = library.albumTree()
+        withAnimation(.easeInOut(duration: 0.25)) {
+            tree = newTree
+            isLoading = false
+        }
     }
 }
 
@@ -220,8 +256,11 @@ struct TagManagerList: View {
                             .pageRowInsets(vertical: 6)
                     }
                     .onDelete { offsets in
-                        for index in offsets {
-                            tagStore.deleteTag(id: tagStore.tags[index].id)
+                        let ids = offsets.map { tagStore.tags[$0].id }
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            for id in ids {
+                                tagStore.deleteTag(id: id)
+                            }
                         }
                     }
                     .onMove { source, destination in

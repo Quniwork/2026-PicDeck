@@ -29,6 +29,12 @@ final class PhotoLibraryService: ObservableObject {
         PHPhotoLibrary.shared().register(changeObserver)
     }
 
+    /// 從背景回到前景時呼叫，強制刷新外部相簿變更（如 Caption、Keywords、新增/刪除相片）。
+    func notifyExternalChange() {
+        assetCache.removeAll()
+        libraryChangeCount += 1
+    }
+
     deinit {
         PHPhotoLibrary.shared().unregisterChangeObserver(changeObserver)
     }
@@ -50,6 +56,7 @@ final class PhotoLibraryService: ObservableObject {
             let nsError = error as NSError
             let cancelled = (nsError.domain == PHPhotosErrorDomain && nsError.code == PHPhotosError.userCancelled.rawValue)
                 || (nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError)
+            print("[PhotoLibraryService] attempt failed: \(failureText) | error=\(nsError.domain):\(nsError.code) \(nsError.localizedDescription)")
             if !cancelled { failure = FailureNotice(text: failureText) }
             return false
         }
@@ -111,6 +118,42 @@ final class PhotoLibraryService: ObservableObject {
 
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetChangeRequest.deleteAssets(result)
+        }
+    }
+
+    /// 將備註同步更新至系統「照片.app」的說明 (Caption) 欄位
+    @discardableResult
+    func updateCaption(_ caption: String, for asset: PHAsset) async -> Bool {
+        if #available(iOS 27.0, *) {
+            let target = caption.trimmingCharacters(in: .whitespacesAndNewlines)
+            let current = PHAsset.fetchAssets(withLocalIdentifiers: [asset.localIdentifier], options: nil)
+                .firstObject?.extendedMetadata.caption ?? ""
+            if current == target { return true }
+
+            return await attempt(String(localized: "無法同步說明至照片庫")) {
+                try await PHPhotoLibrary.shared().performChanges {
+                    let request = PHAssetChangeRequest(for: asset)
+                    request.caption = target.isEmpty ? nil : target
+                }
+            }
+        }
+        return false
+    }
+
+    /// 增減系統照片關鍵字，只修改本次變更的名稱，保留其他 App 新增的關鍵字。
+    @discardableResult
+    func updateKeywords(add: [String], remove: [String], forAssetID id: String) async -> Bool {
+        guard #available(iOS 27.0, *) else { return false }
+        guard !add.isEmpty || !remove.isEmpty else { return true }
+        guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else {
+            return false
+        }
+        return await attempt(String(localized: "無法同步關鍵字至照片庫")) {
+            try await PHPhotoLibrary.shared().performChanges {
+                let request = PHAssetChangeRequest(for: asset)
+                for keyword in remove { request.removeKeyword(keyword) }
+                for keyword in add { request.addKeyword(keyword) }
+            }
         }
     }
 

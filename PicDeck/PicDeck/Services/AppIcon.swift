@@ -114,6 +114,8 @@ struct IconLabel: View {
     var size: CGFloat = 20
     /// 沒有圖示時要不要畫一個淡淡的預設圖示。
     var placeholder: String? = nil
+    /// 強制指定圖示顏色（例如選中狀態跟隨文字變成白色）。
+    var tintOverride: Color? = nil
 
     var body: some View {
         content
@@ -129,14 +131,20 @@ struct IconLabel: View {
             Text(value)
                 .font(.system(size: size))
         case .symbol(let name, let tint):
-            Image(systemName: name)
-                .font(.system(size: size * 0.86))
-                .foregroundStyle(IconPalette.color(for: tint) ?? Color.primary)
+            let color = tintOverride ?? IconPalette.color(for: tint)
+            if let color {
+                Image(systemName: name)
+                    .font(.system(size: size * 0.86))
+                    .foregroundStyle(color)
+            } else {
+                Image(systemName: name)
+                    .font(.system(size: size * 0.86))
+            }
         case .none:
             if let placeholder {
                 Image(systemName: placeholder)
                     .font(.system(size: size * 0.7))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(tintOverride ?? Color.secondary)
             }
         }
     }

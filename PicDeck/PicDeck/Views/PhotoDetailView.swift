@@ -16,10 +16,12 @@ struct PhotoDetailView: View {
 
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var library: PhotoLibraryService
+    @EnvironmentObject private var organized: OrganizedStore
     @EnvironmentObject private var journalStore: JournalStore
     @EnvironmentObject private var noteStore: NoteStore
     @EnvironmentObject private var tagStore: TagStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     private enum QuickMode {
         case tags
@@ -32,8 +34,6 @@ struct PhotoDetailView: View {
     @State private var isInspectorExpanded = false
     /// 往下滑關閉時，畫面跟著手指往下走的距離。
     @State private var dragDown: CGFloat = 0
-    /// 記錄每次拖曳「起始時」inspector 是否展開，避免手勢結束時狀態已變而誤觸 dismiss。
-    @State private var inspectorExpandedAtGestureStart = false
     @State private var showTrash = false
     /// 這次自己改過的喜愛狀態，系統照片庫通知回來之前先用它顯示。
     @State private var favoriteState: [String: Bool] = [:]
@@ -66,7 +66,7 @@ struct PhotoDetailView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color(.systemBackground).ignoresSafeArea()
 
                 VStack(spacing: 10) {
                     header
@@ -86,10 +86,6 @@ struct PhotoDetailView: View {
                             .onChanged { value in
                                 let vertical = value.translation.height
                                 let horizontal = abs(value.translation.width)
-                                // 在手勢剛啟動時（位移很小）記錄 inspector 當下狀態
-                                if abs(vertical) < 4, abs(value.translation.width) < 4 {
-                                    inspectorExpandedAtGestureStart = isInspectorExpanded
-                                }
                                 if !isInspectorExpanded {
                                     if vertical > 0, vertical > horizontal * 1.5 {
                                         dragDown = vertical
@@ -99,8 +95,7 @@ struct PhotoDetailView: View {
                             .onEnded { value in
                                 let vertical = value.translation.height
                                 let horizontal = abs(value.translation.width)
-                                // 判斷依據：手勢「起始」時 inspector 是否展開，而非當下狀態
-                                if !inspectorExpandedAtGestureStart {
+                                if !isInspectorExpanded {
                                     if vertical > 110, vertical > horizontal * 1.5 {
                                         dismiss()
                                     } else if vertical < -45, abs(vertical) > horizontal * 1.5 {
@@ -112,8 +107,8 @@ struct PhotoDetailView: View {
                                         withMotion(.spring(response: 0.3, dampingFraction: 0.8)) { dragDown = 0 }
                                     }
                                 } else {
-                                    // 手勢起始時 inspector 是開著的 → 只收起，絕不 dismiss
-                                    if vertical > 50, vertical > horizontal * 1.3 {
+                                    // 資訊面板展開中：向下滑動一律只收起資訊，絕不關閉單圖
+                                    if vertical > 40, vertical > horizontal * 1.2 {
                                         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
                                             isInspectorExpanded = false
                                         }
@@ -131,12 +126,12 @@ struct PhotoDetailView: View {
                                 isInspectorExpanded = false
                             }
                         }
-                        .gesture(
-                            DragGesture(minimumDistance: 12)
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 10)
                                 .onEnded { value in
                                     let dy = value.translation.height
                                     let dx = abs(value.translation.width)
-                                    if dy > 40, dy > dx * 1.2 {
+                                    if dy > 30, dy > dx * 1.1 {
                                         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
                                             isInspectorExpanded = false
                                         }
@@ -169,8 +164,21 @@ struct PhotoDetailView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .overlay(alignment: .bottom) { undoBanner }
+        .task(id: "\(currentID)-\(library.libraryChangeCount)-\(scenePhase)") {
+            if let current {
+                await noteStore.refreshFromPhotos(for: current)
+                await tagStore.refreshFromPhotos(for: current)
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, let current {
+                Task {
+                    await noteStore.refreshFromPhotos(for: current)
+                    await tagStore.refreshFromPhotos(for: current)
+                }
+            }
+        }
         .failureToast()
         .sheet(item: $sheet) { which in
             if let asset = current {
@@ -179,7 +187,8 @@ struct PhotoDetailView: View {
                     let day = dayParts(asset)
                     // 那天已經有日記就載入它，這張照片一併勾選。
                     JournalEditorView(year: day.0, month: day.1, day: day.2,
-                                      preselectedIDs: [asset.localIdentifier])
+                                      preselectedIDs: [asset.localIdentifier],
+                                      allowsDateChange: true)
                 case .note:
                     NoteEditorView(asset: asset)
                 case .tags:
@@ -216,7 +225,7 @@ struct PhotoDetailView: View {
 
             Text(titleText)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .accessibilityIdentifier("detail.title")
@@ -280,9 +289,8 @@ struct PhotoDetailView: View {
                         }
                     }
                     .padding(.horizontal, 24)
-                    .padding(.vertical, 4)
                 }
-                .frame(height: 48)
+                .frame(height: 40)
                 // 2. 最左邊跟最右邊的漸層淡化設計
                 .mask(
                     LinearGradient(
@@ -309,9 +317,7 @@ struct PhotoDetailView: View {
     @ViewBuilder
     private var noteCaption: some View {
         if let asset = current, let text = noteStore.note(for: asset)?.text, !text.isEmpty {
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(.white)
+            ExpandableNoteText(text: text)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -404,7 +410,7 @@ struct PhotoDetailView: View {
                            isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         ActionBarButton(key: key, icon: icon, id: id, isActive: isActive,
                         isDestructive: isDestructive,
-                        tint: .white, action: action)
+                        tint: .primary, action: action)
     }
 
     /// 刪除之後浮在功能列上面：「已放進待刪除　復原」。
@@ -414,9 +420,10 @@ struct PhotoDetailView: View {
             HStack(spacing: 14) {
                 Label("已移至待刪除清單", systemImage: "trash.fill")
                     .font(.footnote.weight(.medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Button("復原") { undoDelete(undoItem) }
                     .font(.footnote.weight(.bold))
+                    .foregroundStyle(Color.accentColor)
                     .accessibilityIdentifier("detail.undo")
             }
             .padding(.horizontal, 16)
@@ -431,6 +438,7 @@ struct PhotoDetailView: View {
         undoHideTask?.cancel()
         model.unmarkTrashed(item.assetID)
         if let asset = library.asset(withID: item.assetID) {
+            organized.unmarkOrganized(asset)
             withMotion {
                 assets.insert(asset, at: min(item.index, assets.count))
                 currentID = asset.localIdentifier
@@ -505,20 +513,18 @@ private struct DetailPage: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(white: 0.11))
+                .fill(Color(.secondarySystemBackground))
 
             if asset.mediaType == .video {
                 InlineVideoView(asset: asset, poster: image)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             if isFavorite {
@@ -531,7 +537,7 @@ private struct DetailPage: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 4)
+        .padding(.top, 4)
         .task(id: asset.localIdentifier) {
             image = await ThumbnailLoader.shared.image(for: asset, size: 1400)
         }

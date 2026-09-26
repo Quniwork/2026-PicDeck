@@ -76,6 +76,14 @@ final class TagStore: ObservableObject {
         var tagIDs: [UUID]
         /// 最後一次改標籤的時間。舊資料沒有。
         var updatedAt: Date? = nil
+        /// 最後一次由 PhotoKit 讀到的關鍵字；nil 是尚未匯入的舊版資料。
+        var syncedKeywords: [String]? = nil
+    }
+
+    private struct KeywordChange {
+        let assetID: String
+        let add: [String]
+        let remove: [String]
     }
 
     private struct Payload: Codable {
@@ -90,6 +98,15 @@ final class TagStore: ObservableObject {
     private let fileURL: URL
     private let filename: String
     private var saveTask: Task<Void, Never>?
+    private weak var library: PhotoLibraryService?
+    private var keywordChanges: [KeywordChange] = []
+    private var nextKeywordChange = 0
+    private var keywordWriteTask: Task<Void, Never>?
+    private var pendingKeywordCounts: [String: Int] = [:]
+
+    func attach(library: PhotoLibraryService) {
+        self.library = library
+    }
 
     init(filename: String = "tags.json") {
         self.filename = filename
@@ -99,7 +116,7 @@ final class TagStore: ObservableObject {
         seedAnniversaryTagIfRequested()
 
         NotificationCenter.default.addObserver(forName: CloudSyncService.didSyncFromCloudNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.load()
+            Task { @MainActor in self?.load() }
         }
     }
 
@@ -147,6 +164,76 @@ final class TagStore: ObservableObject {
     func tags(for asset: PHAsset) -> [PhotoTag] {
         let ids = tagIDs(for: asset)
         return tags.filter { ids.contains($0.id) }
+    }
+
+    /// 讀取照片.app 的關鍵字。
+    /// - 有對應 PicDeck 標籤 → 自動關聯。
+    /// - 沒有對應標籤 → 保留為系統關鍵字，可由資訊面板手動加入 PicDeck 標籤。
+    func refreshFromPhotos(for asset: PHAsset) async {
+        guard #available(iOS 27.0, *), pendingKeywordCounts[asset.localIdentifier] == nil else { return }
+        let id = asset.localIdentifier
+        let result = await Task.detached(priority: .userInitiated) { () -> [String]? in
+            PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
+                .firstObject?.extendedMetadata.keywords
+        }.value
+        guard !Task.isCancelled, pendingKeywordCounts[id] == nil, let systemKeywords = result else { return }
+
+        let fingerprint = OrganizedStore.fingerprint(for: asset)
+        let previousKey = assignments[id] == nil ? fingerprintIndex[fingerprint] : id
+        let old = previousKey.flatMap { assignments[$0] }
+        let localIDs = Set(old?.tagIDs ?? [])
+        var systemIDs: Set<UUID> = []
+
+        for keyword in systemKeywords {
+            let name = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { continue }
+            if let existing = tags.first(where: { Self.normalizedName($0.name) == Self.normalizedName(name) }) {
+                // 有既有同名標籤 → 自動關聯
+                systemIDs.insert(existing.id)
+            }
+            // 未在 PicDeck 建立的關鍵字保留在 syncedKeywords，由資訊面板提供加入標籤的操作。
+        }
+
+        let firstImport = old?.syncedKeywords == nil
+        let mergedIDs = firstImport ? localIDs.union(systemIDs) : systemIDs
+        let systemNames = Set(systemKeywords.map(Self.normalizedName))
+        let localOnlyNames = firstImport
+            ? tags.filter { localIDs.contains($0.id) && !systemNames.contains(Self.normalizedName($0.name)) }
+                .map(\.name)
+            : []
+        if old?.tagIDs.count == mergedIDs.count,
+           localIDs == mergedIDs,
+           old?.syncedKeywords == systemKeywords,
+           previousKey == id { return }
+
+        storeAssignment(mergedIDs, for: asset, syncedKeywords: systemKeywords)
+        if !localOnlyNames.isEmpty {
+            queueKeywordChange(add: localOnlyNames, remove: [], forAssetID: id)
+        }
+    }
+
+    /// 讀取這張照片在系統照片庫擁有的關鍵字（Keywords）
+    func systemKeywords(for asset: PHAsset) -> [String] {
+        let fingerprint = OrganizedStore.fingerprint(for: asset)
+        let key = assignments[asset.localIdentifier] == nil ? fingerprintIndex[fingerprint] : asset.localIdentifier
+        return key.flatMap { assignments[$0]?.syncedKeywords } ?? []
+    }
+
+    /// 將系統關鍵字升格為正式 PicDeck 標籤並關聯到照片
+    @discardableResult
+    func promoteKeywordToTag(_ keyword: String, symbol: String = defaultSymbol, for asset: PHAsset) -> PhotoTag? {
+        let name = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        let tag: PhotoTag
+        if let existing = tags.first(where: { Self.normalizedName($0.name) == Self.normalizedName(name) }) {
+            tag = existing
+        } else if let created = createTag(name: name, symbol: symbol) {
+            tag = created
+        } else {
+            return nil
+        }
+        addTag(tag.id, to: [asset])
+        return tag
     }
 
     func tag(withID id: UUID) -> PhotoTag? {
@@ -209,9 +296,11 @@ final class TagStore: ObservableObject {
         guard let index = tags.firstIndex(where: { $0.id == id }) else { return false }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !nameExists(trimmed, excluding: id) else { return false }
+        let oldName = tags[index].name
         tags[index].name = trimmed
         tags[index].symbol = symbol
         scheduleSave()
+        if oldName != trimmed { renameKeyword(oldName, to: trimmed, for: id) }
         return true
     }
 
@@ -227,6 +316,7 @@ final class TagStore: ObservableObject {
         guard let index = tags.firstIndex(where: { $0.id == id }) else { return false }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !nameExists(trimmed, excluding: id) else { return false }
+        let oldName = tags[index].name
         tags[index].name = trimmed
         tags[index].symbol = symbol
         tags[index].anniversary = anniversary.map { Anniversary.startOfDay($0) }
@@ -235,6 +325,7 @@ final class TagStore: ObservableObject {
         tags[index].isPinned = anniversary == nil ? false : isPinned
         if let pinnedOnHome { tags[index].pinnedOnHome = pinnedOnHome }
         scheduleSave()
+        if oldName != trimmed { renameKeyword(oldName, to: trimmed, for: id) }
         return true
     }
 
@@ -290,6 +381,12 @@ final class TagStore: ObservableObject {
     }
 
     func deleteTag(id: UUID) {
+        let oldName = tags.first(where: { $0.id == id })?.name
+        let affected = oldName.map { name in
+            assetIDs(withTag: id).map { assetID in
+                (assetID, systemKeywordName(for: name, assetID: assetID))
+            }
+        } ?? []
         tags.removeAll { $0.id == id }
         for (key, var assignment) in assignments {
             guard assignment.tagIDs.contains(id) else { continue }
@@ -302,6 +399,9 @@ final class TagStore: ObservableObject {
             }
         }
         scheduleSave()
+        for (assetID, keyword) in affected {
+            queueKeywordChange(add: [], remove: [keyword], forAssetID: assetID)
+        }
     }
 
     // MARK: - 指派
@@ -328,32 +428,84 @@ final class TagStore: ObservableObject {
     }
 
     func setTags(_ tagIDs: Set<UUID>, for asset: PHAsset) {
-        let added = tagIDs.subtracting(self.tagIDs(for: asset))
+        let oldIDs = self.tagIDs(for: asset)
+        let added = tagIDs.subtracting(oldIDs)
+        let removed = oldIDs.subtracting(tagIDs)
+        guard !added.isEmpty || !removed.isEmpty else { return }
         if !added.isEmpty {
             var used = lastUsed
             let now = Date()
             for id in added { used[id.uuidString] = now }
             lastUsed = used
         }
+        let previous = assignments[asset.localIdentifier]
+            ?? fingerprintIndex[OrganizedStore.fingerprint(for: asset)].flatMap { assignments[$0] }
+        storeAssignment(tagIDs, for: asset, syncedKeywords: previous?.syncedKeywords)
+        let addedNames = tags.filter { added.contains($0.id) }.map(\.name)
+        let removedNames = tags.filter { removed.contains($0.id) }
+            .map { systemKeywordName(for: $0.name, assetID: asset.localIdentifier) }
+        queueKeywordChange(add: addedNames, remove: removedNames, forAssetID: asset.localIdentifier)
+    }
+
+    private func storeAssignment(_ tagIDs: Set<UUID>, for asset: PHAsset, syncedKeywords: [String]?) {
         let fingerprint = OrganizedStore.fingerprint(for: asset)
         let key = asset.localIdentifier
-
-        // 換機後識別碼可能改變，先清掉指紋對應的舊紀錄。
         if let oldKey = fingerprintIndex[fingerprint], oldKey != key {
             assignments.removeValue(forKey: oldKey)
         }
-
-        if tagIDs.isEmpty {
+        if tagIDs.isEmpty && (syncedKeywords?.isEmpty ?? true) {
             assignments.removeValue(forKey: key)
             fingerprintIndex.removeValue(forKey: fingerprint)
         } else {
-            assignments[key] = Assignment(localIdentifier: key,
-                                          fingerprint: fingerprint,
-                                          tagIDs: Array(tagIDs),
-                                          updatedAt: Date())
+            assignments[key] = Assignment(localIdentifier: key, fingerprint: fingerprint,
+                                          tagIDs: Array(tagIDs), updatedAt: Date(),
+                                          syncedKeywords: syncedKeywords)
             fingerprintIndex[fingerprint] = key
         }
         scheduleSave()
+    }
+
+    private func renameKeyword(_ oldName: String, to newName: String, for tagID: UUID) {
+        for assetID in assetIDs(withTag: tagID) {
+            queueKeywordChange(add: [newName],
+                               remove: [systemKeywordName(for: oldName, assetID: assetID)],
+                               forAssetID: assetID)
+        }
+    }
+
+    private func systemKeywordName(for tagName: String, assetID: String) -> String {
+        assignments[assetID]?.syncedKeywords?
+            .first { Self.normalizedName($0) == Self.normalizedName(tagName) } ?? tagName
+    }
+
+    private func queueKeywordChange(add: [String], remove: [String], forAssetID id: String) {
+        guard #available(iOS 27.0, *), library != nil,
+              !add.isEmpty || !remove.isEmpty else { return }
+        keywordChanges.append(KeywordChange(assetID: id, add: add, remove: remove))
+        pendingKeywordCounts[id, default: 0] += 1
+        guard keywordWriteTask == nil else { return }
+        keywordWriteTask = Task { [weak self] in
+            guard let self else { return }
+            while nextKeywordChange < keywordChanges.count {
+                let change = keywordChanges[nextKeywordChange]
+                nextKeywordChange += 1
+                let succeeded = await library?.updateKeywords(add: change.add, remove: change.remove,
+                                                               forAssetID: change.assetID) ?? false
+                let remaining = (pendingKeywordCounts[change.assetID] ?? 1) - 1
+                if remaining > 0 {
+                    pendingKeywordCounts[change.assetID] = remaining
+                } else {
+                    pendingKeywordCounts.removeValue(forKey: change.assetID)
+                    if succeeded,
+                       let asset = PHAsset.fetchAssets(withLocalIdentifiers: [change.assetID], options: nil).firstObject {
+                        await refreshFromPhotos(for: asset)
+                    }
+                }
+            }
+            keywordChanges.removeAll()
+            nextKeywordChange = 0
+            keywordWriteTask = nil
+        }
     }
 
     /// 這張照片標籤最後一次被改的時間。

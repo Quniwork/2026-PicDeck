@@ -29,6 +29,7 @@ struct OrganizeTabView: View {
             .navigationTitle("整理")
             .failureToast()
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
+            .borderlessHeaderScrim()
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
                     LeadingTitleToolbar(title: "整理", font: .largeTitle)

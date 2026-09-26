@@ -48,12 +48,21 @@ struct ReviewSessionView: View {
     @State private var isZoomed = false
     @State private var showTagPicker = false
     @State private var showNoteEditor = false
+    @State private var showJournalEditor = false
+    @State private var isNoteExpanded = false
     @State private var isInspectorExpanded = false
     /// 記錄每次拖曳「起始時」inspector 是否展開，避免手勢結束時誤觸 dismiss。
     @State private var inspectorExpandedAtGestureStart = false
     /// 目前這張照片所屬的相簿名稱與 ID 清單。
     @State private var currentAlbums: [String] = []
     @State private var currentAlbumIDs: Set<String> = []
+
+    /// 整理柵欄 / 網格模式相關狀態
+    @AppStorage("review_session_is_grid_mode") private var isGridMode = false
+    @State private var gridSelectedIDs: Set<String> = []
+    @State private var batchSelectedAssetsForTag: [PHAsset] = []
+    @State private var batchSelectedAssetsForAlbum: [PHAsset] = []
+    @State private var previewAsset: PHAsset? = nil
 
     private var currentTags: [PhotoTag] {
         guard let currentAsset else { return [] }
@@ -67,33 +76,83 @@ struct ReviewSessionView: View {
     var body: some View {
         VStack(spacing: 10) {
             header
-            photoArea
+            if isGridMode {
+                OrganizeGridView(
+                    assets: assets,
+                    selectedIDs: $gridSelectedIDs,
+                    onToggleSelect: { asset in
+                        let id = asset.localIdentifier
+                        if gridSelectedIDs.contains(id) {
+                            gridSelectedIDs.remove(id)
+                        } else {
+                            gridSelectedIDs.insert(id)
+                        }
+                    },
+                    onToggleSelectAll: {
+                        if gridSelectedIDs.count == assets.count {
+                            gridSelectedIDs.removeAll()
+                        } else {
+                            gridSelectedIDs = Set(assets.map(\.localIdentifier))
+                        }
+                    },
+                    onBatchKeep: {
+                        batchKeepSelected()
+                    },
+                    onBatchDelete: {
+                        batchDeleteSelected()
+                    },
+                    onBatchFavorite: {
+                        batchToggleFavoriteSelected()
+                    },
+                    onBatchTags: {
+                        let targets = selectedGridAssets
+                        if !targets.isEmpty {
+                            batchSelectedAssetsForTag = targets
+                            showTagPicker = true
+                        }
+                    },
+                    onBatchAlbums: {
+                        let targets = selectedGridAssets
+                        if !targets.isEmpty {
+                            batchSelectedAssetsForAlbum = targets
+                            showMoreAlbums = true
+                        }
+                    },
+                    onOpenAsset: { asset in
+                        previewAsset = asset
+                    },
+                    isFavorite: { isFavorite($0) }
+                )
                 .layoutPriority(1)
+            } else {
+                photoArea
+                    .layoutPriority(1)
 
-            if isInspectorExpanded, let asset = currentAsset {
-                PhotoInspectorPanelView(asset: asset) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                        isInspectorExpanded = false
+                if isInspectorExpanded, let asset = currentAsset {
+                    PhotoInspectorPanelView(asset: asset) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                            isInspectorExpanded = false
+                        }
                     }
-                }
-                .gesture(
-                    DragGesture(minimumDistance: 12)
-                        .onEnded { value in
-                            let dy = value.translation.height
-                            let dx = abs(value.translation.width)
-                            if dy > 40, dy > dx * 1.2 {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                                    isInspectorExpanded = false
+                    .gesture(
+                        DragGesture(minimumDistance: 12)
+                            .onEnded { value in
+                                let dy = value.translation.height
+                                let dx = abs(value.translation.width)
+                                if dy > 40, dy > dx * 1.2 {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                        isInspectorExpanded = false
+                                    }
                                 }
                             }
-                        }
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.horizontal, 10)
-            }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.horizontal, 10)
+                }
 
-            quickRow
-            actionBar
+                quickRow
+                actionBar
+            }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.82), value: isInspectorExpanded)
         .background(Color(.systemBackground))
@@ -114,13 +173,17 @@ struct ReviewSessionView: View {
             await updateCurrentAssetAlbums()
         }
         .onChange(of: currentAsset?.localIdentifier) { _, newID in
+            isNoteExpanded = false
             if let newID {
                 model.setLastReviewedAssetID(newID, for: bucket.id)
             }
         }
-        .sheet(isPresented: $showTagPicker) {
-            if let asset = currentAsset {
-                TagPickerView(assets: [asset])
+        .sheet(isPresented: $showTagPicker, onDismiss: {
+            batchSelectedAssetsForTag = []
+        }) {
+            let targets = !batchSelectedAssetsForTag.isEmpty ? batchSelectedAssetsForTag : (currentAsset.map { [$0] } ?? [])
+            if !targets.isEmpty {
+                TagPickerView(assets: targets)
             }
         }
         .sheet(isPresented: $showNoteEditor) {
@@ -128,17 +191,35 @@ struct ReviewSessionView: View {
                 NoteEditorView(asset: asset)
             }
         }
-        .sheet(isPresented: $showTrash) { PendingTrashView() }
+        .sheet(isPresented: $showJournalEditor) {
+            if let asset = currentAsset {
+                if let entry = journalStore.entry(for: asset) {
+                    JournalEditorView(entry: entry)
+                } else {
+                    let date = asset.creationDate ?? Date()
+                    let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
+                    JournalEditorView(year: parts.year ?? 2026, month: parts.month ?? 1, day: parts.day ?? 1, preselectedIDs: [asset.localIdentifier])
+                }
+            }
+        }
+        .sheet(isPresented: $showTrash, onDismiss: {
+            Task { await load() }
+        }) { PendingTrashView() }
         .sheet(isPresented: $showPaywall) { PaywallView() }
         .sheet(isPresented: $showMoreAlbums, onDismiss: {
+            batchSelectedAssetsForAlbum = []
             Task {
                 albums = await library.userAlbums()
                 await updateCurrentAssetAlbums()
             }
         }) {
-            if let asset = currentAsset {
-                AlbumPickerView(assets: [asset])
+            let targets = !batchSelectedAssetsForAlbum.isEmpty ? batchSelectedAssetsForAlbum : (currentAsset.map { [$0] } ?? [])
+            if !targets.isEmpty {
+                AlbumPickerView(assets: targets)
             }
+        }
+        .sheet(item: $previewAsset) { asset in
+            PhotoDetailView(assets: assets, startID: asset.localIdentifier)
         }
         // 動作結果放在畫面正中間，比原本壓在標題下的小字明顯得多。
         .overlay(alignment: .center) {
@@ -164,10 +245,17 @@ struct ReviewSessionView: View {
 
     // MARK: - 上方
 
-    /// 頁首：關閉、來源標題、垃圾桶。三個都是浮在照片上的玻璃，靠得近時會融合成一組。
+    // MARK: - 上方
+
+    /// 頁首：關閉、來源標題（螢幕正中央置中）、右上角按鈕群（網格切換與待刪除垃圾桶各自獨立，不融合）。
     private var header: some View {
         VStack(spacing: 6) {
-            GlassGroup(spacing: 16) {
+            ZStack {
+                // 中間：來源日期選單（絕對水平置中，不受兩側按鈕數量或寬度影響）
+                sourceMenu
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                // 兩側按鈕
                 HStack {
                     GlassCircleButton { dismiss() } label: {
                         Image(systemName: "xmark")
@@ -177,95 +265,111 @@ struct ReviewSessionView: View {
 
                     Spacer()
 
-                    Menu {
-                        bucketButton(for: .allUnorganized, count: summary.allCount)
-                        bucketButton(for: .unorganizedPhotos, count: summary.photoCount)
-                        bucketButton(for: .unorganizedVideos, count: summary.videoCount)
-                        bucketButton(for: .unorganizedScreenshots, count: summary.screenshotCount)
-
-                        let monthList = monthsForMenu
-                        if !monthList.isEmpty {
-                            Menu {
-                                ForEach(monthList) { month in
-                                    let monthBucket = OrganizeBucket.month(year: month.year, month: month.month)
-                                    Button {
-                                        if model.canUse(monthBucket) {
-                                            switchBucket(monthBucket)
-                                        } else {
-                                            showPaywall = true
-                                        }
-                                    } label: {
-                                        Label {
-                                            Text("\(month.title)（\(month.count)）")
-                                        } icon: {
-                                            if monthBucket == bucket {
-                                                Image(systemName: "checkmark")
-                                            } else if !model.canUse(monthBucket) {
-                                                Image(systemName: "lock.fill")
-                                            } else {
-                                                Image(systemName: "calendar")
-                                            }
-                                        }
-                                    }
-                                    .disabled(!model.canUse(monthBucket) && monthBucket != bucket)
-                                }
-                            } label: {
-                                Label {
-                                    Text("依月份")
-                                } icon: {
-                                    if case .month = bucket {
-                                        Image(systemName: "calendar.badge.checkmark")
-                                    } else {
-                                        Image(systemName: "calendar")
-                                    }
+                    HStack(spacing: 12) {
+                        GlassCircleButton {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isGridMode.toggle()
+                                if index >= assets.count {
+                                    index = max(0, assets.count - 1)
                                 }
                             }
+                        } label: {
+                            Image(systemName: isGridMode ? "rectangle.portrait.fill" : "square.grid.3x3.fill")
                         }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(bucket.title).font(.headline)
-                            Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+                        .accessibilityLabel(Text(isGridMode ? "切換至卡片模式" : "切換至網格模式"))
+                        .accessibilityIdentifier("session.modeToggle")
+
+                        GlassCircleButton { showTrash = true } label: {
+                            Image(systemName: "trash")
                         }
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 18)
-                        .frame(height: 44)
-                        .floatingGlass(in: Capsule(), interactive: true)
+                        .accessibilityLabel(Text("待刪除清單"))
+                        .accessibilityIdentifier("session.trash")
+                        .overlay(alignment: .topTrailing) {
+                            if !model.trashedAssetIDs.isEmpty {
+                                Text("\(model.trashedAssetIDs.count)")
+                                    .font(.system(.caption2, design: .rounded, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                                    .padding(.horizontal, 5)
+                                    .frame(minWidth: 18, minHeight: 18)
+                                    .background(Color.red, in: Capsule())
+                                    .offset(x: 5, y: -5)
+                                    .allowsHitTesting(false)
+                                    .accessibilityIdentifier("session.trash.count")
+                            }
+                        }
                     }
-                    .accessibilityIdentifier("session.source")
-
-                    Spacer()
-
-                    GlassCircleButton { showTrash = true } label: {
-                        Image(systemName: "trash")
-                    }
-                    .accessibilityLabel(Text("待刪除清單"))
-                    .accessibilityIdentifier("session.trash")
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                // 待刪除的張數，紅色圓形加數字。放在 GlassGroup 與按鈕外層，避免在選單展開或返回頁面時被圓形玻璃裁切。
-                if !model.trashedAssetIDs.isEmpty {
-                    Text("\(model.trashedAssetIDs.count)")
-                        .font(.system(.caption2, design: .rounded, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .fixedSize()
-                        .padding(.horizontal, 5)
-                        .frame(minWidth: 18, minHeight: 18)
-                        .background(Color.red, in: Capsule())
-                        .offset(x: 5, y: -5)
-                        .allowsHitTesting(false)
-                        .accessibilityIdentifier("session.trash.count")
                 }
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
 
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if !isGridMode {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.bottom, 8)
+    }
+
+    private var sourceMenu: some View {
+        Menu {
+            bucketButton(for: .allUnorganized, count: summary.allCount)
+            bucketButton(for: .unorganizedPhotos, count: summary.photoCount)
+            bucketButton(for: .unorganizedVideos, count: summary.videoCount)
+            bucketButton(for: .unorganizedScreenshots, count: summary.screenshotCount)
+
+            let monthList = monthsForMenu
+            if !monthList.isEmpty {
+                Menu {
+                    ForEach(monthList) { month in
+                        let monthBucket = OrganizeBucket.month(year: month.year, month: month.month)
+                        Button {
+                            if model.canUse(monthBucket) {
+                                switchBucket(monthBucket)
+                            } else {
+                                showPaywall = true
+                            }
+                        } label: {
+                            Label {
+                                Text("\(month.title)（\(month.count)）")
+                            } icon: {
+                                if monthBucket == bucket {
+                                    Image(systemName: "checkmark")
+                                } else if !model.canUse(monthBucket) {
+                                    Image(systemName: "lock.fill")
+                                } else {
+                                    Image(systemName: "calendar")
+                                }
+                            }
+                        }
+                        .disabled(!model.canUse(monthBucket) && monthBucket != bucket)
+                    }
+                } label: {
+                    Label {
+                        Text("依月份")
+                    } icon: {
+                        if case .month = bucket {
+                            Image(systemName: "calendar.badge.checkmark")
+                        } else {
+                            Image(systemName: "calendar")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(bucket.title).font(.headline)
+                Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 18)
+            .frame(height: 44)
+            .floatingGlass(in: Capsule(), interactive: true)
+        }
+        .accessibilityIdentifier("session.source")
     }
 
     private var subtitle: String {
@@ -289,9 +393,35 @@ struct ReviewSessionView: View {
                               title: String(localized: "Nothing left here"),
                               message: String(localized: "This source is all reviewed."))
             } else if index >= assets.count {
-                AppEmptyState(icon: "checkmark.circle",
-                              title: String(localized: "All done"),
-                              message: String(localized: "You reached the end of this batch."))
+                VStack(spacing: 16) {
+                    AppEmptyState(icon: "checkmark.circle",
+                                  title: String(localized: "All done"),
+                                  message: String(localized: "You reached the end of this batch."))
+                    if !assets.isEmpty {
+                        Button {
+                            withMotion { index = max(0, assets.count - 1) }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.left")
+                                Text("返回查看照片")
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
+                        }
+                    }
+                }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 20)
+                        .onEnded { value in
+                            if value.translation.width > 50, !assets.isEmpty {
+                                withMotion { index = max(0, assets.count - 1) }
+                            }
+                        }
+                )
             } else if let asset = currentAsset {
                 SessionPhotoCard(asset: asset, isZoomed: $isZoomed)
                     .overlay {
@@ -307,121 +437,131 @@ struct ReviewSessionView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                     }
-                    .overlay(alignment: .top) {
-                        HStack(alignment: .top, spacing: 8) {
-                            // 左側：水平滾動膠囊列（喜愛、標籤、相簿、備註）
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 6) {
-                                    if isFavorite(asset) {
-                                        Button {
-                                            toggleFavoriteCurrent()
-                                        } label: {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "heart.fill")
-                                                    .font(.system(size: 11))
-                                                    .foregroundStyle(.pink)
-                                                Text(String(localized: "Favorite"))
-                                                    .font(.caption2.weight(.medium))
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .foregroundStyle(.primary)
-                                            .floatingGlass(in: Capsule(), interactive: true)
-                                        }
-                                        .buttonStyle(.plain)
+                    .overlay(alignment: .topLeading) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            // #1 喜愛
+                            if isFavorite(asset) {
+                                Button {
+                                    toggleFavoriteCurrent()
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "heart.fill")
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(.pink)
+                                        Text(String(localized: "Favorite", defaultValue: "喜愛"))
+                                            .font(.caption2.weight(.medium))
                                     }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .foregroundStyle(.primary)
+                                    .floatingGlass(in: Capsule(), interactive: true)
+                                }
+                                .buttonStyle(.plain)
+                            }
 
-                                    ForEach(currentTags) { tag in
-                                        Button {
-                                            showTagPicker = true
-                                        } label: {
-                                            HStack(spacing: 4) {
-                                                if !tag.symbol.isEmpty {
-                                                    IconLabel(raw: tag.symbol, size: 13)
-                                                } else {
-                                                    Image(systemName: "tag.fill")
-                                                        .font(.system(size: 11))
+                            // #2 日記
+                            if journalStore.isInJournal(asset) {
+                                Button {
+                                    showJournalEditor = true
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "book.closed.fill")
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(.white)
+                                        Text("日記")
+                                            .font(.caption2.weight(.medium))
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .foregroundStyle(.primary)
+                                    .floatingGlass(in: Capsule(), interactive: true)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(12)
+                        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: isFavorite(asset))
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        // #3 狀態按鈕 (移出待刪除)
+                        if model.trashedAssetIDs.contains(asset.localIdentifier) {
+                            Button {
+                                untrashCurrent()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.uturn.backward")
+                                        .font(.system(size: 10, weight: .bold))
+                                    Text(String(localized: "Remove from pending deletion", defaultValue: "移出待刪除"))
+                                        .font(.caption2.weight(.bold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.red, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.scale.combined(with: .opacity))
+                            .padding(12)
+                        }
+                    }
+                    .overlay(alignment: .bottomLeading) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            // #4 標籤 (水平單列滾動，不折行)
+                            if !currentTags.isEmpty {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(currentTags) { tag in
+                                            Button {
+                                                showTagPicker = true
+                                            } label: {
+                                                HStack(spacing: 4) {
+                                                    if !tag.symbol.isEmpty {
+                                                        IconLabel(raw: tag.symbol, size: 13)
+                                                    } else {
+                                                        Image(systemName: "tag.fill")
+                                                            .font(.system(size: 11))
+                                                    }
+                                                    Text(tag.name)
+                                                        .font(.caption2.weight(.medium))
+                                                        .lineLimit(1)
                                                 }
-                                                Text(tag.name)
-                                                    .font(.caption2.weight(.medium))
-                                                    .lineLimit(1)
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .foregroundStyle(.primary)
+                                                .floatingGlass(in: Capsule(), interactive: true)
                                             }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .foregroundStyle(.primary)
-                                            .floatingGlass(in: Capsule(), interactive: true)
+                                            .buttonStyle(.plain)
                                         }
-                                        .buttonStyle(.plain)
-                                    }
-
-                                    ForEach(currentAlbums, id: \.self) { albumTitle in
-                                        Button {
-                                            showMoreAlbums = true
-                                        } label: {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "rectangle.stack.fill")
-                                                    .font(.system(size: 11))
-                                                    .foregroundStyle(Color.accentColor)
-                                                Text(albumTitle)
-                                                    .font(.caption2.weight(.medium))
-                                                    .lineLimit(1)
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .foregroundStyle(.primary)
-                                            .floatingGlass(in: Capsule(), interactive: true)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-
-                                    if let note = noteStore.note(for: asset)?.text, !note.isEmpty {
-                                        Button {
-                                            showNoteEditor = true
-                                        } label: {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "note.text")
-                                                    .font(.system(size: 11))
-                                                    .foregroundStyle(.yellow)
-                                                Text(note)
-                                                    .font(.caption2.weight(.medium))
-                                                    .lineLimit(1)
-                                                    .frame(maxWidth: 120)
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .foregroundStyle(.primary)
-                                            .floatingGlass(in: Capsule(), interactive: true)
-                                        }
-                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
 
-                            Spacer(minLength: 4)
+                            // #5 備註（最多顯示兩行，點擊顯示更多才展開）
+                            if let noteText = noteStore.note(for: asset)?.text, !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(noteText)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.white)
+                                        .lineLimit(isNoteExpanded ? nil : 2)
+                                        .multilineTextAlignment(.leading)
 
-                            // 右上角：若為待刪除照片，顯示「移出待刪除」按鈕
-                            if model.trashedAssetIDs.contains(asset.localIdentifier) {
-                                Button {
-                                    untrashCurrent()
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "arrow.uturn.backward")
-                                            .font(.system(size: 10, weight: .bold))
-                                        Text(String(localized: "Remove from pending deletion", defaultValue: "移出待刪除"))
-                                            .font(.caption2.weight(.bold))
+                                    Button {
+                                        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                                            isNoteExpanded.toggle()
+                                        }
+                                    } label: {
+                                        Text(isNoteExpanded ? "顯示較少" : "顯示更多")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Color.accentColor)
                                     }
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(Color.red, in: Capsule())
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
-                                .transition(.scale.combined(with: .opacity))
+                                .padding(10)
+                                .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                             }
                         }
                         .padding(12)
                         .animation(.spring(response: 0.28, dampingFraction: 0.82), value: currentTags)
-                        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: currentAlbums)
                     }
                     .offset(dragOffset)
                     .rotationEffect(dragOffset.height > 0 && dragOffset.height > abs(dragOffset.width) ? .zero : .degrees(Double(dragOffset.width / 30)))
@@ -484,9 +624,10 @@ struct ReviewSessionView: View {
     /// 跟選取照片時的功能列同一種樣式：玻璃膠囊、小圖示加文字、間距平均。
     private var actionBar: some View {
         let favorite = currentAsset.map(isFavorite) ?? false
+        let isKept = currentAsset.map { organized.isOrganized($0) } ?? false
 
         // 順序：資訊、標籤、相簿、喜愛（移出喜愛）、保留、刪除。
-        return ActionBarRow {
+        return ActionBarRow(forceHorizontal: true) {
             barButton("資訊", icon: isInspectorExpanded ? "info.circle.fill" : "info.circle",
                       id: "session.info", isActive: isInspectorExpanded) {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
@@ -510,7 +651,10 @@ struct ReviewSessionView: View {
                 toggleFavoriteCurrent()
             }
             Spacer(minLength: 4)
-            barButton("保留", icon: "checkmark", id: "session.keep") {
+            barButton(isKept ? "取消保留" : "保留",
+                      icon: isKept ? "checkmark.circle.badge.xmark" : "checkmark",
+                      id: "session.keep",
+                      isActive: isKept) {
                 keepCurrent()
             }
             Spacer(minLength: 4)
@@ -600,19 +744,27 @@ struct ReviewSessionView: View {
     private func untrashCurrent() {
         guard let asset = currentAsset else { return }
         model.unmarkTrashed(asset.localIdentifier)
+        organized.unmarkOrganized(asset)
         incrementCounts(for: asset)
         showBanner(String(localized: "Removed from pending deletion", defaultValue: "已移出待刪除"),
                    icon: "arrow.uturn.backward", tint: .secondary)
     }
 
-    /// 保留：標記成已整理，之後不再出現在未整理清單。左滑保留不跳出提示橫幅。
+    /// 保留／取消保留：標記成已整理或取消已整理。
     private func keepCurrent() {
-        guard let asset = currentAsset, model.hasQuotaLeft else { return }
-        organized.markOrganized(asset)
-        model.consumeQuota()
-        decrementCounts(for: asset)
-        history.append(SessionAction(assetID: asset.localIdentifier, kind: .keep))
-        withMotion { index += 1 }
+        guard let asset = currentAsset else { return }
+        if organized.isOrganized(asset) {
+            organized.unmarkOrganized(asset)
+            incrementCounts(for: asset)
+            showBanner("已取消保留", icon: "checkmark.circle", tint: .secondary, haptic: .light)
+        } else {
+            guard model.hasQuotaLeft else { showPaywall = true; return }
+            organized.markOrganized(asset)
+            model.consumeQuota()
+            decrementCounts(for: asset)
+            history.append(SessionAction(assetID: asset.localIdentifier, kind: .keep))
+            withMotion { index += 1 }
+        }
     }
 
     /// 刪除：先進待刪清單，確認後才真的刪。
@@ -637,6 +789,9 @@ struct ReviewSessionView: View {
         guard let asset = currentAsset else { return }
         let now = !isFavorite(asset)
         favoriteState[asset.localIdentifier] = now
+        if now {
+            organized.markOrganized(asset)
+        }
         Task {
             await library.attempt(String(localized: "Couldn't change favorites")) {
                 try await library.setFavorite(asset, to: now)
@@ -659,6 +814,7 @@ struct ReviewSessionView: View {
                        icon: "tag.slash.fill", tint: .secondary, haptic: .light)
         } else {
             tagStore.addTag(tag.id, to: [asset])
+            organized.markOrganized(asset)
             showBanner("已加入標籤 \(tag.name)",
                        icon: "tag.fill", tint: .accentColor, haptic: .success)
         }
@@ -684,6 +840,7 @@ struct ReviewSessionView: View {
             if !currentAlbums.contains(album.title) {
                 currentAlbums.append(album.title)
             }
+            organized.markOrganized(asset)
             Task {
                 await library.attempt(String(localized: "Couldn't add to the album", defaultValue: "無法加入相簿")) {
                     try await library.addAsset(asset, toAlbumWithID: album.id)
@@ -903,6 +1060,85 @@ struct ReviewSessionView: View {
         let ids = library.albumIDs(for: asset)
         currentAlbums = titles
         currentAlbumIDs = ids
+    }
+
+    // MARK: - 柵欄 / 網格模式批次動作
+
+    private var selectedGridAssets: [PHAsset] {
+        assets.filter { gridSelectedIDs.contains($0.localIdentifier) }
+    }
+
+    private func batchKeepSelected() {
+        let targets = selectedGridAssets
+        guard !targets.isEmpty else { return }
+
+        let allKept = targets.allSatisfy { organized.isOrganized($0) }
+        if allKept {
+            for asset in targets {
+                organized.unmarkOrganized(asset)
+                incrementCounts(for: asset)
+            }
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                gridSelectedIDs.removeAll()
+            }
+            showBanner("已取消保留 \(targets.count) 張照片", icon: "checkmark.circle", tint: .secondary, haptic: .light)
+        } else {
+            guard model.hasQuotaLeft else { showPaywall = true; return }
+            let unkept = targets.filter { !organized.isOrganized($0) }
+            for asset in unkept {
+                organized.markOrganized(asset)
+                decrementCounts(for: asset)
+                history.append(SessionAction(assetID: asset.localIdentifier, kind: .keep))
+            }
+            model.consumeQuota(unkept.count)
+
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                gridSelectedIDs.removeAll()
+            }
+            showBanner("已保留 \(targets.count) 張照片", icon: "checkmark.circle.fill", tint: .green, haptic: .light)
+        }
+    }
+
+    private func batchDeleteSelected() {
+        let targets = selectedGridAssets
+        guard !targets.isEmpty else { return }
+        guard model.hasQuotaLeft else { showPaywall = true; return }
+        let count = targets.count
+
+        for asset in targets {
+            model.markTrashed(asset.localIdentifier)
+            decrementCounts(for: asset)
+            history.append(SessionAction(assetID: asset.localIdentifier, kind: .delete))
+        }
+        model.consumeQuota(count)
+
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+            gridSelectedIDs.removeAll()
+        }
+        showBanner("已加入待刪除 \(count) 張照片", icon: "trash.fill", tint: .red, haptic: .warning)
+    }
+
+    private func batchToggleFavoriteSelected() {
+        let targets = selectedGridAssets
+        guard !targets.isEmpty else { return }
+        let allFavorites = targets.allSatisfy { isFavorite($0) }
+        let targetState = !allFavorites
+
+        for asset in targets {
+            favoriteState[asset.localIdentifier] = targetState
+            if targetState {
+                organized.markOrganized(asset)
+            }
+        }
+        Task {
+            for asset in targets {
+                try? await library.setFavorite(asset, to: targetState)
+            }
+        }
+        showBanner(targetState ? "已將 \(targets.count) 張加入喜愛" : "已將 \(targets.count) 張移出喜愛",
+                   icon: targetState ? "heart.fill" : "heart.slash.fill",
+                   tint: targetState ? .pink : .secondary,
+                   haptic: targetState ? .success : .light)
     }
 }
 

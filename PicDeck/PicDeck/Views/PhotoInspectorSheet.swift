@@ -200,7 +200,7 @@ struct PhotoInspectorSheet: View {
                             Button {
                                 showNoteEditor = true
                             } label: {
-                                Label("編輯備註", systemImage: "pencil")
+                                Label("編輯備註", systemImage: "square.and.pencil")
                                     .font(.caption.weight(.medium))
                             }
                             .padding(.top, 2)
@@ -290,10 +290,12 @@ struct PhotoInspectorSheet: View {
             .sheet(isPresented: $showJournalEditor) {
                 if let entry = journalEntryForEdit {
                     JournalEditorView(entry: entry)
-                } else if let date = asset.creationDate {
+                } else {
+                    let date = asset.creationDate ?? Date()
                     let parts = PhotoGrouping.calendar.dateComponents([.year, .month, .day], from: date)
                     JournalEditorView(year: parts.year ?? 0, month: parts.month ?? 0, day: parts.day ?? 0,
-                                      preselectedIDs: [asset.localIdentifier])
+                                      preselectedIDs: [asset.localIdentifier],
+                                      allowsDateChange: true)
                 }
             }
         }

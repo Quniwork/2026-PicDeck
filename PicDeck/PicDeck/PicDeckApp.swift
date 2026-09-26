@@ -20,7 +20,12 @@ struct PicDeckApp: App {
                 .environmentObject(tagStore)
                 .environmentObject(journalStore)
                 .environmentObject(noteStore)
-                .onAppear { model.appearance.apply() }
+                .preferredColorScheme(model.appearance.colorScheme)
+                .onAppear {
+                    model.appearance.apply()
+                    noteStore.attach(library: library)
+                    tagStore.attach(library: library)
+                }
                 // 桌面小工具的資料：啟動時、標籤有變動時同步一次。
                 .task(id: "\(tagStore.assignments.count)-\(tagStore.tags.count)-\(model.cardTextPosition.rawValue)-\(model.cardTextStyle.rawValue)") {
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
@@ -37,8 +42,11 @@ struct PicDeckApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, phase in
-            // 進背景時把保留紀錄立刻寫入磁碟。
-            if phase == .active { model.refreshEntitlement() }
+            // 進背景時把保留紀錄立刻寫入磁碟；回到前景時刷新外部相簿變更。
+            if phase == .active {
+                model.refreshEntitlement()
+                library.notifyExternalChange()
+            }
             if phase == .background { Task { await WidgetSync.sync(tagStore: tagStore, library: library, model: model) } }
             if phase != .active {
                 organized.flush()

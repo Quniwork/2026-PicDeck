@@ -7,6 +7,8 @@ project.xcworkspace/xcuserdata/
 # Build products and intermediates
 build/
 build-device/
+build_sim/
+build_device/
 DerivedData/
 *.build
 *.moved-aside

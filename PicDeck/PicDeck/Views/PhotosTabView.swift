@@ -29,22 +29,26 @@ private struct PhotosHeaderScrimOverlay: View {
     let isDarkMode: Bool
 
     var body: some View {
-        if isDarkMode || dateState.hasScrolled {
-            LinearGradient(
-                stops: [
-                    .init(color: Color.black.opacity(0.72), location: 0.0),
-                    .init(color: Color.black.opacity(0.48), location: 0.45),
-                    .init(color: Color.black.opacity(0.18), location: 0.75),
-                    .init(color: Color.clear, location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 140)
-            .ignoresSafeArea(edges: .top)
-            .allowsHitTesting(false)
-            .transition(.opacity)
+        let darkHeader = isDarkMode || dateState.hasScrolled
+        let baseColor = darkHeader ? Color.black : Color(.systemBackground)
+        let fade = LinearGradient(stops: [
+            .init(color: .black, location: 0),
+            .init(color: .black, location: 0.48),
+            .init(color: .clear, location: 1)
+        ], startPoint: .top, endPoint: .bottom)
+        ZStack {
+            Rectangle().fill(.ultraThinMaterial).mask(fade)
+            LinearGradient(stops: [
+                .init(color: baseColor.opacity(darkHeader ? 0.52 : 0.70), location: 0),
+                .init(color: baseColor.opacity(darkHeader ? 0.38 : 0.50), location: 0.45),
+                .init(color: baseColor.opacity(darkHeader ? 0.12 : 0.16), location: 0.76),
+                .init(color: .clear, location: 1)
+            ], startPoint: .top, endPoint: .bottom)
         }
+        .frame(height: 140)
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
+        .transition(.opacity)
     }
 }
 
@@ -276,7 +280,8 @@ struct PhotosTabView: View {
             .navigationTitle(displayTitle)
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .toolbarColorScheme(usesDarkHeader ? .dark : appColorScheme, for: .navigationBar)
-            .toolbarBackground(usesDarkHeader ? .hidden : .automatic, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(NavigationBarSeparatorHider())
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
                     PhotosTitleToolbar(dateState: visibleDateState,
@@ -328,7 +333,8 @@ struct PhotosTabView: View {
                     TagPickerView(assets: [asset])
                 case .journal(let date):
                     JournalEditorView(year: date.year, month: date.month, day: date.day,
-                                      preselectedIDs: date.photoIDs)
+                                      preselectedIDs: date.photoIDs,
+                                      allowsDateChange: true)
                 case .batchTags:
                     TagPickerView(assets: selectedAssets)
                 case .batchNote:

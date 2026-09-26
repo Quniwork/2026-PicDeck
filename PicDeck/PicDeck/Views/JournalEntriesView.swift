@@ -142,15 +142,6 @@ struct JournalEntriesView: View {
                 AnniversaryChips(date: date, tag: anniversaryTag)
             }
             Spacer(minLength: 0)
-            Button { onAddForDay(year, month, day) } label: {
-                Image(systemName: "plus")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
-                    .background(Color(.secondarySystemFill), in: Circle())
-            }
-            .accessibilityLabel(Text("New entry for this day"))
-            .accessibilityIdentifier("journal.addForDay")
         }
     }
 }
@@ -179,9 +170,9 @@ struct JournalEntryRow: View {
 
     /// 收合時只放一列。
     private var maxCollapsed: Int { columnCount }
-    private let collapsedLines = 5
-    /// 超過這個長度才給展開按鈕，不用去量實際有沒有被截斷。
-    private let longTextThreshold = 110
+    private let collapsedLines = 4
+    /// 超過這個長度或行數才給展開按鈕。
+    private let longTextThreshold = 75
 
     private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 2), count: columnCount) }
 
@@ -195,10 +186,17 @@ struct JournalEntryRow: View {
     }
 
     private var isLongText: Bool {
-        entry.text.count > longTextThreshold
+        let lineBreakCount = entry.text.components(separatedBy: .newlines).count
+        return lineBreakCount > collapsedLines || entry.text.count > longTextThreshold
     }
 
     private var category: JournalCategory? { journalStore.category(withID: entry.categoryID) }
+
+    private var timeText: String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: entry.createdAt)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -210,14 +208,13 @@ struct JournalEntryRow: View {
                         .font(.subheadline)
                         .lineSpacing(3)
                         .lineLimit(isTextExpanded ? nil : collapsedLines)
-                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if isLongText {
                         Button {
                             withMotion(.easeInOut(duration: 0.2)) { isTextExpanded.toggle() }
                         } label: {
-                            Text(isTextExpanded ? "Show less" : "Show more")
+                            Text(isTextExpanded ? String(localized: "顯示較少") : String(localized: "顯示更多"))
                                 .font(.caption.weight(.semibold))
                         }
                         .buttonStyle(.plain)
@@ -280,21 +277,33 @@ struct JournalEntryRow: View {
 
             Spacer(minLength: 0)
 
+            Text(timeText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
             // 沒有底色的「…」，點開選編輯或刪除。
             Menu {
                 Button(action: onEdit) {
-                    Label("Edit", systemImage: "square.and.pencil")
+                    Label("編輯", systemImage: "square.and.pencil")
                 }
                 Button(role: .destructive) {
                     confirmDelete = true
                 } label: {
-                    Label("Delete", systemImage: "xmark")
+                    Label {
+                        Text("刪除")
+                    } icon: {
+                        if let redX = UIImage(systemName: "xmark")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal) {
+                            Image(uiImage: redX)
+                        } else {
+                            Image(systemName: "xmark")
+                        }
+                    }
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.body.weight(.semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 28, height: 28)
                     .contentShape(Rectangle())
             }
             // 選單預設會染成主題藍，這顆要灰色。

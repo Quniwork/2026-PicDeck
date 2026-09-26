@@ -23,7 +23,7 @@ struct HomeArrangeView: View {
                             Button {
                                 editingBlockID = block.id
                             } label: {
-                                Image(systemName: "pencil")
+                                Image(systemName: "square.and.pencil")
                                     .frame(width: 44, height: 44)
                             }
                             .buttonStyle(.borderless)

@@ -198,14 +198,18 @@ extension EnvironmentValues {
     }
 }
 
-/// 功能列的一排按鈕。寬度夠就是「圖示＋文字」橫排；小螢幕或英文文字太長就改窄版，不會被切掉。
+/// 功能列的一排按鈕。寬度夠就是「圖示＋文字」橫排；小螢幕或英文文字太長就改窄版，身體也可強制維持橫排。
 struct ActionBarRow<Content: View>: View {
     var isCompact = false
+    var forceHorizontal = false
     @ViewBuilder let content: () -> Content
 
     var body: some View {
         Group {
-            if isCompact {
+            if forceHorizontal {
+                HStack(spacing: 0) { content() }
+                    .environment(\.actionBarCompact, false)
+            } else if isCompact {
                 HStack(spacing: 0) { content() }
                     .environment(\.actionBarCompact, true)
             } else {

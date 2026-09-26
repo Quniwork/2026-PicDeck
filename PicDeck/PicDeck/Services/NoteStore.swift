@@ -11,9 +11,11 @@ struct PhotoNote: Codable, Identifiable, Hashable {
     /// 這件事做了沒，例如餐廳吃過了、景點去過了。
     var isDone: Bool = false
     var updatedAt: Date = Date()
+    /// 最後一次確認已寫入或讀取的系統說明；nil 代表尚未同步的舊版備註。
+    var lastSyncedCaption: String?
 }
 
-/// 照片備註。跟標籤一樣只存在 App 自己的資料裡，不動系統照片。
+/// 照片備註；iOS 27 起與系統照片說明雙向同步。
 @MainActor
 final class NoteStore: ObservableObject {
 
@@ -23,6 +25,13 @@ final class NoteStore: ObservableObject {
     private let fileURL: URL
     private let filename: String
     private var saveTask: Task<Void, Never>?
+    private weak var library: PhotoLibraryService?
+    private var captionTasks: [String: Task<Void, Never>] = [:]
+    private var pendingCaptions: [String: String] = [:]
+
+    func attach(library: PhotoLibraryService) {
+        self.library = library
+    }
 
     init(filename: String = "notes.json") {
         self.filename = filename
@@ -31,7 +40,7 @@ final class NoteStore: ObservableObject {
         load()
 
         NotificationCenter.default.addObserver(forName: CloudSyncService.didSyncFromCloudNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.load()
+            Task { @MainActor in self?.load() }
         }
     }
 
@@ -40,8 +49,57 @@ final class NoteStore: ObservableObject {
     func note(for asset: PHAsset) -> PhotoNote? {
         if let note = notes[asset.localIdentifier] { return note }
         let fingerprint = OrganizedStore.fingerprint(for: asset)
-        if let id = fingerprintIndex[fingerprint] { return notes[id] }
-        return nil
+        return fingerprintIndex[fingerprint].flatMap { notes[$0] }
+    }
+
+    /// 重新取得照片庫的資產，避免沿用畫面中舊 PHAsset 的說明內容。
+    func refreshFromPhotos(for asset: PHAsset) async {
+        guard #available(iOS 27.0, *) else { return }
+        let id = asset.localIdentifier
+        let result = await Task.detached(priority: .userInitiated) { () -> (Bool, String?) in
+            guard let current = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else {
+                return (false, nil)
+            }
+            return (true, current.extendedMetadata.caption)
+        }.value
+        guard !Task.isCancelled, result.0, pendingCaptions[id] == nil else { return }
+        let systemText = result.1?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let fingerprint = OrganizedStore.fingerprint(for: asset)
+        let old = note(for: asset)
+
+        if let old, old.lastSyncedCaption == nil, systemText.isEmpty {
+            // 舊版只存在 PicDeck 的備註首次同步時寫到照片庫。
+            queueCaptionWrite(old.text, for: asset)
+            return
+        }
+        if let old, old.text == systemText {
+            if old.lastSyncedCaption != systemText {
+                var synced = old
+                synced.lastSyncedCaption = systemText
+                notes[old.id] = synced
+                scheduleSave()
+            }
+            return
+        }
+        if let old, old.lastSyncedCaption == systemText {
+            // 上次寫入失敗或中斷後，保留本機輸入並重試。
+            queueCaptionWrite(old.text, for: asset)
+            return
+        }
+
+        if let old { notes.removeValue(forKey: old.id) }
+        if systemText.isEmpty {
+            fingerprintIndex.removeValue(forKey: fingerprint)
+        } else {
+            notes[id] = PhotoNote(id: id, fingerprint: fingerprint, text: systemText,
+                                  isDone: old?.isDone ?? false, lastSyncedCaption: systemText)
+            fingerprintIndex[fingerprint] = id
+        }
+        scheduleSave()
+    }
+
+    func note(withID id: String) -> PhotoNote? {
+        notes[id]
     }
 
     func hasNote(_ asset: PHAsset) -> Bool { note(for: asset) != nil }
@@ -53,10 +111,19 @@ final class NoteStore: ObservableObject {
 
     // MARK: - 寫入
 
-    /// 存備註。文字清空就等於刪掉這則備註。
+    /// 存備註。文字清空就等於刪掉這則備註，並同步寫入系統「照片.app」說明欄位。
     func save(text: String, isDone: Bool, for asset: PHAsset) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let key = asset.localIdentifier
+
+        let currentNote = notes[key]
+        if let currentNote, currentNote.text == trimmed, currentNote.isDone == isDone {
+            return
+        }
+        if currentNote == nil && trimmed.isEmpty {
+            return
+        }
+
         let fingerprint = OrganizedStore.fingerprint(for: asset)
 
         // 換機後識別碼可能改變，先清掉指紋對應的舊紀錄。
@@ -68,10 +135,13 @@ final class NoteStore: ObservableObject {
             notes.removeValue(forKey: key)
             fingerprintIndex.removeValue(forKey: fingerprint)
         } else {
-            notes[key] = PhotoNote(id: key, fingerprint: fingerprint, text: trimmed, isDone: isDone)
+            notes[key] = PhotoNote(id: key, fingerprint: fingerprint, text: trimmed,
+                                   isDone: isDone, lastSyncedCaption: currentNote?.lastSyncedCaption)
             fingerprintIndex[fingerprint] = key
         }
         scheduleSave()
+
+        queueCaptionWrite(trimmed, for: asset)
     }
 
     func save(text: String, for asset: PHAsset) {
@@ -90,6 +160,30 @@ final class NoteStore: ObservableObject {
         guard let note = notes.removeValue(forKey: id) else { return }
         fingerprintIndex.removeValue(forKey: note.fingerprint)
         scheduleSave()
+
+        if let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject {
+            queueCaptionWrite("", for: asset)
+        }
+    }
+
+    private func queueCaptionWrite(_ text: String, for asset: PHAsset) {
+        guard #available(iOS 27.0, *), let library else { return }
+        let id = asset.localIdentifier
+        let previous = captionTasks[id]
+        pendingCaptions[id] = text
+        captionTasks[id] = Task { [weak self] in
+            await previous?.value
+            guard let self, !Task.isCancelled else { return }
+            // 快速連續編輯只寫入最後一版。
+            guard pendingCaptions[id] == text else { return }
+            let succeeded = await library.updateCaption(text, for: asset)
+            if succeeded, var note = notes[id], note.text == text {
+                note.lastSyncedCaption = text
+                notes[id] = note
+                scheduleSave()
+            }
+            if pendingCaptions[id] == text { pendingCaptions.removeValue(forKey: id) }
+        }
     }
 
     // MARK: - 持久化
@@ -112,9 +206,11 @@ final class NoteStore: ObservableObject {
 
     private func save() {
         let snapshot = Array(notes.values)
+        let fileURL = self.fileURL
         let filename = self.filename
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(snapshot) else { return }
+            try? data.write(to: fileURL, options: .atomic)
             await MainActor.run {
                 CloudSyncService.shared.writeData(data, filename: filename)
             }

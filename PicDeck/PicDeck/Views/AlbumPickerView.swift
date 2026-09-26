@@ -9,6 +9,7 @@ struct AlbumPickerView: View {
     let assets: [PHAsset]
 
     @EnvironmentObject private var library: PhotoLibraryService
+    @EnvironmentObject private var organized: OrganizedStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var tree: [AlbumNode] = []
@@ -146,6 +147,9 @@ struct AlbumPickerView: View {
                     try await library.removeAssets(assets, fromAlbumWithID: album.id)
                 }
             } else {
+                for asset in assets {
+                    organized.markOrganized(asset)
+                }
                 await library.attempt(String(localized: "Couldn't add to the album")) {
                     try await library.addAssets(assets, toAlbumWithID: album.id)
                 }
@@ -185,6 +189,7 @@ struct AlbumCreateForm: View {
     let onCreated: () -> Void
 
     @EnvironmentObject private var library: PhotoLibraryService
+    @EnvironmentObject private var organized: OrganizedStore
     @Environment(\.dismiss) private var dismiss
 
     private enum Kind: String, CaseIterable, Identifiable {
@@ -303,6 +308,9 @@ struct AlbumCreateForm: View {
                     newID = try await library.createAlbum(named: title, inFolderID: parent)
                 }
                 if created, let id = newID, !assets.isEmpty {
+                    for asset in assets {
+                        organized.markOrganized(asset)
+                    }
                     await library.attempt(String(localized: "Couldn't add to the album")) {
                         try await library.addAssets(assets, toAlbumWithID: id)
                     }

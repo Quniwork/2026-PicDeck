@@ -21,6 +21,11 @@ struct MoreTabView: View {
     var body: some View {
         NavigationStack {
             List {
+                // MARK: 系統同步狀態（頂部優先顯示）
+                Section {
+                    SyncStatusCard()
+                }
+
                 Section("方案狀態") {
                     LabeledContent("目前方案", value: planName)
                         .pageRowInsets()
@@ -168,6 +173,7 @@ struct MoreTabView: View {
             }
             .navigationTitle("更多")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
+            .borderlessHeaderScrim()
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
                     LeadingTitleToolbar(title: "更多", font: .largeTitle)

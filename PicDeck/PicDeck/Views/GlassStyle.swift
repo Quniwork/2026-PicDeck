@@ -41,6 +41,55 @@ extension View {
         }
     }
 
+    /// 為 View 套用無邊界 Header 遮罩並隱藏系統導覽列背景與分隔線。
+    func borderlessHeaderScrim(height: CGFloat = 140, color: Color? = nil) -> some View {
+        self
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(NavigationBarSeparatorHider())
+            .overlay(alignment: .top) {
+                BorderlessHeaderScrim(height: height, customColor: color)
+            }
+    }
+}
+
+/// 無邊界 Header 遮罩：漸層由頂部向漸變淡出至透明（.clear），沒有 iOS 預設導覽列的底線與區塊硬切感。
+struct BorderlessHeaderScrim: View {
+    @Environment(\.colorScheme) private var colorScheme
+    var height: CGFloat = 140
+    var customColor: Color? = nil
+
+    var body: some View {
+        let baseColor = customColor ?? (colorScheme == .dark ? Color.black : Color(.systemBackground))
+        let fade = LinearGradient(
+            stops: [
+                .init(color: .black, location: 0),
+                .init(color: .black, location: 0.48),
+                .init(color: .clear, location: 1)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .mask(fade)
+
+            LinearGradient(
+                stops: [
+                    .init(color: baseColor.opacity(colorScheme == .dark ? 0.52 : 0.70), location: 0.0),
+                    .init(color: baseColor.opacity(colorScheme == .dark ? 0.38 : 0.50), location: 0.45),
+                    .init(color: baseColor.opacity(colorScheme == .dark ? 0.12 : 0.16), location: 0.76),
+                    .init(color: .clear, location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .frame(height: height)
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
+    }
 }
 
 /// 把幾個玻璃元件放進同一個容器，它們靠近時會像液體一樣融合，也避免玻璃各自取樣互相干擾。

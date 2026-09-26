@@ -88,6 +88,7 @@ struct JournalTabView: View {
             }
             .navigationTitle("日記")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
+            .borderlessHeaderScrim()
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
                     LeadingTitleToolbar(title: "日記", font: .largeTitle)
@@ -114,7 +115,7 @@ struct JournalTabView: View {
             case .newEntry(let date):
                 JournalEditorView(year: date.year, month: date.month, day: date.day,
                                   preselectedIDs: date.photoIDs,
-                                  allowsDateChange: date.isNew)
+                                  allowsDateChange: true)
             case .editEntry(let entry):
                 JournalEditorView(entry: entry)
             case .categories:

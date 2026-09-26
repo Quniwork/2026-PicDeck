@@ -6,6 +6,7 @@ struct NoteEditorView: View {
     let asset: PHAsset
 
     @EnvironmentObject private var noteStore: NoteStore
+    @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var tagStore: TagStore
     @Environment(\.dismiss) private var dismiss
 
@@ -101,6 +102,14 @@ struct NoteEditorView: View {
                     text = existing.text
                 } else {
                     isEditing = true
+                }
+            }
+            .task(id: library.libraryChangeCount) {
+                let textBeforeRefresh = text
+                await noteStore.refreshFromPhotos(for: asset)
+                await tagStore.refreshFromPhotos(for: asset)
+                if text == textBeforeRefresh && (!isEditing || text.isEmpty) {
+                    text = noteStore.note(for: asset)?.text ?? ""
                 }
             }
         }

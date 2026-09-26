@@ -150,19 +150,22 @@ final class JournalStore: ObservableObject {
     /// 新增一篇，永遠是新的一篇，就算當天已經有別篇了。
     @discardableResult
     func create(mood: String, text: String, photoIDs: [String], dateKey: String,
-                categoryID: JournalCategory.ID?) -> String? {
+                categoryID: JournalCategory.ID?, createdAt: Date? = nil) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !(trimmed.isEmpty && mood.isEmpty && photoIDs.isEmpty) else { return nil }
         let id = UUID().uuidString
+        let date = createdAt ?? Date()
         entries[id] = JournalEntry(id: id, dateKey: dateKey, mood: mood, text: trimmed,
-                                   photoIDs: photoIDs, categoryID: categoryID)
+                                   photoIDs: photoIDs, categoryID: categoryID,
+                                   createdAt: date, updatedAt: Date())
         scheduleSave()
         return id
     }
 
     /// 更新指定的那一篇；內容都清空就整篇刪掉。
     func update(id: String, mood: String, text: String, photoIDs: [String],
-                categoryID: JournalCategory.ID?) {
+                categoryID: JournalCategory.ID?, dateKey: String? = nil,
+                createdAt: Date? = nil) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty && mood.isEmpty && photoIDs.isEmpty {
             entries.removeValue(forKey: id)
@@ -171,6 +174,8 @@ final class JournalStore: ObservableObject {
             existing.text = trimmed
             existing.photoIDs = photoIDs
             existing.categoryID = categoryID
+            if let dateKey { existing.dateKey = dateKey }
+            if let createdAt { existing.createdAt = createdAt }
             existing.updatedAt = Date()
             entries[id] = existing
         }

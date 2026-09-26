@@ -350,10 +350,10 @@ final class AppModel: ObservableObject {
         isUnlocked || processedToday < Self.dailyFreeLimit
     }
 
-    /// 處理一張照片就扣一次額度；付費版不扣。
-    func consumeQuota() {
+    /// 處理照片就扣額度；付費版不扣。
+    func consumeQuota(_ count: Int = 1) {
         guard !isUnlocked else { return }
-        processedToday += 1
+        processedToday += count
         persistQuota()
     }
 
@@ -569,9 +569,9 @@ enum OrganizeSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .photos: return "相片"
+        case .photos: return "照片"
         case .tags: return "標籤"
-        case .albums: return "相簿"
+        case .albums: return "資料夾與相簿"
         }
     }
 }
@@ -593,6 +593,14 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     var style: UIUserInterfaceStyle {
         switch self {
         case .system: return .unspecified
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
         case .light: return .light
         case .dark: return .dark
         }

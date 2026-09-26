@@ -175,7 +175,14 @@ struct CompactGridView: View {
         GeometryReader { proxy in
             let safeColumns = max(columns, 1)
             let cellWidth = max(1, (proxy.size.width - CGFloat(safeColumns - 1) * 2) / CGFloat(safeColumns))
-            AnchoredScrollView(anchorID: assets.isEmpty ? nil : "compact-grid-bottom-anchor", isReady: !assets.isEmpty, scrub: scrub,
+            let rowCount = (assets.count + safeColumns - 1) / safeColumns
+            let estimatedHeight = CGFloat(rowCount) * (cellWidth + 2)
+            // 當照片高度不足一頁時（如只有幾張），從頂部起排，不啟用底部錨定
+            let isShortLibrary = !assets.isEmpty && estimatedHeight < (proxy.size.height - 140)
+
+            AnchoredScrollView(anchorID: (assets.isEmpty || isShortLibrary) ? nil : "compact-grid-bottom-anchor",
+                               isReady: !assets.isEmpty,
+                               scrub: isShortLibrary ? nil : scrub,
                                scrubTopInset: 160,
                                scrollRequestID: scrollRequestID,
                                onScrollOffsetChange: { offset, viewportHeight in
@@ -188,7 +195,7 @@ struct CompactGridView: View {
                 let firstDate = assets.indices.contains(firstIndex) ? assets[firstIndex].creationDate : nil
                 let lastDate = assets.indices.contains(lastIndex) ? assets[lastIndex].creationDate : nil
                 onVisibleDateRangeChange?(offset, firstDate, lastDate)
-            }, scrollToAnchor: .bottom) {
+            }, scrollToAnchor: isShortLibrary ? .top : .bottom) {
                 VStack(spacing: 0) {
                     Group {
                         if fitsAspect {
@@ -221,18 +228,43 @@ struct CompactGridView: View {
                                     thumbnail(asset, size: cellWidth)
                                 }
                             }
+                            .gridSwipeToSelect(
+                                isSelecting: isSelecting,
+                                columns: safeColumns,
+                                spacing: 2,
+                                topInset: 0,
+                                assetCount: assets.count,
+                                isSelected: { idx in
+                                    guard idx >= 0, idx < assets.count else { return false }
+                                    return selectedIDs?.wrappedValue.contains(assets[idx].localIdentifier) ?? false
+                                },
+                                onSelect: { idx, shouldSelect in
+                                    guard idx >= 0, idx < assets.count, let selectedIDs else { return }
+                                    let asset = assets[idx]
+                                    let id = asset.localIdentifier
+                                    if shouldSelect {
+                                        selectedIDs.wrappedValue.insert(id)
+                                        if asset.isFavorite { selectedFavoriteIDs?.wrappedValue.insert(id) }
+                                    } else {
+                                        selectedIDs.wrappedValue.remove(id)
+                                        selectedFavoriteIDs?.wrappedValue.remove(id)
+                                    }
+                                }
+                            )
                         }
                     }
 
-                    Color.clear
-                        .frame(height: 1)
-                        .id("compact-grid-bottom-anchor")
+                    if !isShortLibrary {
+                        Color.clear
+                            .frame(height: 1)
+                            .id("compact-grid-bottom-anchor")
+                    }
                 }
-                .padding(.top, assets.count > max(columns, 1) * 4 ? 0 : 12)
+                .padding(.top, isShortLibrary ? 12 : 0)
             }
             .softScrollEdges()
-            // A short library cannot scroll its first row back out from under the title.
-            .ignoresSafeArea(edges: assets.count > max(columns, 1) * 4 ? .top : [])
+            // 不滿一頁時保留頂部安全區，避免遮擋標題；超過一頁時可向上滑動穿透頂部
+            .ignoresSafeArea(edges: isShortLibrary ? [] : .top)
         }
     }
 
@@ -337,6 +369,29 @@ struct TimelineView: View {
                                         zoomNamespace: zoomNamespace)
                 }
             }
+            .gridSwipeToSelect(
+                isSelecting: isSelecting,
+                columns: columnCount,
+                spacing: 2,
+                topInset: 0,
+                assetCount: section.assets.count,
+                isSelected: { idx in
+                    guard idx >= 0, idx < section.assets.count else { return false }
+                    return selectedIDs?.wrappedValue.contains(section.assets[idx].localIdentifier) ?? false
+                },
+                onSelect: { idx, shouldSelect in
+                    guard idx >= 0, idx < section.assets.count, let selectedIDs else { return }
+                    let asset = section.assets[idx]
+                    let id = asset.localIdentifier
+                    if shouldSelect {
+                        selectedIDs.wrappedValue.insert(id)
+                        if asset.isFavorite { selectedFavoriteIDs?.wrappedValue.insert(id) }
+                    } else {
+                        selectedIDs.wrappedValue.remove(id)
+                        selectedFavoriteIDs?.wrappedValue.remove(id)
+                    }
+                }
+            )
         }
         .padding(.horizontal, PageMetrics.edge)
     }

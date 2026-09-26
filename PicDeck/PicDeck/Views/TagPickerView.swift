@@ -7,6 +7,8 @@ struct TagPickerView: View {
     let assets: [PHAsset]
 
     @EnvironmentObject private var tagStore: TagStore
+    @EnvironmentObject private var library: PhotoLibraryService
+    @EnvironmentObject private var organized: OrganizedStore
     @Environment(\.dismiss) private var dismiss
 
 
@@ -59,6 +61,12 @@ struct TagPickerView: View {
                         .accessibilityIdentifier("tagpicker.done")
                 }
             }
+            .task(id: library.libraryChangeCount) {
+                for asset in assets {
+                    if Task.isCancelled { return }
+                    await tagStore.refreshFromPhotos(for: asset)
+                }
+            }
         }
     }
 
@@ -76,6 +84,9 @@ struct TagPickerView: View {
             }
         } else {
             tagStore.addTag(tag.id, to: assets)
+            for asset in assets {
+                organized.markOrganized(asset)
+            }
         }
     }
 

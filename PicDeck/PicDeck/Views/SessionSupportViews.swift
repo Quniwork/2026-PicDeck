@@ -16,12 +16,10 @@ struct SessionPhotoCard: View {
             if asset.mediaType == .video {
                 // 影片：點一下就播放，不需要另外進放大。
                 InlineVideoView(asset: asset, poster: image)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
             } else if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
             } else {
                 ProgressView()
             }
@@ -65,14 +63,14 @@ struct ZoomedPhotoView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
 
             if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
             } else {
-                ProgressView().tint(.white)
+                ProgressView()
             }
 
             VStack {
@@ -152,6 +150,7 @@ struct HelpSheet: View {
 struct PendingTrashView: View {
     @EnvironmentObject private var library: PhotoLibraryService
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var organized: OrganizedStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var assets: [PHAsset] = []
@@ -176,6 +175,7 @@ struct PendingTrashView: View {
 
                                     Button {
                                         model.unmarkTrashed(asset.localIdentifier)
+                                        organized.unmarkOrganized(asset)
                                         Task { await reload() }
                                     } label: {
                                         Image(systemName: "arrow.uturn.backward.circle.fill")
@@ -218,9 +218,17 @@ struct PendingTrashView: View {
             .navigationTitle("待刪除清單")
             .failureToast()
             .navigationBarTitleDisplayMode(.inline)
+            .borderlessHeaderScrim()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("關閉") { dismiss() }
+                }
+                if !model.trashedAssetIDs.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("全部復原") {
+                            restoreAll()
+                        }
+                    }
                 }
             }
             .task { await reload() }
@@ -231,6 +239,14 @@ struct PendingTrashView: View {
                 Text("照片將移至系統「最近刪除」相簿，可在 30 天內隨時復原。")
             }
         }
+    }
+
+    private func restoreAll() {
+        for asset in assets {
+            model.unmarkTrashed(asset.localIdentifier)
+            organized.unmarkOrganized(asset)
+        }
+        assets.removeAll()
     }
 
     private func reload() async {

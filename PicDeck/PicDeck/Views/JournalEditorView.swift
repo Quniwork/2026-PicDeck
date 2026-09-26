@@ -6,7 +6,7 @@ import Photos
 struct JournalEditorView: View {
     /// 新增一篇（一定是新的，就算當天已經有別篇了）；或編輯指定的那一篇。
     enum Target {
-        case new(year: Int, month: Int, day: Int, preselectedIDs: [String] = [], allowsDateChange: Bool = false)
+        case new(year: Int, month: Int, day: Int, preselectedIDs: [String] = [], allowsDateChange: Bool = true)
         case edit(JournalEntry)
     }
 
@@ -16,14 +16,18 @@ struct JournalEditorView: View {
         self.target = target
         switch target {
         case .new(let year, let month, let day, _, _):
+            let now = Date()
+            let nowComps = PhotoGrouping.calendar.dateComponents([.hour, .minute, .second], from: now)
             var parts = DateComponents()
-            parts.year = year; parts.month = month; parts.day = day
-            _date = State(initialValue: PhotoGrouping.calendar.date(from: parts) ?? Date())
+            parts.year = year
+            parts.month = month
+            parts.day = day
+            parts.hour = nowComps.hour
+            parts.minute = nowComps.minute
+            parts.second = nowComps.second
+            _date = State(initialValue: PhotoGrouping.calendar.date(from: parts) ?? now)
         case .edit(let entry):
-            let comps = JournalStore.components(fromKey: entry.dateKey)
-            var parts = DateComponents()
-            parts.year = comps?.year; parts.month = comps?.month; parts.day = comps?.day
-            _date = State(initialValue: PhotoGrouping.calendar.date(from: parts) ?? Date())
+            _date = State(initialValue: entry.createdAt)
             _mood = State(initialValue: entry.mood)
             _text = State(initialValue: entry.text)
             _selectedIDs = State(initialValue: entry.photoIDs)
@@ -31,8 +35,8 @@ struct JournalEditorView: View {
         }
     }
 
-    /// 新增時，方便的建構子。
-    init(year: Int, month: Int, day: Int, preselectedIDs: [String] = [], allowsDateChange: Bool = false) {
+    /// 新增時，方便的建構子。預設允許選擇日期與時間。
+    init(year: Int, month: Int, day: Int, preselectedIDs: [String] = [], allowsDateChange: Bool = true) {
         self.init(target: .new(year: year, month: month, day: day,
                                preselectedIDs: preselectedIDs, allowsDateChange: allowsDateChange))
     }
@@ -92,84 +96,141 @@ struct JournalEditorView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                if allowsDateChange {
-                    Section {
-                        DatePicker(String(localized: "Date"), selection: $date,
-                                   in: ...Date(), displayedComponents: .date)
-                            .accessibilityIdentifier("journal.date")
-                    }
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    // MARK: - 日期與時間
+                    if allowsDateChange {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("日期與時間")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
 
-                Section {
-                    HStack(spacing: 12) {
-                        IconPickerButton(raw: $mood,
-                                         size: 44,
-                                         removedValue: "",
-                                         identifier: "journal.mood")
-                        Text(mood.isEmpty ? "點擊選擇心情" : "點擊更換心情")
+                            HStack {
+                                DatePicker("", selection: $date,
+                                           displayedComponents: [.date, .hourAndMinute])
+                                    .labelsHidden()
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                    }
+
+                    // MARK: - 心情（獨立一條）
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("心情")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        moodRowCard
+                    }
+
+                    // MARK: - 分類（獨立一條）
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("分類")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+
+                            Spacer()
+
+                            Button {
+                                editorSheet = .categories
+                            } label: {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "slider.horizontal.3")
+                                        .font(.caption2)
+                                    Text("管理")
+                                        .font(.caption)
+                                }
+                                .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .offset(x: -1)
+                            .accessibilityIdentifier("journal.category.manage")
+                        }
+
+                        categoryRowCard
+                    }
+
+                    // MARK: - 日記
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("日記")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        TextField("今天發生了什麼事？", text: $text, axis: .vertical)
+                            .lineLimit(4...10)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .accessibilityIdentifier("journal.text")
+                    }
+
+                    // MARK: - 照片
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("照片 (\(selectedIDs.count))")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 12) {
+                            if isLoading {
+                                ProgressView().frame(maxWidth: .infinity).padding(.vertical, 12)
+                            } else {
+                                if !gridAssets.isEmpty {
+                                    LazyVGrid(columns: photoColumns, spacing: 4) {
+                                        ForEach(gridAssets, id: \.localIdentifier) { asset in
+                                            selectableThumbnail(asset)
+                                        }
+                                    }
+                                    .padding(.top, 4)
+                                }
+
+                                Button {
+                                    editorSheet = .picker
+                                } label: {
+                                    Label(dayAssets.isEmpty ? "加入照片" : "加入更多照片",
+                                          systemImage: "photo.badge.plus")
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                }
+                                .buttonStyle(.bordered)
+                                .buttonBorderShape(.capsule)
+                                .accessibilityIdentifier("journal.addPhotos")
+                            }
+                        }
+                        .padding(14)
+                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                        Text(dayAssets.isEmpty ? "這一天沒有照片。" : "挑選這篇日記要呈現的照片。")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                        Spacer()
+                            .padding(.leading, 4)
                     }
-                    .padding(.vertical, 2)
-                } header: {
-                    Text("心情")
-                }
 
-                Section {
-                    categoryChips
-                } header: {
-                    Text("分類")
-                }
-
-                Section("日記內文") {
-                    TextField("今天發生了什麼事？",
-                              text: $text, axis: .vertical)
-                        .lineLimit(4...10)
-                        .accessibilityIdentifier("journal.text")
-                }
-
-                Section {
-                    if isLoading {
-                        ProgressView().frame(maxWidth: .infinity)
-                    } else {
-                        // 當天的照片排前面，接著是從別天挑來的。
-                        if !gridAssets.isEmpty {
-                            LazyVGrid(columns: photoColumns, spacing: 4) {
-                                ForEach(gridAssets, id: \.localIdentifier) { asset in
-                                    selectableThumbnail(asset)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        Button {
-                            editorSheet = .picker
-                        } label: {
-                            Label(dayAssets.isEmpty ? "加入照片" : "加入更多照片",
-                                  systemImage: "photo.badge.plus")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .accessibilityIdentifier("journal.addPhotos")
-                    }
-                } header: {
-                    Text("照片 (\(selectedIDs.count))")
-                } footer: {
-                    Text(dayAssets.isEmpty ? "這一天沒有照片。" : "挑選這篇日記要呈現的照片。")
-                }
-
-                if existingEntry != nil {
-                    Section {
-                        DestructiveRowButton(title: "刪除日記",
-                                             identifier: "journal.delete") {
+                    // MARK: - 刪除日記
+                    if existingEntry != nil {
+                        Button(role: .destructive) {
                             if let id = existingEntry?.id { journalStore.delete(id: id) }
                             dismiss()
+                        } label: {
+                            Text("刪除日記")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("journal.delete")
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
             }
-            // 新增時標題是「新增日記」；編輯既有的顯示那篇的日期。
-            .appCanvas()
+            .background(Color(.systemGroupedBackground))
             .navigationTitle(existingEntry == nil ? "新增日記" : dateTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -204,34 +265,114 @@ struct JournalEditorView: View {
         .accessibilityIdentifier("journal.editor")
     }
 
-    /// 分類：一排膠囊，「沒有分類」固定在最前面，最後一顆是管理分類。
-    private var categoryChips: some View {
+    @State private var showMoodPicker = false
+
+    /// 心情獨立整條卡片：高度適中，點擊整條卡片或心情圖示皆可選擇心情，若已有心情右側提供清除按鈕，再點一次已選心情亦可取消。
+    private var moodRowCard: some View {
+        HStack(spacing: 12) {
+            Button {
+                if mood.isEmpty {
+                    showMoodPicker = true
+                } else {
+                    mood = "" // 點了心情，再點一次就取消！
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    if mood.isEmpty {
+                        Image(systemName: "face.smiling")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 32, height: 32)
+                    } else {
+                        IconLabel(raw: mood, size: 24)
+                            .frame(width: 32, height: 32)
+                    }
+
+                    Text(mood.isEmpty ? "點擊選擇心情" : "點擊更換心情")
+                        .font(.subheadline)
+                        .foregroundStyle(mood.isEmpty ? .secondary : .primary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            if !mood.isEmpty {
+                Button {
+                    mood = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("清除心情")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture {
+            showMoodPicker = true
+        }
+        .contextMenu {
+            if !mood.isEmpty {
+                Button(role: .destructive) {
+                    mood = ""
+                } label: {
+                    Label {
+                        Text("取消心情")
+                    } icon: {
+                        if let redX = UIImage(systemName: "xmark")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal) {
+                            Image(uiImage: redX)
+                        } else {
+                            Image(systemName: "xmark")
+                        }
+                    }
+                }
+                Button {
+                    showMoodPicker = true
+                } label: {
+                    Label("更換心情", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+        }
+        .sheet(isPresented: $showMoodPicker) {
+            IconPickerView(raw: $mood, allowsRemove: true, removedValue: "")
+        }
+        .accessibilityLabel(mood.isEmpty ? Text("選擇心情") : Text("心情：\(mood)"))
+        .accessibilityIdentifier("journal.mood")
+    }
+
+    /// 分類獨立卡片：整條通欄，水平捲動膠囊列表。點選某個分類再點一次可反選取消。
+    private var categoryRowCard: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                categoryChip(nil, name: "無分類", symbol: nil)
                 ForEach(journalStore.categories) { category in
                     categoryChip(category.id, name: category.name, symbol: category.symbol)
                 }
-                Button { editorSheet = .categories } label: {
-                    Label("管理", systemImage: "slider.horizontal.3")
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .foregroundStyle(.secondary)
-                        .background(Color(.secondarySystemFill), in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("journal.category.manage")
             }
-            .padding(.vertical, 2)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
         }
+        .frame(height: 50)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
-    private func categoryChip(_ id: JournalCategory.ID?, name: String, symbol: String?) -> some View {
+    private func categoryChip(_ id: JournalCategory.ID, name: String, symbol: String?) -> some View {
         let isOn = categoryID == id
-        return Button { categoryID = id } label: {
+        return Button {
+            if isOn {
+                categoryID = nil // 再點一次就取消，完全沒有選分類就是無分類狀態！
+            } else {
+                categoryID = id
+            }
+        } label: {
             HStack(spacing: 4) {
-                if let symbol { IconLabel(raw: symbol, size: 13) }
+                if let symbol {
+                    IconLabel(raw: symbol, size: 13, tintOverride: isOn ? .white : nil)
+                }
                 Text(name).font(.subheadline.weight(.medium)).lineLimit(1)
             }
             .padding(.horizontal, 14)
@@ -240,14 +381,15 @@ struct JournalEditorView: View {
             .background(isOn ? Color.accentColor : Color(.secondarySystemFill), in: Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("journal.category.chip")
+        .accessibilityIdentifier("journal.category.chip.\(id.uuidString)")
         .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
     }
 
     private func save() {
         if let entry = existingEntry {
             journalStore.update(id: entry.id, mood: mood, text: text,
-                                photoIDs: selectedIDs, categoryID: categoryID)
+                                photoIDs: selectedIDs, categoryID: categoryID,
+                                dateKey: dateKey, createdAt: date)
         } else {
             // 免費版每天只能新增 1 則；編輯已有的日記不受限。
             guard model.canCreateJournal else {
@@ -255,7 +397,8 @@ struct JournalEditorView: View {
                 return
             }
             let created = journalStore.create(mood: mood, text: text, photoIDs: selectedIDs,
-                                              dateKey: dateKey, categoryID: categoryID)
+                                              dateKey: dateKey, categoryID: categoryID,
+                                              createdAt: date)
             if created != nil { model.noteJournalCreated() }
         }
         dismiss()
@@ -401,7 +544,15 @@ struct PhotoActionsMenu: View {
         Button(role: .destructive) {
             onDelete(asset)
         } label: {
-            Label("刪除", systemImage: "xmark")
+            Label {
+                Text("刪除")
+            } icon: {
+                if let redX = UIImage(systemName: "xmark")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal) {
+                    Image(uiImage: redX)
+                } else {
+                    Image(systemName: "xmark")
+                }
+            }
         }
     }
 }
