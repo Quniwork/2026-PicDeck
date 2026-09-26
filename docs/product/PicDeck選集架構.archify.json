@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "PicDeck 選集架構與文章式搜尋",
+    "quality_profile": "showcase",
+    "output": "PicDeck選集架構.html",
+    "views": [
+      { "id": "current-sections", "label": "目前區塊與入口", "focus": ["visitor", "collection-home", "block-model", "tag-archive", "period-view", "year-review"], "note": "日子與標籤卡片進入標籤照片集；月曆與週曆選日期；那年今天依年份瀏覽。" },
+      { "id": "article-search", "label": "文章式搜尋建議", "focus": ["collection-home", "tag-archive", "search-sheet", "article-reader", "photo-detail"], "note": "搜尋結果先進入文字閱讀頁，只有點擊內文照片才開啟單圖檢視。" },
+      { "id": "extensions", "label": "可新增的首頁區塊", "focus": ["collection-home", "block-model", "block-editor", "suggested-blocks"], "note": "保留區塊排序與設定入口，可逐步加入近期、喜愛、相簿與地點回憶。" }
+    ]
+  },
+  "components": [
+    { "id": "visitor", "type": "external", "label": "使用者", "sublabel": "瀏覽選集", "pos": [20, 285], "size": [100, 64] },
+    { "id": "collection-home", "type": "frontend", "label": "選集首頁", "sublabel": "HomeView · 卡片／列表", "pos": [145, 285], "size": [160, 76] },
+    { "id": "block-model", "type": "backend", "label": "區塊模型", "sublabel": "日子 · 標籤 · 月曆 · 週曆 · 那年今天", "pos": [340, 285], "size": [210, 90] },
+    { "id": "block-editor", "type": "frontend", "label": "區塊管理", "sublabel": "新增 · 編輯 · 隱藏 · 重排", "pos": [340, 460], "size": [210, 76] },
+    { "id": "tag-archive", "type": "frontend", "label": "標籤照片集", "sublabel": "TagCollectionView · 網格／單張", "pos": [575, 115], "size": [190, 82] },
+    { "id": "period-view", "type": "frontend", "label": "月曆／週曆日期", "sublabel": "選日後看該日照片與備註", "pos": [575, 285], "size": [190, 82] },
+    { "id": "year-review", "type": "frontend", "label": "日子／那年今天", "sublabel": "紀念日標籤 · 往年照片分組", "pos": [575, 455], "size": [190, 82] },
+    { "id": "search-sheet", "type": "frontend", "label": "標籤搜尋", "sublabel": "備註／標籤摘要清單", "pos": [790, 115], "size": [185, 82] },
+    { "id": "article-reader", "type": "frontend", "label": "文章閱讀頁", "sublabel": "標題 · 內文 · 標籤 · 日期", "pos": [1000, 115], "size": [173, 88], "tag": "規劃中" },
+    { "id": "photo-detail", "type": "frontend", "label": "單張照片檢視", "sublabel": "文章內點照片", "pos": [1198, 115], "size": [154, 82] },
+    { "id": "suggested-blocks", "type": "frontend", "label": "可新增區塊", "sublabel": "近期 · 喜愛 · 相簿 · 地點回憶", "pos": [790, 455], "size": [195, 82], "tag": "產品建議" }
+  ],
+  "connections": [
+    { "id": "user-home", "from": "visitor", "to": "collection-home" },
+    { "id": "home-blocks", "from": "collection-home", "to": "block-model" },
+    { "id": "editor-model", "from": "block-model", "to": "block-editor" },
+    { "id": "blocks-tag", "from": "block-model", "to": "tag-archive" },
+    { "id": "blocks-period", "from": "block-model", "to": "period-view" },
+    { "id": "blocks-years", "from": "block-model", "to": "year-review" },
+    { "id": "tag-search", "from": "tag-archive", "to": "search-sheet" },
+    { "id": "search-article", "from": "search-sheet", "to": "article-reader", "variant": "dashed" },
+    { "id": "article-photo", "from": "article-reader", "to": "photo-detail", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "現有區塊與點入方式", "items": ["日子、標籤卡片 → 標籤照片集", "月曆／週曆日期 → 該日照片", "那年今天 → 往年照片分組", "區塊可命名、隱藏、排序與自訂標籤"] },
+    { "dot": "violet", "title": "文章式搜尋建議", "items": ["結果列保留標題、摘要、日期與標籤", "點結果進閱讀頁，照片以內文媒體呈現", "閱讀頁可編輯備註與標籤", "點內文照片才開全螢幕單圖檢視"] },
+    { "dot": "emerald", "title": "建議新增區塊", "items": ["近期新增：快速回到最近匯入的照片", "喜愛：系統喜愛照片的時間流", "相簿：常用相簿捷徑", "地點回憶：有定位資料時依地點聚合"] }
+  ]
+}
