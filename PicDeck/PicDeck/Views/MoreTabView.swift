@@ -166,19 +166,12 @@ struct MoreTabView: View {
                         .pageRowInsets()
                 }
             }
-            .pageList(firstSectionHasHeader: true)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
-                    .accessibilityHidden(true)
-            }
+            .pageList(firstSectionHasHeader: true, underlapsHeader: true)
             .navigationTitle("更多")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .borderlessHeaderScrim()
-            .toolbar {
-                if !dynamicTypeSize.isAccessibilitySize {
-                    LeadingTitleToolbar(title: "更多", font: .largeTitle)
-                }
-            }
+            .overlay(alignment: .top) { BorderlessPageHeader(title: "更多") { EmptyView() } }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showPaywall) { PaywallView() }
             .sheet(isPresented: $showShareSheet) {
                 if let url = backupFileURL {

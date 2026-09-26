@@ -75,9 +75,10 @@ struct DayCalendarGridView: View {
                     .id(month.id)
                 }
             }
-            .padding(.top, PageMetrics.contentTopGap)
+            .padding(.top, PageMetrics.headerUnderlapContentInset)
             .padding(.bottom, 24)
         }
+        .ignoresSafeArea(edges: .top)
     }
 
     private var weekdayHeader: some View {

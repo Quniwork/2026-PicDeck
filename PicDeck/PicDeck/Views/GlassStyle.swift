@@ -92,6 +92,26 @@ struct BorderlessHeaderScrim: View {
     }
 }
 
+/// 主分頁使用內容上的浮動頁首，避免系統導覽列的背景在底部形成水平分界。
+struct BorderlessPageHeader<Actions: View>: View {
+    let title: String
+    @ViewBuilder let actions: () -> Actions
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.largeTitle.weight(.bold))
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("page.title")
+            Spacer(minLength: 8)
+            actions()
+        }
+        .padding(.horizontal, PageMetrics.edge)
+        .padding(.top, 8)
+    }
+}
+
 /// 把幾個玻璃元件放進同一個容器，它們靠近時會像液體一樣融合，也避免玻璃各自取樣互相干擾。
 struct GlassGroup<Content: View>: View {
     var spacing: CGFloat = 12

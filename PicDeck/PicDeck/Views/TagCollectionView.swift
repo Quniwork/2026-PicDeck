@@ -6,7 +6,7 @@ import Photos
 /// - 單張：一張照片占滿整個畫面，上下滑動換下一張。頁首可回到標籤列表、切換同層標籤與檢視選項，
 ///   有備註的話備註浮在左下角。
 /// - 柵欄：3:4 直式的縮圖格狀，右上角選單多一個「顯示方式選項」（放大縮小）。
-/// - 右下角固定一顆搜尋鈕，打開跟系統相簿一樣的搜尋畫面：標籤快選、最近搜尋、搜尋列。
+/// - 右下角固定一顆搜尋鈕，打開半屏搜尋頁：標題、最新項目、固定在搜尋列上方的標籤與關閉按鈕。
 /// - 點照片打開詳細資訊（只有照片與備註，沒有下面那排功能按鈕）。
 struct TagCollectionView: View {
     let tag: PhotoTag?
@@ -47,6 +47,7 @@ struct TagCollectionView: View {
 
     private struct ViewerTarget: Identifiable {
         let startID: String
+        var assets: [PHAsset]? = nil
         var id: String { startID }
     }
 
@@ -100,8 +101,10 @@ struct TagCollectionView: View {
                     emptyState
                 } else if mode == .single {
                     singleContent
+                        .ignoresSafeArea(edges: .top)
                 } else {
                     gridContent
+                        .ignoresSafeArea(edges: .top)
                 }
             }
 
@@ -109,7 +112,7 @@ struct TagCollectionView: View {
             currentNote
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
 
-            // 右下角固定的搜尋鈕（y 軸向下微調）。
+            // 右下角固定的搜尋鈕，與左下角標籤的垂直中心對齊。
             GlassCircleButton { showSearch = true } label: {
                 Image(systemName: "magnifyingglass")
             }
@@ -120,27 +123,11 @@ struct TagCollectionView: View {
             .accessibilityIdentifier("collection.search")
         }
         .background(Color(.systemBackground))
-        .navigationBarTitleDisplayMode(.inline)
         .borderlessHeaderScrim()
+        .overlay(alignment: .top) { headerControls }
         .toolbar(.hidden, for: .tabBar)
+        .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .floatingGlass(in: Circle(), interactive: true)
-                .accessibilityLabel(Text("Back"))
-                .accessibilityIdentifier("collection.back")
-            }
-            ToolbarItem(placement: .principal) { tagChipMenu }
-            ToolbarItem(placement: .topBarTrailing) { modeToggleButton }
-            ToolbarItem(placement: .topBarTrailing) { optionsMenu }
-        }
         .task(id: "\(selectedCollectionTagID?.uuidString ?? "-")-\(tagStore.assignments.count)-\(tagStore.tags.count)") { reload() }
         .task(id: sortsByAdded) {
             if sortsByAdded { addedRanks = await library.addedRanks() }
@@ -152,17 +139,14 @@ struct TagCollectionView: View {
             if mode == .grid { withMotion { model.zoom(.collection, in: zoomIn) } }
         }
         .fullScreenCover(item: $viewer) { target in
-            PhotoDetailView(assets: visible, startID: target.startID)
+            PhotoDetailView(assets: target.assets ?? visible, startID: target.startID)
                 .zoomDestination(id: target.startID, in: photoZoom)
         }
         .sheet(item: $editingAsset) { NoteEditorView(asset: $0) }
         .sheet(isPresented: $showSearch) {
-            CollectionSearchView(query: $search,
-                                 selectedTags: $selectedSubTags,
-                                 subTags: subTags,
-                                 results: visible) { asset in
+            CollectionSearchView { asset, results in
                 showSearch = false
-                viewer = ViewerTarget(startID: asset.localIdentifier)
+                viewer = ViewerTarget(startID: asset.localIdentifier, assets: results)
             }
         }
     }
@@ -244,13 +228,14 @@ struct TagCollectionView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .floatingGlass(in: Capsule())
+                            .accessibilityIdentifier("collection.tag")
                         }
                     }
                 }
             }
             .padding(.leading, PageMetrics.edge)
             .padding(.trailing, 72)
-            .padding(.bottom, 12)
+            .padding(.bottom, 25)
             .accessibilityIdentifier("collection.note")
         }
     }
@@ -291,6 +276,35 @@ struct TagCollectionView: View {
     }
 
     // MARK: - 右上角與標頭按鈕
+
+    private var headerControls: some View {
+        ZStack {
+            tagChipMenu
+                .frame(maxWidth: 170)
+
+            HStack {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .floatingGlass(in: Circle(), interactive: true)
+                .accessibilityLabel(Text("Back"))
+                .accessibilityIdentifier("collection.back")
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 10) {
+                    modeToggleButton
+                    optionsMenu
+                }
+            }
+        }
+        .padding(.horizontal, PageMetrics.edge)
+        .padding(.top, 8)
+    }
 
     /// 切換單圖與柵欄檢視的快捷按鈕（44x44 獨立圓形玻璃按鈕，尺寸完全參考整理頁面）
     private var modeToggleButton: some View {
@@ -337,6 +351,8 @@ struct TagCollectionView: View {
                 Text(displayTitle)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(Color.accentColor)
@@ -453,71 +469,60 @@ struct FullBleedPhoto: View {
     }
 }
 
-/// 收藏裡的搜尋，參考系統相簿：標題、標籤快選、最近搜尋，搜尋列固定在最下面，右邊一顆 ✕ 關閉。
-/// 輸入的字與選的標籤會直接套用到收藏頁；有結果時在畫面上列出縮圖，點一張打開。
+/// 半屏搜尋涵蓋所有已標籤照片，最新項目依拍攝時間排序；標籤與搜尋列固定在底部。
+/// 搜尋文字與標籤篩選只作用於搜尋頁；符合的字詞以系統藍色標示。
 struct CollectionSearchView: View {
-    @Binding var query: String
-    @Binding var selectedTags: Set<UUID>
-    let subTags: [PhotoTag]
-    let results: [PHAsset]
-    let onOpen: (PHAsset) -> Void
+    let onOpen: (PHAsset, [PHAsset]) -> Void
 
+    @EnvironmentObject private var noteStore: NoteStore
+    @EnvironmentObject private var tagStore: TagStore
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focused: Bool
-    @State private var recents: [String] = Self.loadRecents()
+    @State private var query = ""
+    @State private var selectedTags: Set<UUID> = []
+    @State private var allTaggedAssets: [PHAsset] = []
+    @State private var isLoading = true
 
-    private static let recentsKey = "picdeck.collectionRecentSearches"
-
-    private static func loadRecents() -> [String] {
-        (UserDefaults.standard.stringArray(forKey: recentsKey)) ?? []
-    }
-
-    private var isFiltering: Bool {
-        !query.trimmingCharacters(in: .whitespaces).isEmpty || !selectedTags.isEmpty
+    private var matchingResults: [PHAsset] {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if needle.isEmpty, selectedTags.isEmpty { return allTaggedAssets }
+        let tagNames = Dictionary(uniqueKeysWithValues: tagStore.tags.map { ($0.id, $0.name) })
+        return allTaggedAssets.filter { asset in
+            let ids = tagStore.tagIDs(for: asset)
+            guard selectedTags.isSubset(of: ids) else { return false }
+            guard !needle.isEmpty else { return true }
+            if noteStore.note(for: asset)?.text.localizedCaseInsensitiveContains(needle) == true { return true }
+            return ids.contains { tagNames[$0]?.localizedCaseInsensitiveContains(needle) == true }
+        }
     }
 
     var body: some View {
+        let results = matchingResults
         VStack(spacing: 0) {
+            Text("搜尋")
+                .font(.largeTitle.weight(.bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, PageMetrics.edge)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
+
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text("Search").font(.largeTitle.weight(.bold)).padding(.top, PageMetrics.contentTopGap)
-
-                    if !subTags.isEmpty {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Tags").font(.title3.weight(.bold))
-                            chips(subTags.map { ($0.id.uuidString, $0.name, selectedTags.contains($0.id)) }) { id in
-                                guard let uuid = UUID(uuidString: id) else { return }
-                                if selectedTags.contains(uuid) { selectedTags.remove(uuid) } else { selectedTags.insert(uuid) }
-                            }
-                        }
-                    }
-
-                    if !recents.isEmpty {
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack {
-                                Text("Recent searches").font(.title3.weight(.bold))
-                                Spacer()
-                                Button("Clear") { recents = []; UserDefaults.standard.removeObject(forKey: Self.recentsKey) }
-                                    .font(.subheadline.weight(.semibold))
-                            }
-                            chips(recents.map { ($0, $0, false) }) { text in query = text }
-                        }
-                    }
-
-                    if isFiltering {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(String(format: String(localized: "%lld results"), results.count))
-                                .font(.title3.weight(.bold))
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3), spacing: 2) {
-                                ForEach(results, id: \.localIdentifier) { asset in
-                                    Color.clear
-                                        .aspectRatio(3.0 / 4.0, contentMode: .fit)
-                                        .overlay { CoverImage(assetID: asset.localIdentifier, size: 240) }
-                                        .clipped()
-                                        .contentShape(Rectangle())
-                                        .onTapGesture { rememberQuery(); onOpen(asset) }
-                                        .accessibilityIdentifier("search.result")
-                                }
+                LazyVStack(spacing: 0) {
+                    if isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                    } else if results.isEmpty {
+                        Text("沒有符合的項目")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 18)
+                    } else {
+                        ForEach(results, id: \.localIdentifier) { asset in
+                            latestRow(asset, in: results)
+                            if asset.localIdentifier != results.last?.localIdentifier {
+                                Divider()
                             }
                         }
                     }
@@ -527,11 +532,114 @@ struct CollectionSearchView: View {
             }
             .scrollDismissesKeyboard(.interactively)
 
+            if !tagStore.tags.isEmpty {
+                chips(tagStore.tags.map { ($0.id.uuidString, $0.name, selectedTags.contains($0.id)) }) { id in
+                    guard let uuid = UUID(uuidString: id) else { return }
+                    if selectedTags.contains(uuid) { selectedTags.remove(uuid) } else { selectedTags.insert(uuid) }
+                }
+                .padding(.horizontal, PageMetrics.edge)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
+            }
+
             searchBar
         }
         .background(Color(.systemBackground))
-        .presentationDetents([.large])
-        .onAppear { focused = true }
+        .presentationDetents([.medium])
+        .task { await loadTaggedAssets() }
+    }
+
+    private func loadTaggedAssets() async {
+        let existingTags = Set(tagStore.tags.map(\.id))
+        let ids = tagStore.assignments.values
+            .filter { !existingTags.isDisjoint(with: $0.tagIDs) }
+            .map(\.localIdentifier)
+        let fetchTask = Task.detached(priority: .userInitiated) { () -> [PHAsset] in
+            let fetched = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
+            var assets: [PHAsset] = []
+            fetched.enumerateObjects { asset, _, _ in assets.append(asset) }
+            guard !Task.isCancelled else { return [] }
+            return assets.sorted {
+                let left = $0.creationDate ?? .distantPast
+                let right = $1.creationDate ?? .distantPast
+                return left == right ? $0.localIdentifier > $1.localIdentifier : left > right
+            }
+        }
+        let sorted = await withTaskCancellationHandler {
+            await fetchTask.value
+        } onCancel: {
+            fetchTask.cancel()
+        }
+        guard !Task.isCancelled else { return }
+        allTaggedAssets = sorted
+        isLoading = false
+    }
+
+    private func latestRow(_ asset: PHAsset, in results: [PHAsset]) -> some View {
+        let note = noteText(for: asset)
+        let parts = note.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        let assetTags = tagStore.tags(for: asset)
+        let title = parts.first ?? assetTags.map(\.name).joined(separator: "、")
+        let date = asset.creationDate.map { DateFormatter.localizedString(from: $0, dateStyle: .medium, timeStyle: .none) } ?? "照片"
+        let continuation = parts.dropFirst().joined(separator: " ")
+        let tagSummary = assetTags.map { "#\($0.name)" }.joined(separator: "  ")
+        let subtitle = !continuation.isEmpty ? continuation : (!tagSummary.isEmpty ? tagSummary : date)
+
+        return Button { onOpen(asset, results) } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(highlight(title.isEmpty ? date : title))
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(highlight(subtitle, defaultColor: .secondary))
+                        .font(.caption)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if !continuation.isEmpty, !assetTags.isEmpty {
+                        Text(assetTags.map { "#\($0.name)" }.joined(separator: "  "))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                CoverImage(assetID: asset.localIdentifier, size: 112)
+                    .frame(width: 52, height: 56)
+                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+            }
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("search.result")
+    }
+
+    private func noteText(for asset: PHAsset) -> String {
+        noteStore.note(for: asset)?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    private func highlight(_ text: String, defaultColor: Color = .primary) -> AttributedString {
+        var value = AttributedString(text)
+        value.foregroundColor = defaultColor
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty else { return value }
+
+        let source = text as NSString
+        let sought = needle as NSString
+        var location = 0
+        while location < source.length {
+            let found = source.range(of: needle,
+                                    options: [.caseInsensitive, .widthInsensitive],
+                                    range: NSRange(location: location, length: source.length - location))
+            guard found.location != NSNotFound, found.length > 0,
+                  let stringRange = Range(found, in: text),
+                  let attributedRange = Range(stringRange, in: value) else { break }
+            value[attributedRange].foregroundColor = .blue
+            location = found.location + sought.length
+        }
+        return value
     }
 
     /// 底下的搜尋列加關閉鈕。
@@ -542,18 +650,14 @@ struct CollectionSearchView: View {
                 TextField("搜尋備註與標籤", text: $query)
                     .focused($focused)
                     .submitLabel(.search)
-                    .onSubmit { rememberQuery() }
+                    .onSubmit { focused = false }
                     .accessibilityIdentifier("search.field")
-                if !query.isEmpty {
-                    Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
-                        .buttonStyle(.plain)
-                }
             }
             .padding(.horizontal, 12)
             .frame(height: 46)
             .floatingGlass(in: Capsule())
 
-            GlassCircleButton { rememberQuery(); dismiss() } label: {
+            GlassCircleButton { dismiss() } label: {
                 Image(systemName: "xmark")
             }
             .accessibilityLabel(Text("Close"))
@@ -565,29 +669,21 @@ struct CollectionSearchView: View {
 
     /// 一排一排的小膠囊，放不下就換行。
     private func chips(_ items: [(id: String, title: String, isOn: Bool)], action: @escaping (String) -> Void) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 8) {
-            ForEach(items, id: \.id) { item in
-                Button { action(item.id) } label: {
-                    Text(item.title)
-                        .font(.subheadline.weight(.medium))
-                        .lineLimit(1)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 9)
-                        .foregroundStyle(item.isOn ? Color.white : Color.primary)
-                        .background(item.isOn ? Color.accentColor : Color(.secondarySystemFill), in: Capsule())
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(items, id: \.id) { item in
+                    Button { action(item.id) } label: {
+                        Text(highlight(item.title, defaultColor: item.isOn ? .white : .primary))
+                            .font(.subheadline.weight(.medium))
+                            .lineLimit(1)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .background(item.isOn ? Color.accentColor : Color(.secondarySystemFill), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("search.chip")
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("search.chip")
             }
         }
-    }
-
-    private func rememberQuery() {
-        let text = query.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { return }
-        recents.removeAll { $0 == text }
-        recents.insert(text, at: 0)
-        recents = Array(recents.prefix(8))
-        UserDefaults.standard.set(recents, forKey: Self.recentsKey)
     }
 }

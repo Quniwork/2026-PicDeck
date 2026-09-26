@@ -188,6 +188,7 @@ struct PendingTrashView: View {
                             }
                         }
                         .padding(4)
+                        .padding(.top, PageMetrics.headerUnderlapContentInset)
                     }
                     .safeAreaInset(edge: .bottom) {
                         VStack(spacing: 8) {
@@ -213,24 +214,33 @@ struct PendingTrashView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 6)
                     }
+                    .ignoresSafeArea(edges: .top)
                 }
             }
             .navigationTitle("待刪除清單")
             .failureToast()
             .navigationBarTitleDisplayMode(.inline)
             .borderlessHeaderScrim()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("關閉") { dismiss() }
-                }
-                if !model.trashedAssetIDs.isEmpty {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("全部復原") {
-                            restoreAll()
-                        }
+            .overlay(alignment: .top) {
+                HStack(spacing: 12) {
+                    GlassCircleButton { dismiss() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel(Text("關閉"))
+                    Text("待刪除清單")
+                        .font(.headline)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    if !model.trashedAssetIDs.isEmpty {
+                        Button("全部復原") { restoreAll() }
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .frame(height: 44)
+                            .floatingGlass(in: Capsule(), interactive: true)
                     }
                 }
+                .padding(.horizontal, PageMetrics.edge)
+                .padding(.top, 8)
             }
+            .toolbar(.hidden, for: .navigationBar)
             .task { await reload() }
             .alert("確定要刪除這 \(model.trashedAssetIDs.count) 張照片嗎？", isPresented: $showConfirm) {
                 Button("取消", role: .cancel) {}

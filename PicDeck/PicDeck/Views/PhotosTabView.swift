@@ -241,12 +241,6 @@ struct PhotosTabView: View {
         NavigationStack {
             content
                 .background(Color(.systemBackground))
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    Color.clear
-                        .frame(height: dynamicTypeSize.isAccessibilitySize || scale == .all
-                               ? 0 : PageMetrics.largeTitleBodyOffset)
-                        .accessibilityHidden(true)
-                }
                 // 換篩選、排序、縮放時內容淡入淡出，不是一下子跳掉。
                 .motionAnimation(.easeInOut(duration: 0.22), value: isLoading)
                 .motionAnimation(value: selection)
@@ -262,6 +256,9 @@ struct PhotosTabView: View {
                 .overlay(alignment: .top) {
                     PhotosHeaderScrimOverlay(dateState: visibleDateState, isDarkMode: appColorScheme == .dark)
                         .animation(.easeInOut(duration: 0.22), value: visibleDateState.hasScrolled)
+                }
+                .overlay(alignment: .top) {
+                    if scale != .all { floatingScaleHeader }
                 }
             // 選取工具固定在底部；iOS 26 的年月日切換器由 TabView 底部配件顯示。
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -282,6 +279,7 @@ struct PhotosTabView: View {
             .toolbarColorScheme(usesDarkHeader ? .dark : appColorScheme, for: .navigationBar)
             .toolbarBackground(.hidden, for: .navigationBar)
             .background(NavigationBarSeparatorHider())
+            .toolbar(scale == .all ? .visible : .hidden, for: .navigationBar)
             .toolbar {
                 if !dynamicTypeSize.isAccessibilitySize {
                     PhotosTitleToolbar(dateState: visibleDateState,
@@ -316,6 +314,9 @@ struct PhotosTabView: View {
             .onChange(of: selectedFavoriteIDs) { _, _ in syncSelectionAccessory() }
             // 系統相簿有變動（例如在別處改了喜愛）就重取，長按選單才不會拿到舊狀態。
             .onChange(of: library.libraryChangeCount) { _ in
+                Task { await refreshAssets() }
+            }
+            .onChange(of: model.trashedAssetIDs) { _, _ in
                 Task { await refreshAssets() }
             }
             .task(id: scale) { await rebuildCurrentScale() }
@@ -382,6 +383,33 @@ struct PhotosTabView: View {
     /// 只有全部與時間軸可以多選。
     private var supportsSelection: Bool {
         scale == .all || scale == .timeline
+    }
+
+    /// 其他時間尺度的內容可滑入頁首後方；原生導覽列在其底部會留下硬切線。
+    private var floatingScaleHeader: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(displayTitle)
+                    .font(.largeTitle.weight(.bold))
+                    .lineLimit(1)
+                    .accessibilityIdentifier("photos.title")
+                Text(visibleDateState.hasScrolled ? itemCountText : " ")
+                    .font(TypeScale.subtitle)
+                    .opacity(visibleDateState.hasScrolled ? 0.85 : 0)
+            }
+            .foregroundStyle(usesDarkHeader ? Color.white : Color.primary)
+            Spacer(minLength: 8)
+            if supportsSelection {
+                selectButton
+                    .frame(width: 44, height: 44)
+                    .floatingGlass(in: Circle(), interactive: true)
+            }
+            filterMenu
+                .frame(width: 44, height: 44)
+                .floatingGlass(in: Circle(), interactive: true)
+        }
+        .padding(.horizontal, PageMetrics.edge)
+        .padding(.top, 8)
     }
 
     /// 選取與篩選是分開的按鈕；篩選固定最右側。
@@ -1101,14 +1129,24 @@ struct PhotosTabView: View {
         case .filter(let filter):
             loaded = await library.assets(matching: filter)
             // 選「截圖」就是要看截圖，不受顯示開關影響。
-            if filter == .screenshots || model.showsScreenshots { return loaded }
-            return loaded.filter { !$0.mediaSubtypes.contains(.photoScreenshot) }
+            let visible = filter == .screenshots || model.showsScreenshots
+                ? loaded
+                : loaded.filter { !$0.mediaSubtypes.contains(.photoScreenshot) }
+            return excludingTrashed(visible)
         case .tag(let tagID):
             // 標籤是 App 端資料，先取全部照片再依標籤過濾。
             let all = await library.assets(matching: .all)
             loaded = all.filter { tagStore.tagIDs(for: $0).contains(tagID) }
-            return model.showsScreenshots ? loaded : loaded.filter { !$0.mediaSubtypes.contains(.photoScreenshot) }
+            let visible = model.showsScreenshots ? loaded : loaded.filter { !$0.mediaSubtypes.contains(.photoScreenshot) }
+            return excludingTrashed(visible)
         }
+    }
+
+    /// 待刪除是暫存狀態：照片保留在待刪除清單，並從照片分頁所有尺度與篩選中隱藏。
+    private func excludingTrashed(_ assets: [PHAsset]) -> [PHAsset] {
+        let trashedIDs = Set(model.trashedAssetIDs)
+        guard !trashedIDs.isEmpty else { return assets }
+        return assets.filter { !trashedIDs.contains($0.localIdentifier) }
     }
 
     /// 每批照片的每個層級只分組一次；切回已看過的層級直接沿用結果。
@@ -1117,7 +1155,16 @@ struct PhotosTabView: View {
     }
 
     private func prepareScale(_ requestedScale: PhotoScale, priority: TaskPriority) async {
-        guard !assets.isEmpty else { return }
+        guard !assets.isEmpty else {
+            years = []
+            monthCalendars = []
+            dayCalendars = []
+            sections = []
+            dayIndex = ScrubIndex(anchors: [])
+            timelineIndex = ScrubIndex(anchors: [])
+            preparedScales.insert(requestedScale)
+            return
+        }
         if preparedScales.contains(requestedScale) { return }
         guard !Task.isCancelled else { return }
 

@@ -57,9 +57,10 @@ struct MonthCalendarGridView: View {
                     .id(group.id)
                 }
             }
-            .padding(.top, PageMetrics.contentTopGap)
+            .padding(.top, PageMetrics.headerUnderlapContentInset)
             .padding(.bottom, 24)
         }
+        .ignoresSafeArea(edges: .top)
     }
 }
 

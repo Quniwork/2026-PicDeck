@@ -98,13 +98,14 @@ struct JournalEntriesView: View {
                         }
                     }
                     .padding(.horizontal, PageMetrics.edge)
-                    .padding(.top, PageMetrics.contentTopGap)
+                    .padding(.top, PageMetrics.headerUnderlapContentInset)
                     .padding(.bottom, 16)
                 }
             }
         }
         // 空狀態跟有內容時背景要一樣，不然切換時（或跟選集比較）顏色會跳一下。
         .background(Color(.systemBackground))
+        .ignoresSafeArea(edges: .top)
     }
 
     private func dayGroup(_ group: JournalDayGroup) -> some View {

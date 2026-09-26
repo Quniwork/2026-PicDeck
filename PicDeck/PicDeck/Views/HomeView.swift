@@ -82,18 +82,15 @@ struct HomeView: View {
                     // 依使用者排的順序，一個區塊一個區塊往下放。
                     ForEach(model.homeBlocks.filter { !$0.isHidden }) { block in blockView(block) }
                 }
-                .padding(.top, PageMetrics.contentTopGap)
+                .padding(.top, PageMetrics.headerUnderlapContentInset)
                 .padding(.bottom, 12)
             }
             .background(Color(.systemBackground))
+            .ignoresSafeArea(edges: .top)
             .background(GeometryReader { proxy in
                 Color.clear.onAppear { contentWidth = proxy.size.width }
                     .onChange(of: proxy.size.width) { _, width in contentWidth = width }
             })
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
-                    .accessibilityHidden(true)
-            }
             .navigationDestination(item: $openedCollection) { tag in
                 TagCollectionView(tag: tag)
             }
@@ -106,11 +103,8 @@ struct HomeView: View {
             .navigationTitle("選集")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .borderlessHeaderScrim()
-            .toolbar {
-                if !dynamicTypeSize.isAccessibilitySize {
-                    LeadingTitleToolbar(title: "選集", font: .largeTitle)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
+            .overlay(alignment: .top) {
+                BorderlessPageHeader(title: "選集") {
                     Menu {
                         Button { sheet = .cardStyle } label: {
                             Label("卡片樣式", systemImage: "slider.horizontal.3")
@@ -130,8 +124,12 @@ struct HomeView: View {
                     }
                     .accessibilityLabel(Text("自訂版面"))
                     .accessibilityIdentifier("home.cardSettings")
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .floatingGlass(in: Circle(), interactive: true)
                 }
             }
+            .toolbar(.hidden, for: .navigationBar)
             .fullScreenCover(item: $selectedOnThisDayGroup) { group in
                 NavigationStack {
                     TagCollectionView(tag: nil,

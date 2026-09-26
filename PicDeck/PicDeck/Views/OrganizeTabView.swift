@@ -22,19 +22,12 @@ struct OrganizeTabView: View {
                 case .albums: AlbumManagerList()
                 }
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
-                    .accessibilityHidden(true)
-            }
             .navigationTitle("整理")
             .failureToast()
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .borderlessHeaderScrim()
-            .toolbar {
-                if !dynamicTypeSize.isAccessibilitySize {
-                    LeadingTitleToolbar(title: "整理", font: .largeTitle)
-                }
-            }
+            .overlay(alignment: .top) { BorderlessPageHeader(title: "整理") { EmptyView() } }
+            .toolbar(.hidden, for: .navigationBar)
             // 只有照片子層需要載入，而且不能掛在會消失又出現的清單上，不然會一直重載。
             .task(id: model.organizeSection) {
                 if model.organizeSection == .photos { await reload() }
@@ -72,7 +65,7 @@ struct OrganizeTabView: View {
                     Text("依月份整理")
                 }
             }
-            .pageList()
+            .pageList(underlapsHeader: true)
             .refreshable { await reload() }
         }
     }

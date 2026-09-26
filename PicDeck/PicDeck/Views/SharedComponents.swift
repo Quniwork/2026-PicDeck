@@ -19,6 +19,8 @@ enum PageMetrics {
     static let titleNudge: CGFloat = 0
     /// 頂層標題列下方的內容起始位置，五個主分頁共用。
     static let largeTitleBodyOffset: CGFloat = 20
+    /// 內容延伸到狀態列與透明導覽列後方時，初始項目仍從頁首控制項下方開始。
+    static let headerUnderlapContentInset: CGFloat = 128
     /// 照片頁的可點擊標題本身已有額外位移，不套用功能頁的尺寸補償。
     static let photoTitleNudge: CGFloat = -1
 
@@ -407,15 +409,17 @@ extension View {
     /// 會疊加在這段margin上面）。所以改成明確指定這段margin＝PageMetrics.edge，卡片的外緣才會跟
     /// 標題、其他頁的內容對在同一條線上；卡片「裡面」文字要不要再縮一點是 pageRowInsets 的事，
     /// 兩層各管各的，不會互相疊加出裝置量出來不一樣的邊距。
-    func pageList(firstSectionHasHeader: Bool = false) -> some View {
+    func pageList(firstSectionHasHeader: Bool = false, underlapsHeader: Bool = false) -> some View {
         self
             .listStyle(.insetGrouped)
             .listSectionSpacing(.custom(PageMetrics.gapLG))
             // 依裝置寬度跟原生 large title 的 leading inset 對齊分組卡片外緣。
             .contentMargins(.horizontal, PageMetrics.groupedListEdge, for: .scrollContent)
-            .contentMargins(.top, firstSectionHasHeader ? PageMetrics.headerCompensation : PageMetrics.contentTopGap,
+            .contentMargins(.top, underlapsHeader ? PageMetrics.headerUnderlapContentInset :
+                            (firstSectionHasHeader ? PageMetrics.headerCompensation : PageMetrics.contentTopGap),
                             for: .scrollContent)
             .appCanvas()
+            .ignoresSafeArea(edges: underlapsHeader ? .top : [])
     }
 
     /// `pageList()` 搭配用：卡片外緣已經對齊 `PageMetrics.edge`（見上面），這裡只管卡片「裡面」

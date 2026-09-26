@@ -138,9 +138,10 @@ struct BucketGridView: View {
                 }
             }
             .padding(.horizontal, PageMetrics.edge)
-            .padding(.top, PageMetrics.contentTopGap)
+            .padding(.top, PageMetrics.headerUnderlapContentInset)
             .padding(.bottom, 28)
         }
+        .ignoresSafeArea(edges: .top)
     }
 
     private var gridColumns: [GridItem] {
@@ -347,9 +348,10 @@ struct TimelineView: View {
                         .id(section.id)
                 }
             }
-            .padding(.top, PageMetrics.contentTopGap)
+            .padding(.top, PageMetrics.headerUnderlapContentInset)
             .padding(.bottom, 20)
         }
+        .ignoresSafeArea(edges: .top)
     }
 
     private func daySection(_ section: PhotoGrouping.DaySection) -> some View {

@@ -82,22 +82,15 @@ struct JournalTabView: View {
                     .motionAnimation(value: model.journalNewestFirst)
                     .motionAnimation(value: model.gridColumns(for: .journal))
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear.frame(height: dynamicTypeSize.isAccessibilitySize ? 0 : PageMetrics.largeTitleBodyOffset)
-                    .accessibilityHidden(true)
-            }
             .navigationTitle("日記")
             .navigationBarTitleDisplayMode(dynamicTypeSize.isAccessibilitySize ? .large : .inline)
             .borderlessHeaderScrim()
-            .toolbar {
-                if !dynamicTypeSize.isAccessibilitySize {
-                    LeadingTitleToolbar(title: "日記", font: .largeTitle)
-                }
-                ToolbarItem(placement: .topBarTrailing) { filterMenu }
-                if #available(iOS 26.0, *) {
-                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
+            .overlay(alignment: .top) {
+                BorderlessPageHeader(title: "日記") {
+                    filterMenu
+                        .foregroundStyle(.primary)
+                        .frame(width: 44, height: 44)
+                        .floatingGlass(in: Circle(), interactive: true)
                     Button {
                         addEntry()
                     } label: {
@@ -105,8 +98,12 @@ struct JournalTabView: View {
                     }
                     .accessibilityLabel(Text("新增日記"))
                     .accessibilityIdentifier("journal.add")
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .floatingGlass(in: Circle(), interactive: true)
                 }
             }
+            .toolbar(.hidden, for: .navigationBar)
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {

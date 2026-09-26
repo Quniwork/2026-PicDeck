@@ -3,6 +3,7 @@ import Photos
 
 /// 相簿內容。
 struct AlbumDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     let album: AlbumSummary
 
     @State private var assets: [PHAsset] = []
@@ -28,13 +29,30 @@ struct AlbumDetailView: View {
                 }
             }
             .padding(.horizontal, PageMetrics.edge)
+            .padding(.top, PageMetrics.headerUnderlapContentInset)
         }
+        .ignoresSafeArea(edges: .top)
         .fullScreenCover(item: $viewerTarget) { target in
             PhotoDetailView(assets: assets, startID: target.startID)
         }
         .navigationTitle(album.title)
         .navigationBarTitleDisplayMode(.inline)
         .borderlessHeaderScrim()
+        .overlay(alignment: .top) {
+            HStack(spacing: 12) {
+                GlassCircleButton { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .accessibilityLabel(Text("返回"))
+                Text(album.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, PageMetrics.edge)
+            .padding(.top, 8)
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             assets = await load()
         }
